@@ -282,20 +282,16 @@ export async function executeTransfer(
   // ── Build ISO 20022 pacs.009 human-readable memo ──
   // Multi-line text format renders cleanly in Solana Explorer's
   // monospace "Data (UTF-8)" display while remaining machine-parseable.
-  const msgId = crypto.randomUUID();
-  const creDtTm = new Date().toISOString();
-  const e2eId = iso20022.endToEndId ?? transactionId;
+  const creDtTm = new Date().toISOString().replace(/\.\d{3}Z$/, "Z"); // drop milliseconds
   const ccy = iso20022.currency ?? "USD";
   const rmtLine = iso20022.remittanceInfo
     ? `\nRemittance: ${iso20022.remittanceInfo}`
     : "";
 
   const memo = [
-    `CODA Solstice | ISO 20022 pacs.009`,
+    `CODA pacs.009 Settlement`,
     `------------------------------------`,
-    `MsgId:   ${msgId}`,
-    `TxId:    ${transactionId}`,
-    `E2EId:   ${e2eId}`,
+    `TxId:    ${transactionId.slice(0, 8)}`,
     `Date:    ${creDtTm}`,
     `Amount:  ${iso20022.settlementAmount} ${ccy}`,
     `From:    ${iso20022.senderBic} (${iso20022.senderName})`,
