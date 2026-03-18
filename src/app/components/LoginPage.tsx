@@ -19,7 +19,7 @@ const THEME_CYCLE: { pref: ThemePreference; icon: ElementType; label: string }[]
 ];
 
 export function LoginPage() {
-  const { signIn, signUp, loading, error: authError, user } = useAuth();
+  const { signIn, signUp, loading, error: authError, user, authProvider } = useAuth();
   const { resolved, preference, cycleTheme } = useTheme();
   const isDark = resolved === 'dark';
   const navigate = useNavigate();
@@ -123,6 +123,28 @@ export function LoginPage() {
             </p>
           </div>
 
+          {/* Azure Entra ID login — production */}
+          {authProvider === 'azure' && (
+            <div className="px-8 pb-8">
+              <button
+                onClick={() => signIn('', '')}
+                className={`w-full py-3.5 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
+                  isDark
+                    ? 'bg-white text-black hover:bg-gray-100'
+                    : 'bg-black text-white hover:bg-gray-900'
+                } shadow-lg`}
+              >
+                <ShieldCheck size={18} />
+                Sign in with Microsoft
+              </button>
+              <p className="text-[10px] text-coda-text-muted text-center mt-4">
+                Authenticates through Microsoft Entra ID
+              </p>
+            </div>
+          )}
+
+          {/* Supabase email/password login — dev/staging */}
+          {authProvider !== 'azure' && <>
           {/* Tab switcher */}
           <div className="px-8 mb-6">
             <div className="flex p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.06]">
@@ -290,6 +312,7 @@ export function LoginPage() {
               }
             </button>
           </form>
+          </>}
 
           {/* Footer */}
           <div className="px-8 pb-6 text-center">
