@@ -1396,3 +1396,29 @@ Extracted hardcoded Supabase config to env vars, made Solana URLs configurable, 
 | `utils/supabase/info.tsx` | Replaced by env vars |
 
 ---END_TASK---
+
+---
+
+## Task 132a–c: Phase B — Staging Environment + Azure Static Web Apps (2026-03-18)
+
+---TASK_COMPLETE---
+Step: Task 132a–c — Phase B: Staging Environment + Azure Static Web Apps
+Timestamp: 2026-03-18T21:30:00Z
+Status: DONE
+
+### Summary:
+Captured full database schema as Supabase migration (16 tables, 1,703 lines). Deployed staging frontend to Azure Static Web Apps in `rg-solstice-network` (westus2). Auto-deploy from `develop` via GitHub Actions with build-time env vars.
+
+### Files created:
+| File | Description |
+|------|-------------|
+| `supabase/config.toml` | Supabase CLI config |
+| `supabase/migrations/20260318000000_initial_schema.sql` | Full schema dump |
+| `.github/workflows/azure-static-web-apps-*.yml` | Azure deploy workflow |
+
+### Infrastructure:
+- Azure Static Web App: `solstice-ai-staging` (Free, westus2)
+- Staging URL: `https://zealous-smoke-037ea5c1e.1.azurestaticapps.net`
+- GitHub Secrets: 4 VITE_* vars for build-time injection
+
+---END_TASK---

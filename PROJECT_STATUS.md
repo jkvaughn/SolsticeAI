@@ -1,9 +1,9 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-03-18T21:00:00Z
-> Phase: Phase A — Dev Environment Setup (Tasks 128a–128e)
+> Last updated: 2026-03-18T21:30:00Z
+> Phase: Phase B — Staging Environment + Azure Static Web Apps (Tasks 132a–132c)
 > Server version: v7 Task-125 (lockup-route-dedup-iso20022-fix)
-> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-128e)
+> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-132c)
 
 ---
 
@@ -406,5 +406,36 @@ Extracted all hardcoded configuration to environment variables, set up git branc
 - `.env` not committed, `.env.example` committed
 - Both branches pushed to GitHub
 - Missing env var throws clear error message
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 132a–c — Phase B: Staging Environment + Azure Static Web Apps
+Timestamp: 2026-03-18T21:30:00Z
+Status: DONE
+
+### Summary:
+Captured the full database schema as a Supabase migration file (16 tables, all constraints/indexes/RLS/grants). Deployed the staging frontend to Azure Static Web Apps (free tier) in `rg-solstice-network` (westus2), colocated with the Solstice Network validators. Auto-deploy from `develop` branch via GitHub Actions. Build-time env vars passed as GitHub secrets.
+
+### New files created:
+| File | Description |
+|------|-------------|
+| `supabase/config.toml` | Supabase CLI project config |
+| `supabase/migrations/20260318000000_initial_schema.sql` | Full schema dump — 16 tables, 1,703 lines |
+| `supabase/.gitignore` | Supabase CLI generated gitignore |
+| `.github/workflows/azure-static-web-apps-*.yml` | Azure auto-generated deploy workflow (modified to pass VITE_* env vars) |
+
+### Infrastructure:
+| Resource | Detail |
+|----------|--------|
+| Azure Static Web App | `solstice-ai-staging` in `rg-solstice-network` (westus2, Free tier) |
+| Staging URL | `https://zealous-smoke-037ea5c1e.1.azurestaticapps.net` |
+| GitHub Secrets | `VITE_SUPABASE_PROJECT_ID`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_FUNCTION_NAME`, `VITE_MAPBOX_TOKEN` |
+| Deploy trigger | Push to `develop` branch |
+
+### Verification:
+- Migration SQL includes all 16 tables + Task 127 additions (travel_rule_payload, simulated_watchlist)
+- Azure deploy succeeded (GitHub Actions run #23267897933)
+- Staging URL serves the React SPA
 
 ---END_TASK---
