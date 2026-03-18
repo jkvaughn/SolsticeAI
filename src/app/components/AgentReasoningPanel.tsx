@@ -21,6 +21,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from './motion-shim';
 import { CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { useBanks } from '../contexts/BanksContext';
 import { truncateAddress, explorerUrl } from '../types';
 import { PipelineStrip, PIPELINE_AGENTS } from './PipelineStrip';
@@ -508,31 +509,34 @@ export function AgentReasoningPanel({ isRunning, currentCycle }: AgentReasoningP
   }, [banks, firePill]);
 
   // ── Realtime subscriptions ─────────────────────────────────
+  useRealtimeSubscription({
+    channelName: 'reasoning-panel-rt',
+    subscriptions: [
+      {
+        table: 'transactions',
+        event: 'INSERT',
+        callback: (payload) => handleTxUpdate(payload.new),
+      },
+      {
+        table: 'transactions',
+        event: 'UPDATE',
+        callback: (payload) => handleTxUpdate(payload.new),
+      },
+      {
+        table: 'agent_messages',
+        event: 'INSERT',
+        callback: (payload) => handleAgentMessage(payload.new),
+      },
+    ],
+  });
+
+  // Cleanup pill timers and fade timer on unmount
   useEffect(() => {
-    const txChannel = supabase
-      .channel('reasoning-panel-txns')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'transactions' },
-        (payload) => handleTxUpdate(payload.new))
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'transactions' },
-        (payload) => handleTxUpdate(payload.new))
-      .subscribe();
-
-    const msgChannel = supabase
-      .channel('reasoning-panel-msgs')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'agent_messages' },
-        (payload) => handleAgentMessage(payload.new))
-      .subscribe();
-
     return () => {
-      supabase.removeChannel(txChannel);
-      supabase.removeChannel(msgChannel);
       for (const timer of pillCleanupRef.current.values()) clearTimeout(timer);
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
     };
-  }, [handleTxUpdate, handleAgentMessage]);
+  }, []);
 
   // ── Completion: collapse after all txs done ────────────────
   useEffect(() => {

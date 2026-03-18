@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from './motion-shim';
 import { useNavigate } from 'react-router';
 import { supabase, callServer } from '../supabaseClient';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { formatTokenAmount, explorerUrl, truncateAddress } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader } from './PageHeader';
@@ -711,13 +712,13 @@ export function EscalationDashboard() {
   }, [fetchEscalations, fetchMonitoredCount]);
 
   // Realtime subscription for lockup_tokens status changes
-  useEffect(() => {
-    const channel = supabase
-      .channel('escalation-dashboard-lockups')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'lockup_tokens' },
-        () => {
+  useRealtimeSubscription({
+    channelName: 'escalation-dashboard-lockups',
+    subscriptions: [
+      {
+        table: 'lockup_tokens',
+        event: '*',
+        callback: () => {
           // Suppress realtime re-fetches while a resolution action is in-flight
           // to prevent the item from reappearing before /lockup-settle completes
           if (isResolvingRef.current) {
@@ -727,13 +728,15 @@ export function EscalationDashboard() {
           fetchEscalations();
           fetchMonitoredCount();
         },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchEscalations, fetchMonitoredCount]);
+      },
+    ],
+    onPoll: () => {
+      if (!isResolvingRef.current) {
+        fetchEscalations();
+        fetchMonitoredCount();
+      }
+    },
+  });
 
   // Handle approve/reverse with confirmation
   const handleApproveClick = useCallback((lockupId: string) => {

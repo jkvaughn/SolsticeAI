@@ -11,6 +11,7 @@ import { supabase, callServer } from '../supabaseClient';
 import { useHeartbeat } from './HeartbeatContext';
 import { NetworkActivityFeed } from './NetworkActivityFeed';
 import { useSWRCache, evictSWRCache } from '../hooks/useSWRCache';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { PageHeader } from './PageHeader';
 import { PageTransition } from './PageTransition';
 import { AnimatedValue } from './AnimatedValue';
@@ -247,34 +248,31 @@ export default function HeartbeatControl() {
   // -- Realtime subscription --
   // Direct-mutate local state for instant UI, then also invalidate SWR
   // so the cache stays fresh for return visits.
-  useEffect(() => {
-    const channel = supabase
-      .channel('heartbeat-cycles-rt')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'heartbeat_cycles' },
-        (payload) => {
+  useRealtimeSubscription({
+    channelName: 'heartbeat-cycles-rt',
+    subscriptions: [
+      {
+        table: 'heartbeat_cycles',
+        event: 'INSERT',
+        callback: (payload) => {
           const newCycle = payload.new as HeartbeatCycle;
           setCycles((prev) => [newCycle, ...prev].slice(0, 20));
           setLatestCycleNumber(newCycle.cycle_number);
           invalidateCycles();
         },
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'heartbeat_cycles' },
-        (payload) => {
+      },
+      {
+        table: 'heartbeat_cycles',
+        event: 'UPDATE',
+        callback: (payload) => {
           const updated = payload.new as HeartbeatCycle;
           setCycles((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
           invalidateCycles();
         },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [setLatestCycleNumber, invalidateCycles]);
+      },
+    ],
+    onPoll: invalidateCycles,
+  });
 
   // - Derived state --
   const lastCycle = cycles.length > 0 ? cycles[0] : null;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { ArrowRight, Activity, ChevronDown } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { useBanks } from '../contexts/BanksContext';
 import { useSWRCache } from '../hooks/useSWRCache';
 
@@ -364,13 +365,13 @@ export function NetworkActivityFeed() {
   // ── Realtime subscriptions ──
   // Direct-mutate local state for instant UI, then invalidate SWR
   // so the cache stays fresh for return visits.
-  useEffect(() => {
-    const channel = supabase
-      .channel('network-feed-rt')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'agent_messages' },
-        async (payload) => {
+  useRealtimeSubscription({
+    channelName: 'network-feed-rt',
+    subscriptions: [
+      {
+        table: 'agent_messages',
+        event: 'INSERT',
+        callback: (payload) => {
           const row = payload.new as any;
           // Resolve bank short_codes from context cache instead of per-event DB queries
           const fromBank = lookupShortCode(row.from_bank_id);
@@ -387,11 +388,11 @@ export function NetworkActivityFeed() {
             invalidateFeed();
           }
         },
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'transactions' },
-        async (payload) => {
+      },
+      {
+        table: 'transactions',
+        event: 'UPDATE',
+        callback: (payload) => {
           const row = payload.new as any;
           if (row.status === 'settled' || row.status === 'rejected' || row.status === 'reversed') {
             const sCode = lookupShortCode(row.sender_bank_id);
@@ -409,11 +410,10 @@ export function NetworkActivityFeed() {
             }
           }
         },
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [invalidateFeed]);
+      },
+    ],
+    onPoll: invalidateFeed,
+  });
 
   return (
     <div className="flex flex-col h-full">

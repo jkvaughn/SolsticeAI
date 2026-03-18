@@ -3,7 +3,7 @@
  * deployed banks, token mints, and wallet status with SWR caching.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { Link } from 'react-router';
 import {
   Globe, Server, Coins, Wifi, WifiOff, ArrowRight,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { supabase, callServer } from '../../supabaseClient';
 import { useSWRCache } from '../../hooks/useSWRCache';
+import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 import { useBanks } from '../../contexts/BanksContext';
 import type { Bank } from '../../types';
 
@@ -88,19 +89,14 @@ export function NetworkInfrastructureWidget() {
   const invalidateRef = useRef(invalidate);
   invalidateRef.current = invalidate;
 
-  useEffect(() => {
-    const channel = supabase
-      .channel('dashboard-network-infra-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'banks' }, () => {
-        setTimeout(() => invalidateRef.current(), 1000);
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'wallets' }, () => {
-        setTimeout(() => invalidateRef.current(), 1000);
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+  useRealtimeSubscription({
+    channelName: 'dashboard-network-infra-rt',
+    subscriptions: [
+      { table: 'banks', event: '*', callback: () => setTimeout(() => invalidateRef.current(), 1000) },
+      { table: 'wallets', event: '*', callback: () => setTimeout(() => invalidateRef.current(), 1000) },
+    ],
+    onPoll: () => invalidateRef.current(),
+  });
 
   const infra = data;
   const totalTokenDisplay = infra
