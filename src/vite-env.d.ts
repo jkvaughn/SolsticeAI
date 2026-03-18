@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_SOLANA_EXPLORER_URL?: string;
   readonly VITE_SOLANA_CLUSTER?: string;
   readonly VITE_SOLANA_FAUCET_URL?: string;
+  readonly VITE_AUTH_PROVIDER?: 'azure' | 'supabase';
 }
 
 interface ImportMeta {

@@ -3,11 +3,23 @@ import { supabase, serverBaseUrl, publicAnonKey } from '../supabaseClient';
 import type { Session, User } from '@supabase/supabase-js';
 
 // ============================================================
-// Auth Context — manages Supabase auth state globally
+// Auth Context — supports Supabase auth (dev/staging) and
+// Azure Entra ID auth (production via Static Web Apps).
+// Controlled by VITE_AUTH_PROVIDER env var.
 // ============================================================
 
+const AUTH_PROVIDER = import.meta.env.VITE_AUTH_PROVIDER || 'supabase';
+
+// Unified user type that works for both providers
+interface AppUser {
+  id: string;
+  email: string;
+  name?: string;
+}
+
 interface AuthState {
-  user: User | null;
+  user: AppUser | null;
+  supabaseUser: User | null;
   session: Session | null;
   loading: boolean;
   error: string | null;
@@ -18,6 +30,7 @@ interface AuthContextValue extends AuthState {
   signUp: (email: string, password: string, name: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   accessToken: string | null;
+  authProvider: string;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -36,38 +49,110 @@ function friendlyAuthError(raw: string): string {
   if (lower.includes('network') || lower.includes('fetch'))
     return 'Unable to reach the server. Check your internet connection.';
   if (lower.includes('password') && lower.includes('least'))
-    return raw; // already descriptive (e.g. "Password should be at least 6 characters")
+    return raw;
   return raw;
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+// ============================================================
+// Azure Entra ID Provider (production)
+// Uses Azure Static Web Apps built-in /.auth/* endpoints
+// ============================================================
+
+function AzureAuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
+    supabaseUser: null,
     session: null,
     loading: true,
     error: null,
   });
 
-  // Initialize — check for existing session
+  // Check if user is already authenticated via Azure
+  useEffect(() => {
+    fetch('/.auth/me')
+      .then(res => res.json())
+      .then(data => {
+        const clientPrincipal = data?.clientPrincipal;
+        if (clientPrincipal) {
+          const user: AppUser = {
+            id: clientPrincipal.userId,
+            email: clientPrincipal.userDetails,
+            name: clientPrincipal.claims?.find((c: { typ: string }) => c.typ === 'name')?.val,
+          };
+          setState({ user, supabaseUser: null, session: null, loading: false, error: null });
+        } else {
+          setState({ user: null, supabaseUser: null, session: null, loading: false, error: null });
+        }
+      })
+      .catch(() => {
+        setState({ user: null, supabaseUser: null, session: null, loading: false, error: null });
+      });
+  }, []);
+
+  // Azure auth is handled by redirects — these are no-ops for the form
+  const signIn = useCallback(async () => {
+    window.location.href = '/.auth/login/aad?post_login_redirect_uri=/';
+    return {};
+  }, []);
+
+  const signUp = useCallback(async () => {
+    window.location.href = '/.auth/login/aad?post_login_redirect_uri=/';
+    return {};
+  }, []);
+
+  const signOut = useCallback(async () => {
+    window.location.href = '/.auth/logout?post_logout_redirect_uri=/login';
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{
+      ...state,
+      signIn,
+      signUp,
+      signOut,
+      accessToken: null, // Azure auth uses cookies, not bearer tokens
+      authProvider: 'azure',
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// ============================================================
+// Supabase Provider (dev/staging) — existing implementation
+// ============================================================
+
+function SupabaseAuthProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    supabaseUser: null,
+    session: null,
+    loading: true,
+    error: null,
+  });
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error('[AuthContext] getSession error:', error.message);
       }
+      const supabaseUser = session?.user ?? null;
       setState({
-        user: session?.user ?? null,
+        user: supabaseUser ? { id: supabaseUser.id, email: supabaseUser.email ?? '', name: supabaseUser.user_metadata?.name } : null,
+        supabaseUser,
         session: session ?? null,
         loading: false,
         error: error?.message ?? null,
       });
     });
 
-    // Listen for auth state changes (sign in, sign out, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        const supabaseUser = session?.user ?? null;
         setState(prev => ({
           ...prev,
-          user: session?.user ?? null,
+          user: supabaseUser ? { id: supabaseUser.id, email: supabaseUser.email ?? '', name: supabaseUser.user_metadata?.name } : null,
+          supabaseUser,
           session: session ?? null,
           loading: false,
         }));
@@ -93,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (email: string, password: string, name: string) => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     try {
-      // Use server-side signup with admin.createUser (auto-confirms email)
       const res = await fetch(
         `${serverBaseUrl}/auth/signup`,
         {
@@ -111,7 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setState(prev => ({ ...prev, loading: false, error: msg }));
         return { error: msg };
       }
-      // Auto sign-in after successful signup
       const result = await signIn(email, password);
       return result;
     } catch (err) {
@@ -123,16 +206,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    setState({ user: null, session: null, loading: false, error: null });
+    setState({ user: null, supabaseUser: null, session: null, loading: false, error: null });
   }, []);
 
   const accessToken = state.session?.access_token ?? null;
 
   return (
-    <AuthContext.Provider value={{ ...state, signIn, signUp, signOut, accessToken }}>
+    <AuthContext.Provider value={{
+      ...state,
+      signIn,
+      signUp,
+      signOut,
+      accessToken,
+      authProvider: 'supabase',
+    }}>
       {children}
     </AuthContext.Provider>
   );
+}
+
+// ============================================================
+// Exported Provider — picks based on env var
+// ============================================================
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  if (AUTH_PROVIDER === 'azure') {
+    return <AzureAuthProvider>{children}</AzureAuthProvider>;
+  }
+  return <SupabaseAuthProvider>{children}</SupabaseAuthProvider>;
 }
 
 export function useAuth() {
