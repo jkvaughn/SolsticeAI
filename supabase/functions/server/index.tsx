@@ -174,18 +174,15 @@ interface LockupMemoParams {
 }
 
 function buildISO20022LockupMemo(p: LockupMemoParams): string {
-  const msgId = crypto.randomUUID();
-  const creDtTm = new Date().toISOString();
+  const creDtTm = new Date().toISOString().replace(/\.\d{3}Z$/, "Z"); // drop milliseconds
   const ccy = p.currency ?? "USD";
   const purpose = p.purposeCode || "settlement";
   const rmtLine = p.remittanceInfo ? `\nRemittance: ${p.remittanceInfo}` : "";
 
   const memo = [
-    `CODA Solstice | ISO 20022 pacs.009`,
+    `CODA pacs.009 Settlement`,
     `------------------------------------`,
-    `MsgId:   ${msgId}`,
-    `TxId:    ${p.transactionId}`,
-    `E2EId:   ${p.transactionId}`,
+    `TxId:    ${p.transactionId.slice(0, 8)}`,
     `Date:    ${creDtTm}`,
     `Amount:  ${p.amount} ${ccy}`,
     `From:    ${resolveBic(p.senderBank)} (${p.senderBank.name})`,

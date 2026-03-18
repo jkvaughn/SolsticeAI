@@ -273,16 +273,14 @@ Severity mapping: `auto_reverse` → immediate reversal (if auto-reverse enabled
 | 28 | `/cadenza-monitor` | POST | Cadenza dispute resolution agent. 3 actions: `scan_lockup` (single lockup → Gemini monitoring decision → ALL_CLEAR/AUTO_REVERSE/ESCALATE), `periodic_scan` (batch all active lockups), `user_reversal` (operator-initiated reversal, no Gemini). Wired into heartbeat via `coreCadenzaPeriodicScan(heartbeatMode)`. |
 | 29 | `/cadenza-escalate` | POST | Human review for escalated lockups. 3 actions: `get_escalations` (list all escalated lockups with flags, yield, timing), `resolve_escalation` (operator approve/reverse with name attribution), `get_briefing` (on-demand Gemini briefing via buildCadenzaEscalationPrompt). |
 
-### Solana memo format (current)
+### Solana memo format (current — compact v2)
 
-Human-readable multi-line text, ~400 bytes typical. Used by ALL on-chain operations (PvP swaps + lockup burns/mints + reversals):
+Human-readable multi-line text, ~250 bytes typical (down from ~400). Used by ALL on-chain operations (PvP swaps + lockup burns/mints + reversals):
 ```
-CODA Solstice | ISO 20022 pacs.009
+CODA pacs.009 Settlement
 ------------------------------------
-MsgId:   {uuid}
-TxId:    {transaction_id}
-E2EId:   {end_to_end_id}
-Date:    {iso_8601_timestamp}
+TxId:    {first_8_chars}
+Date:    {iso_8601_no_milliseconds}
 Amount:  {amount} {currency}
 From:    {sender_bic} ({sender_name})
 To:      {receiver_bic} ({receiver_name})
