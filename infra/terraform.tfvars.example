@@ -1,0 +1,19 @@
+# =============================================================================
+# CODA App — Terraform Variables
+# =============================================================================
+# Copy to terraform.tfvars and fill in values.
+# terraform.tfvars is gitignored — never commit real credentials.
+# =============================================================================
+
+project_name        = "coda"
+environment         = "prod"
+location            = "westus2"
+resource_group_name = "rg-coda-app"
+
+# Database
+db_admin_username = "codaadmin"
+db_admin_password = "CHANGE_ME_strong_password_here"
+
+# Secrets
+gemini_api_key = "your-gemini-api-key"
+solana_rpc_url = "https://rpc.solsticenetwork.xyz"
