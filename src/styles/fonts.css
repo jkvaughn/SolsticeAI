@@ -1,0 +1,7 @@
+@import url('https://api.fontshare.com/v2/css?f[]=clash-grotesk@200,300,400,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+/* Ensure Clash Grotesk applies globally regardless of Tailwind preflight */
+html, body {
+  font-family: 'Clash Grotesk', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+}
