@@ -20,6 +20,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Loader2, ArrowRight, CheckCircle2, Activity, Brain, Minus } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { PipelineWaterfall, STATUS_STEP_COUNT } from './PipelineWaterfall';
 import { useBanks } from '../contexts/BanksContext';
 
@@ -87,21 +88,23 @@ export function LivePipelineProgress({ runningCycle }: LivePipelineProgressProps
   }, [runningCycle?.id, runningCycle?.status]);
 
   // ── Realtime subscription on transactions ─────────────────────
+  const txWindowStartRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!runningCycle || !visible) return;
-    const cycleStart = runningCycle.started_at;
-    if (!cycleStart) return;
+    if (runningCycle?.started_at) {
+      txWindowStartRef.current = new Date(new Date(runningCycle.started_at).getTime() - 2000).toISOString();
+    }
+  }, [runningCycle?.started_at]);
 
-    const windowStart = new Date(new Date(cycleStart).getTime() - 2000).toISOString();
-
-    const channel = supabase
-      .channel(`pipeline-txns-${runningCycle.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'transactions' },
-        (payload: any) => {
+  useRealtimeSubscription({
+    channelName: `pipeline-txns-${runningCycle?.id ?? 'idle'}`,
+    subscriptions: (runningCycle && visible && runningCycle.started_at) ? [
+      {
+        table: 'transactions',
+        event: 'INSERT',
+        callback: (payload: any) => {
           const row = payload.new;
-          if (!row || row.created_at < windowStart) return;
+          const windowStart = txWindowStartRef.current;
+          if (!row || !windowStart || row.created_at < windowStart) return;
           setTxns(prev => {
             if (prev.some(t => t.id === row.id)) return prev;
             seenIdsRef.current.add(row.id);
@@ -119,12 +122,12 @@ export function LivePipelineProgress({ runningCycle }: LivePipelineProgressProps
             setAnimatingTxIds(prev => new Set(prev).add(row.id));
             return [...prev, row];
           });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'transactions' },
-        (payload: any) => {
+        },
+      },
+      {
+        table: 'transactions',
+        event: 'UPDATE',
+        callback: (payload: any) => {
           const row = payload.new;
           if (!row) return;
           // Update target step count if tx is still animating
@@ -135,38 +138,41 @@ export function LivePipelineProgress({ runningCycle }: LivePipelineProgressProps
           setTxns(prev =>
             prev.map(t => t.id === row.id ? { ...t, ...row } : t)
           );
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [runningCycle?.id, visible]);
+        },
+      },
+    ] : [],
+    onPoll: runningCycle ? () => fetchTransactions(runningCycle) : undefined,
+  });
 
   // ── Realtime subscription on agent_messages (mandate evaluations) ──
+  // Build bankId → short_code lookup
+  const bankLookupRef = useRef<Map<string, string>>(new Map());
   useEffect(() => {
-    if (!runningCycle || !visible) return;
-    if (runningCycle.status !== 'running') return;
-    const cycleStart = runningCycle.started_at;
-    if (!cycleStart) return;
-
-    const windowStart = new Date(new Date(cycleStart).getTime() - 2000).toISOString();
-
-    // Build bankId → short_code lookup
-    const bankLookup = new Map<string, string>();
+    const lookup = new Map<string, string>();
     for (const b of banks) {
-      bankLookup.set(b.id, b.short_code || b.id.slice(0, 6));
+      lookup.set(b.id, b.short_code || b.id.slice(0, 6));
     }
+    bankLookupRef.current = lookup;
+  }, [banks]);
 
-    const channel = supabase
-      .channel(`pipeline-agents-${runningCycle.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'agent_messages' },
-        (payload: any) => {
+  const agentWindowStartRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (runningCycle?.started_at) {
+      agentWindowStartRef.current = new Date(new Date(runningCycle.started_at).getTime() - 2000).toISOString();
+    }
+  }, [runningCycle?.started_at]);
+
+  useRealtimeSubscription({
+    channelName: `pipeline-agents-${runningCycle?.id ?? 'idle'}`,
+    subscriptions: (runningCycle && visible && runningCycle.status === 'running' && runningCycle.started_at) ? [
+      {
+        table: 'agent_messages',
+        event: 'INSERT',
+        callback: (payload: any) => {
           const row = payload.new;
-          if (!row || row.created_at < windowStart) return;
+          const windowStart = agentWindowStartRef.current;
+          if (!row || !windowStart || row.created_at < windowStart) return;
+          const bankLookup = bankLookupRef.current;
 
           // Treasury cycle NO_ACTION — bank decided not to act
           if (
@@ -202,14 +208,11 @@ export function LivePipelineProgress({ runningCycle }: LivePipelineProgressProps
               return next;
             });
           }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [runningCycle?.id, runningCycle?.status, visible, banks]);
+        },
+      },
+    ] : [],
+    onPoll: runningCycle ? () => fetchTransactions(runningCycle) : undefined,
+  });
 
   // ── Step-by-step entrance animation timer ──────────────────
   // Runs while visible. Ticks at 350ms, incrementing each animating tx by 1 step.

@@ -15,6 +15,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import codaIcon from "../icons/coda-icon.svg";
 import { LayoutProvider } from "../../contexts/LayoutContext";
 import { supabase } from "../../supabaseClient";
+import { useRealtimeSubscription } from "../../hooks/useRealtimeSubscription";
 import { usePersona } from "../../contexts/PersonaContext";
 import type { PersonaType } from "../../types";
 
@@ -96,8 +97,7 @@ export function DashboardLayout({
   // --- Escalation count badge (real-time) ---
   const [escalationCount, setEscalationCount] = React.useState(0);
 
-  React.useEffect(() => {
-    // Initial count
+  const reQueryEscalatedCount = React.useCallback(() => {
     supabase
       .from('lockup_tokens')
       .select('id', { count: 'exact', head: true })
@@ -105,27 +105,25 @@ export function DashboardLayout({
       .then(({ count }) => {
         if (count !== null) setEscalationCount(count);
       });
-
-    // Realtime subscription
-    const channel = supabase
-      .channel('sidebar-escalation-count')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'lockup_tokens' },
-        () => {
-          supabase
-            .from('lockup_tokens')
-            .select('id', { count: 'exact', head: true })
-            .eq('status', 'escalated')
-            .then(({ count }) => {
-              if (count !== null) setEscalationCount(count);
-            });
-        },
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // Initial count
+  React.useEffect(() => {
+    reQueryEscalatedCount();
+  }, [reQueryEscalatedCount]);
+
+  // Realtime subscription
+  useRealtimeSubscription({
+    channelName: 'sidebar-escalation-count',
+    subscriptions: [
+      {
+        table: 'lockup_tokens',
+        event: '*',
+        callback: () => reQueryEscalatedCount(),
+      },
+    ],
+    onPoll: reQueryEscalatedCount,
+  });
 
   // --- Sidebar expand/collapse ---
   const [isLargeScreen, setIsLargeScreen] = React.useState(

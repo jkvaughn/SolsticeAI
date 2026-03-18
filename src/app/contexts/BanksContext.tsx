@@ -23,6 +23,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '../supabaseClient';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import type { Bank } from '../types';
 
 // ── Session storage helpers ──────────────────────────────────
@@ -158,43 +159,23 @@ export function BanksProvider({ children }: { children: ReactNode }) {
     });
   }, [fetchBanks]);
 
-  // ── Realtime subscriptions ─────────────────────────────────
-  useEffect(() => {
-    const bankChannel = supabase
-      .channel('banks-context-banks')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'banks' },
-        () => {
-          // Debounce: during seeding, many rapid changes fire
-          if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
-          reloadTimerRef.current = setTimeout(() => {
-            fetchBanks().then(() => setCacheVersion(v => v + 1));
-          }, 2500);
-        }
-      )
-      .subscribe();
+  // ── Realtime subscriptions (env-aware: Supabase or polling) ──
+  const debouncedRefresh = () => {
+    if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+    reloadTimerRef.current = setTimeout(() => {
+      fetchBanks().then(() => setCacheVersion(v => v + 1));
+    }, 2500);
+  };
 
-    const walletChannel = supabase
-      .channel('banks-context-wallets')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'wallets' },
-        () => {
-          if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
-          reloadTimerRef.current = setTimeout(() => {
-            fetchBanks().then(() => setCacheVersion(v => v + 1));
-          }, 2500);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(bankChannel);
-      supabase.removeChannel(walletChannel);
-      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
-    };
-  }, [fetchBanks]);
+  useRealtimeSubscription({
+    channelName: 'banks-context',
+    subscriptions: [
+      { table: 'banks', event: '*', callback: debouncedRefresh },
+      { table: 'wallets', event: '*', callback: debouncedRefresh },
+    ],
+    pollIntervalMs: 5000,
+    onPoll: () => fetchBanks().then(() => setCacheVersion(v => v + 1)),
+  });
 
   // ── Derived ────────────────────────────────────────────────
   const activeBanks = banks.filter(b => b.status === 'active');

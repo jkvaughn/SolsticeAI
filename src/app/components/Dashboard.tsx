@@ -7,6 +7,7 @@ import type { Transaction } from '../types';
 import { isOrphanedTransaction } from '../types';
 import { useBanks } from '../contexts/BanksContext';
 import { useSWRCache } from '../hooks/useSWRCache';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { PageHeader } from './PageHeader';
 import { AnimatedValue } from './AnimatedValue';
 import { PageTransition } from './PageTransition';
@@ -84,25 +85,28 @@ export function Dashboard() {
   const invalidateStatsRef = useRef(invalidateStats);
   invalidateStatsRef.current = invalidateStats;
 
-  useEffect(() => {
-    const reloadTimer = { current: null as ReturnType<typeof setTimeout> | null };
+  const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const txChannel = supabase
-      .channel('dashboard-transactions-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
-        if (reloadTimer.current) clearTimeout(reloadTimer.current);
-        reloadTimer.current = setTimeout(() => {
-          invalidateRef.current();
-          invalidateStatsRef.current();
-        }, 1500);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(txChannel);
-      if (reloadTimer.current) clearTimeout(reloadTimer.current);
-    };
-  }, []);
+  useRealtimeSubscription({
+    channelName: 'dashboard-transactions-rt',
+    subscriptions: [
+      {
+        table: 'transactions',
+        event: '*',
+        callback: () => {
+          if (reloadTimer.current) clearTimeout(reloadTimer.current);
+          reloadTimer.current = setTimeout(() => {
+            invalidateRef.current();
+            invalidateStatsRef.current();
+          }, 1500);
+        },
+      },
+    ],
+    onPoll: () => {
+      invalidateRef.current();
+      invalidateStatsRef.current();
+    },
+  });
 
   const activeSettlements = txList.filter(
     (t) => ['initiated', 'compliance_check', 'risk_scored', 'executing'].includes(t.status)

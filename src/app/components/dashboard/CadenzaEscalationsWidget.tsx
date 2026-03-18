@@ -3,7 +3,7 @@
  * summary with SWR caching. Links to the full Escalation Dashboard.
  */
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { Link } from 'react-router';
 import {
   Shield, AlertOctagon, Clock, CheckCircle2, ArrowRight,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { supabase, callServer } from '../../supabaseClient';
 import { useSWRCache } from '../../hooks/useSWRCache';
+import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 import { useBanks } from '../../contexts/BanksContext';
 
 // ── Types ────────────────────────────────────────────────────
@@ -109,26 +110,21 @@ export function CadenzaEscalationsWidget() {
   const invalidateRef = useRef(invalidate);
   invalidateRef.current = invalidate;
 
-  useEffect(() => {
-    const timer = { current: null as ReturnType<typeof setTimeout> | null };
+  const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const channel = supabase
-      .channel('dashboard-cadenza-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lockup_tokens' }, () => {
-        if (timer.current) clearTimeout(timer.current);
-        timer.current = setTimeout(() => invalidateRef.current(), 1500);
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cadenza_flags' }, () => {
-        if (timer.current) clearTimeout(timer.current);
-        timer.current = setTimeout(() => invalidateRef.current(), 1500);
-      })
-      .subscribe();
+  const debouncedInvalidate = () => {
+    if (reloadTimer.current) clearTimeout(reloadTimer.current);
+    reloadTimer.current = setTimeout(() => invalidateRef.current(), 1500);
+  };
 
-    return () => {
-      supabase.removeChannel(channel);
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, []);
+  useRealtimeSubscription({
+    channelName: 'dashboard-cadenza-rt',
+    subscriptions: [
+      { table: 'lockup_tokens', event: '*', callback: () => debouncedInvalidate() },
+      { table: 'cadenza_flags', event: '*', callback: () => debouncedInvalidate() },
+    ],
+    onPoll: () => invalidateRef.current(),
+  });
 
   const summary = data;
   const hasEscalations = summary && summary.activeEscalations.length > 0;

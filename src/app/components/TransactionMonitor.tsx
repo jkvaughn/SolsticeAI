@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { supabase, callServer } from '../supabaseClient';
+import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import type {
   Transaction, AgentMessage,
 } from '../types';
@@ -161,44 +162,55 @@ export function TransactionMonitor() {
   }, []);
 
   // ── Realtime subscriptions ─────────────────────────────────
-  useEffect(() => {
-    const reloadTimer = { current: null as ReturnType<typeof setTimeout> | null };
+  const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const txChannel = supabase
-      .channel('tx-monitor')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
-        if (reloadTimer.current) clearTimeout(reloadTimer.current);
-        reloadTimer.current = setTimeout(() => { invalidateTxsRef.current(); }, 2000);
-      })
-      .subscribe();
+  useRealtimeSubscription({
+    channelName: 'tx-monitor',
+    subscriptions: [
+      {
+        table: 'transactions',
+        event: '*',
+        callback: () => {
+          if (reloadTimer.current) clearTimeout(reloadTimer.current);
+          reloadTimer.current = setTimeout(() => { invalidateTxsRef.current(); }, 2000);
+        },
+      },
+    ],
+    onPoll: () => { invalidateTxsRef.current(); },
+  });
 
-    const msgChannel = supabase
-      .channel('msg-monitor')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'agent_messages' }, (payload) => {
-        setAgentMessages((prev) => [payload.new as AgentMessage, ...prev].slice(0, 50));
-      })
-      .subscribe();
+  useRealtimeSubscription({
+    channelName: 'msg-monitor',
+    subscriptions: [
+      {
+        table: 'agent_messages',
+        event: 'INSERT',
+        callback: (payload) => {
+          setAgentMessages((prev) => [payload.new as AgentMessage, ...prev].slice(0, 50));
+        },
+      },
+    ],
+    onPoll: () => { invalidateTxsRef.current(); },
+  });
 
-    // Lockup tokens — live updates for Cadenza badges
-    const lockupChannel = supabase
-      .channel('lockup-monitor')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lockup_tokens' }, () => {
-        // Debounce with the same timer as tx reloads
-        if (reloadTimer.current) clearTimeout(reloadTimer.current);
-        reloadTimer.current = setTimeout(() => {
-          invalidateTxsRef.current();
-          invalidateLockupsRef.current();
-        }, 1500);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(txChannel);
-      supabase.removeChannel(msgChannel);
-      supabase.removeChannel(lockupChannel);
-      if (reloadTimer.current) clearTimeout(reloadTimer.current);
-    };
-  }, []);
+  // Lockup tokens — live updates for Cadenza badges
+  useRealtimeSubscription({
+    channelName: 'lockup-monitor',
+    subscriptions: [
+      {
+        table: 'lockup_tokens',
+        event: '*',
+        callback: () => {
+          if (reloadTimer.current) clearTimeout(reloadTimer.current);
+          reloadTimer.current = setTimeout(() => {
+            invalidateTxsRef.current();
+            invalidateLockupsRef.current();
+          }, 1500);
+        },
+      },
+    ],
+    onPoll: () => { invalidateTxsRef.current(); invalidateLockupsRef.current(); },
+  });
 
   // ── Orphan actions ──────────────────────────────────────────
 
