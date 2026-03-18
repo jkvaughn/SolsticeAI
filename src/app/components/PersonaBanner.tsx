@@ -39,7 +39,7 @@ const PERSONA_CONFIG: Record<Exclude<PersonaType, null>, {
 };
 
 export function PersonaBanner() {
-  const { persona, setPersona } = usePersona();
+  const { persona, setPersona, selectedBankId } = usePersona();
   const { activeBanks } = useBanks();
 
   if (!persona) return null;
@@ -47,12 +47,15 @@ export function PersonaBanner() {
   const config = PERSONA_CONFIG[persona];
   const Icon = config.icon;
 
-  // For compliance/treasury show first active bank name, leadership shows 'Network'
-  const contextLabel = persona === 'leadership'
-    ? 'Network'
-    : activeBanks.length > 0
-      ? activeBanks[0].name
-      : 'Network';
+  // Show scoped bank if selected, otherwise generic context
+  const scopedBank = activeBanks.find(b => b.id === selectedBankId);
+  const contextLabel = scopedBank
+    ? `${scopedBank.name} · ${scopedBank.swift_bic || scopedBank.short_code}`
+    : persona === 'leadership'
+      ? 'Network'
+      : activeBanks.length > 0
+        ? activeBanks[0].name
+        : 'Network';
 
   return (
     <div className={`flex items-center gap-2 px-3 py-1 rounded-lg border ${config.bg} ${config.border} mb-3`}>
