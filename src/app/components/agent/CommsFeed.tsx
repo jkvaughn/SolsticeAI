@@ -931,7 +931,7 @@ function SettlementCard({ item }: { item: CommsFeedItem }) {
   const isSettled = sd.finalStatus === 'settled' || sd.finalStatus === 'locked';
 
   const explorerUrl = sd.txSignature
-    ? `https://explorer.solana.com/tx/${sd.txSignature}?cluster=devnet`
+    ? `https://explorer.solana.com/tx/${sd.txSignature}?cluster=${import.meta.env.VITE_SOLANA_CLUSTER || 'devnet'}`
     : null;
 
   return (

@@ -12,7 +12,7 @@ import { useTheme } from "../ThemeProvider";
 import { AnimatedBackground } from "../AnimatedBackground";
 import { ArrowLeftIcon } from "../icons/ArrowLeftIcon";
 import { useAuth } from "../../contexts/AuthContext";
-import codaIcon from "figma:asset/525770ff6aafbf8b7bc340047eb93989c174c635.png";
+import codaIcon from "../icons/coda-icon.svg";
 import { LayoutProvider } from "../../contexts/LayoutContext";
 import { supabase } from "../../supabaseClient";
 import { usePersona } from "../../contexts/PersonaContext";

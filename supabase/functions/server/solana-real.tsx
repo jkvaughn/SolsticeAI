@@ -33,6 +33,9 @@ import {
 const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 
 const DEVNET_RPC = Deno.env.get("SOLANA_RPC_URL") || "https://api.devnet.solana.com";
+const SOLANA_EXPLORER_URL = Deno.env.get("SOLANA_EXPLORER_URL") || "https://explorer.solana.com";
+const SOLANA_CLUSTER = Deno.env.get("SOLANA_CLUSTER") || "devnet";
+const SOLANA_FAUCET_URL = Deno.env.get("SOLANA_FAUCET_URL") || "https://faucet.solana.com";
 export const TOKEN_DECIMALS = 6;
 const MIN_SOL_BALANCE = 0.05 * LAMPORTS_PER_SOL; // 0.05 SOL minimum for token ops
 
@@ -125,7 +128,7 @@ export async function activateBank(
   if (balance < MIN_SOL_BALANCE) {
     throw new Error(
       `Insufficient SOL balance: ${(balance / LAMPORTS_PER_SOL).toFixed(4)} SOL. ` +
-      `Minimum 0.05 SOL required. Please fund wallet ${pubkeyStr} via https://faucet.solana.com`
+      `Minimum 0.05 SOL required. Please fund wallet ${pubkeyStr} via ${SOLANA_FAUCET_URL}`
     );
   }
 
@@ -387,9 +390,9 @@ export async function getTokenBalance(walletPubkey: string, mintAddress: string)
 }
 
 export function explorerUrl(type: "tx" | "address", value: string): string {
-  const base = "https://explorer.solana.com";
-  if (type === "tx") return `${base}/tx/${value}?cluster=devnet`;
-  return `${base}/address/${value}?cluster=devnet`;
+  const clusterParam = SOLANA_CLUSTER === "mainnet-beta" ? "" : `?cluster=${SOLANA_CLUSTER}`;
+  if (type === "tx") return `${SOLANA_EXPLORER_URL}/tx/${value}${clusterParam}`;
+  return `${SOLANA_EXPLORER_URL}/address/${value}${clusterParam}`;
 }
 
 // ============================================================
@@ -689,7 +692,7 @@ export async function sendNetworkFee(
     throw new Error(
       `Insufficient SOL for network fee: ${senderSol.toFixed(6)} SOL in wallet ${walletAddr.slice(0, 16)}... ` +
       `Need ≥${MIN_SOL_FOR_FEE} SOL (${NETWORK_FEE_SOL} fee + ~0.001 tx gas). ` +
-      `Fund via https://faucet.solana.com`
+      `Fund via ${SOLANA_FAUCET_URL}`
     );
   }
 

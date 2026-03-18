@@ -1227,7 +1227,7 @@ function SeedBankCardUI({ card, onActivate }: {
   }
 
   function handleOpenFaucet() {
-    window.open('https://faucet.solana.com', '_blank');
+    window.open(import.meta.env.VITE_SOLANA_FAUCET_URL || 'https://faucet.solana.com', '_blank');
     setFaucetOpened(true);
 
     // Start polling every 10 seconds
@@ -1678,7 +1678,7 @@ function InfraWalletCard({
             )}
           </button>
           <a
-            href={`https://explorer.solana.com/address/${walletAddress}?cluster=devnet`}
+            href={`https://explorer.solana.com/address/${walletAddress}?cluster=${import.meta.env.VITE_SOLANA_CLUSTER || 'devnet'}`}
             target="_blank"
             rel="noopener noreferrer"
             className="shrink-0 p-1 rounded hover:bg-coda-surface-hover transition-colors"
@@ -1700,7 +1700,7 @@ function InfraWalletCard({
           </div>
           {!isFunded && (
             <a
-              href={`https://faucet.solana.com/?address=${walletAddress}`}
+              href={`${import.meta.env.VITE_SOLANA_FAUCET_URL || 'https://faucet.solana.com'}/?address=${walletAddress}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-[10px] font-mono text-amber-400 hover:bg-amber-500/20 transition-colors"

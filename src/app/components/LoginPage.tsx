@@ -1,11 +1,11 @@
-import { useState, type FormEvent, type ElementType } from 'react';
+import { useState, useRef, useEffect, type FormEvent, type ElementType } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router';
 import { AnimatedBackground } from './AnimatedBackground';
 import { useTheme } from './ThemeProvider';
 import { LogIn, UserPlus, Mail, Lock, User, Loader2, Eye, EyeOff, AlertCircle, Sun, Moon, Monitor, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from './motion-shim';
-import codaIcon from 'figma:asset/525770ff6aafbf8b7bc340047eb93989c174c635.png';
+import codaIcon from './icons/coda-icon.svg';
 import type { ThemePreference } from './ThemeProvider';
 
 // ============================================================
@@ -32,6 +32,8 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   // If already authenticated, redirect to dashboard
   if (user && !loading) {
@@ -70,6 +72,14 @@ export function LoginPage() {
 
     if (result.error) {
       setLocalError(result.error);
+      // Shake the form and clear/re-focus password on wrong credentials
+      formRef.current?.classList.remove('animate-shake');
+      void formRef.current?.offsetWidth; // force reflow to restart animation
+      formRef.current?.classList.add('animate-shake');
+      if (mode === 'login') {
+        setPassword('');
+        passwordRef.current?.focus();
+      }
     } else {
       navigate('/');
     }
@@ -146,7 +156,7 @@ export function LoginPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-4">
+          <form ref={formRef} onSubmit={handleSubmit} className="px-8 pb-8 space-y-4">
             <AnimatePresence mode="wait">
               {mode === 'signup' && (
                 <motion.div
@@ -197,6 +207,7 @@ export function LoginPage() {
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-coda-text-muted" />
                 <input
+                  ref={passwordRef}
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}

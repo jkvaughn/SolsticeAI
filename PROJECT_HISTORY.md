@@ -1305,3 +1305,55 @@ Summary: Implemented persona/role switching (Compliance, Treasury, Executive, nu
 | `/src/app/components/AgentConfig.tsx` | forceOpen prop + cardOpenState() |
 
 ---END_TASK---
+
+---
+
+## Tasks 127a–127c: Local Dev Environment + Auth UX (Phase 10)
+
+---TASK_COMPLETE---
+Step: Task 127a — Fix Figma Asset Imports for Local Dev
+Timestamp: 2026-03-18T18:45:00Z
+Status: DONE
+
+### Summary:
+Replaced 2 `figma:asset/...` imports with local `coda-icon.svg` to unblock Vite dev server outside Figma environment.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `/src/app/components/LoginPage.tsx` | `figma:asset/...` → `./icons/coda-icon.svg` |
+| `/src/app/components/dashboard/dashboard-layout.tsx` | `figma:asset/...` → `../icons/coda-icon.svg` |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 127b — Replace CODA Icon with Official Brand SVG
+Timestamp: 2026-03-18T19:00:00Z
+Status: DONE
+
+### Summary:
+Replaced placeholder "C" circle icon with official CODA geometric logo from brand assets. Uses `fill="currentColor"` for theme compatibility.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `/src/app/components/icons/coda-icon.svg` | Replaced with official CODA brand mark (2900x2900 viewBox) |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 127c — Login Error Handling UX Improvements
+Timestamp: 2026-03-18T19:30:00Z
+Status: DONE
+
+### Summary:
+Improved failed login UX: `friendlyAuthError()` maps raw Supabase errors to clear messages, form shakes on failure via CSS keyframe, password auto-clears and re-focuses.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `/src/app/contexts/AuthContext.tsx` | Added `friendlyAuthError()` mapper, wired into signIn/signUp |
+| `/src/app/components/LoginPage.tsx` | formRef + passwordRef, animate-shake on error, password clear + focus |
+| `/src/styles/theme.css` | Added `@keyframes shake` + `.animate-shake` |
+
+---END_TASK---

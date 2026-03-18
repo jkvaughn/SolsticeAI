@@ -1,9 +1,9 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-03-18T16:00:00Z
-> Phase: Phase 9 — Persona Views (Task 126, Role-Based UX)
+> Last updated: 2026-03-18T19:30:00Z
+> Phase: Phase 10 — Local Dev Environment + Auth UX (Tasks 127a–127c)
 > Server version: v7 Task-125 (lockup-route-dedup-iso20022-fix)
-> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-126)
+> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-127c)
 
 ---
 
@@ -301,38 +301,59 @@ Op values: `BURN`, `ESCROW_MINT`, `ESCROW_BURN`, `FINALITY_MINT`, `REVERSAL_ESCR
 
 ---
 
-## Most Recent Task
+## Most Recent Tasks
 
 ---TASK_COMPLETE---
-Step: Task 126 — Persona Views: Role-Based UX
-Timestamp: 2026-03-18T16:00:00Z
+Step: Task 127a — Fix Figma Asset Imports for Local Dev
+Timestamp: 2026-03-18T18:45:00Z
 Status: DONE
 
 ### Summary:
-Implemented a lightweight persona/role switching system with 3 personas (Compliance, Treasury, Executive) plus null (All Views). The persona context layer filters the existing UI — dimming non-primary sidebar nav items, showing persona-specific dashboard strips, and auto-expanding relevant AgentConfig cards.
-
-### New files created:
-| File | Description |
-|------|-------------|
-| `/src/app/contexts/PersonaContext.tsx` | React context + provider. `PersonaType`. localStorage persistence (`coda-persona-preference`). |
-| `/src/app/components/PersonaSwitcher.tsx` | Pill/chip in sidebar below CODA logo. Dropdown with 4 options. Colored badges (violet/emerald/blue). Navigates to persona default page on select. |
-| `/src/app/components/PersonaBanner.tsx` | Slim banner below page headers when persona active. Colored border + icon + label + bank context + "Exit View" link. |
+Replaced 2 `figma:asset/...` imports (Figma-specific protocol that doesn't resolve outside their environment) with the local `coda-icon.svg` file. This unblocked the Vite dev server from starting.
 
 ### Modified files:
 | File | Change |
 |------|--------|
-| `/src/app/types.ts` | Added `PersonaType` union type |
-| `/src/app/App.tsx` | Wrapped with `PersonaProvider` above HeartbeatProvider |
-| `/src/app/components/Layout.tsx` | Added `PersonaBanner` above `Outlet` |
-| `/src/app/components/dashboard/dashboard-layout.tsx` | PersonaSwitcher below logo. `PERSONA_PRIMARY_ITEMS` + `isNavDimmed()`. Nav items get `opacity-40` when dimmed. |
-| `/src/app/components/Dashboard.tsx` | Leadership: "Executive Summary" strip. Compliance: "Compliance Overview" strip linked to /escalations. |
-| `/src/app/components/AgentConfig.tsx` | `forceOpen` prop on `AgentCard`. `cardOpenState()` for persona-specific expansion. |
+| `/src/app/components/LoginPage.tsx` | `figma:asset/...` → `./icons/coda-icon.svg` |
+| `/src/app/components/dashboard/dashboard-layout.tsx` | `figma:asset/...` → `../icons/coda-icon.svg` |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 127b — Replace CODA Icon with Official Brand SVG
+Timestamp: 2026-03-18T19:00:00Z
+Status: DONE
+
+### Summary:
+Replaced the placeholder "C" circle icon (`coda-icon.svg`) with the official CODA geometric logo from the brand assets folder. Uses `fill="currentColor"` for theme compatibility.
+
+### Modified files:
+| File | Change |
+|------|--------|
+| `/src/app/components/icons/coda-icon.svg` | Replaced placeholder with official CODA brand mark (2900x2900 viewBox, single path) |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 127c — Login Error Handling UX Improvements
+Timestamp: 2026-03-18T19:30:00Z
+Status: DONE
+
+### Summary:
+Improved failed login UX with three changes: (1) `friendlyAuthError()` in AuthContext maps raw Supabase errors to clear, actionable messages (e.g. "Invalid login credentials" → "Incorrect email or password. Please try again."), (2) form shakes on failed attempt via CSS `animate-shake` keyframe, (3) password field auto-clears and re-focuses so user can immediately retype.
+
+### Modified files:
+| File | Change |
+|------|--------|
+| `/src/app/contexts/AuthContext.tsx` | Added `friendlyAuthError()` mapper (handles: wrong credentials, unconfirmed email, duplicate account, rate limit, network errors). Wired into `signIn`, `signUp`, and catch blocks. |
+| `/src/app/components/LoginPage.tsx` | Added `formRef` + `passwordRef`. Form gets `animate-shake` class on error. Password clears + re-focuses on failed login. |
+| `/src/styles/theme.css` | Added `@keyframes shake` (8-step dampened horizontal oscillation, 0.5s) + `.animate-shake` class. |
 
 ### Verification:
-- Persona persists across navigation and browser refresh (localStorage)
-- null persona restores full default behavior
-- No hardcoded hex colors — all CODA tokens or Tailwind semantic colors
-- Sidebar dimming correct per persona spec
-- PersonaSwitcher dropdown uses `dashboard-card-subtle` with CODA border tokens
+- Friendly error message renders: "Incorrect email or password. Please try again."
+- `animate-shake` class confirmed on form element after failed login
+- Password field clears and receives focus
+- No console or server errors
+- Shake replays on consecutive failed attempts (reflow trick)
 
 ---END_TASK---

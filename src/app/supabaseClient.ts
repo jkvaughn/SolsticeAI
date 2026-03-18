@@ -1,8 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '/utils/supabase/info';
+
+// ============================================================
+// Environment configuration — reads from Vite env vars.
+// Set these in .env (local), .env.staging, or .env.production.
+// ============================================================
+const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+const publicAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const functionName = import.meta.env.VITE_SUPABASE_FUNCTION_NAME;
+
+if (!projectId || !publicAnonKey || !functionName) {
+  throw new Error(
+    `Missing required environment variables. Check your .env file:\n` +
+    `  VITE_SUPABASE_PROJECT_ID=${projectId ? '✓' : 'MISSING'}\n` +
+    `  VITE_SUPABASE_ANON_KEY=${publicAnonKey ? '✓' : 'MISSING'}\n` +
+    `  VITE_SUPABASE_FUNCTION_NAME=${functionName ? '✓' : 'MISSING'}`
+  );
+}
 
 const supabaseUrl = `https://${projectId}.supabase.co`;
-const serverBaseUrl = `${supabaseUrl}/functions/v1/make-server-49d15288`;
+const serverBaseUrl = `${supabaseUrl}/functions/v1/${functionName}`;
 
 // ============================================================
 // Global request queue — serializes ALL outgoing fetch calls to
@@ -149,4 +165,4 @@ export async function callServer<T = unknown>(
   throw new Error(`Failed ${route} after ${maxRetries} retries (network errors or 5xx)`);
 }
 
-export { projectId, publicAnonKey, serverBaseUrl };
+export { projectId, publicAnonKey, supabaseUrl, serverBaseUrl };

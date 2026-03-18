@@ -879,7 +879,7 @@ export function PipelineTracker({
                   {/* Solana signature */}
                   {step.solanaSignature && (
                     <a
-                      href={`https://explorer.solana.com/tx/${step.solanaSignature}?cluster=devnet`}
+                      href={`https://explorer.solana.com/tx/${step.solanaSignature}?cluster=${import.meta.env.VITE_SOLANA_CLUSTER || 'devnet'}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-[11px] text-blue-500 dark:text-blue-400 hover:text-blue-400 dark:hover:text-blue-300 transition-colors"

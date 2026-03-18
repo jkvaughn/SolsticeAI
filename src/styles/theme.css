@@ -433,3 +433,18 @@ html { font-size: var(--font-size); }
     txHighlight 1.4s 0.4s ease-out both;
   animation-delay: var(--stagger, 0ms), calc(var(--stagger, 0ms) + 400ms);
 }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-8px); }
+  20% { transform: translateX(8px); }
+  30% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  50% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  70% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}

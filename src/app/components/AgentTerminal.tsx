@@ -4,7 +4,7 @@ import {
   Send, Loader2, AlertCircle, Wallet,
   Copy, CheckCircle2,
 } from 'lucide-react';
-import { supabase, callServer, projectId, publicAnonKey } from '../supabaseClient';
+import { supabase, callServer, supabaseUrl, publicAnonKey } from '../supabaseClient';
 import type {
   Bank, Wallet as WalletType, AgentMessage,
   AgentThinkResponse, Transaction
@@ -125,9 +125,8 @@ export function AgentTerminal() {
   const refreshWalletDirect = useCallback(async () => {
     if (!bankId) return;
     try {
-      const url = `https://${projectId}.supabase.co`;
       const response = await fetch(
-        `${url}/rest/v1/wallets?bank_id=eq.${bankId}&is_default=eq.true&select=*`,
+        `${supabaseUrl}/rest/v1/wallets?bank_id=eq.${bankId}&is_default=eq.true&select=*`,
         {
           headers: {
             'apikey': publicAnonKey,
@@ -157,7 +156,6 @@ export function AgentTerminal() {
       const existing = pipelinesRef.current.get(transactionId);
       if (!existing || existing.isComplete) return;
 
-      const supabaseUrl = `https://${projectId}.supabase.co`;
       const response = await fetch(
         `${supabaseUrl}/rest/v1/transactions?id=eq.${transactionId}&select=*`,
         {

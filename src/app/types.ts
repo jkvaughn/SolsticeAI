@@ -85,9 +85,18 @@ export function truncateAddress(address: string | null | undefined, chars = 4): 
   return `${address.slice(0, chars)}...${address.slice(-chars)}`;
 }
 
-// Get Solana Devnet explorer link
-export function explorerUrl(signature: string, type: 'tx' | 'address' = 'tx'): string {
-  return `https://explorer.solana.com/${type}/${signature}?cluster=devnet`;
+// Solana explorer + faucet URLs — configurable via env vars
+const SOLANA_EXPLORER = import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com';
+const SOLANA_CLUSTER = import.meta.env.VITE_SOLANA_CLUSTER || 'devnet';
+const SOLANA_FAUCET = import.meta.env.VITE_SOLANA_FAUCET_URL || 'https://faucet.solana.com';
+
+export function explorerUrl(value: string, type: 'tx' | 'address' = 'tx'): string {
+  const clusterParam = SOLANA_CLUSTER === 'mainnet-beta' ? '' : `?cluster=${SOLANA_CLUSTER}`;
+  return `${SOLANA_EXPLORER}/${type}/${value}${clusterParam}`;
+}
+
+export function faucetUrl(address?: string): string {
+  return address ? `${SOLANA_FAUCET}/?address=${address}` : SOLANA_FAUCET;
 }
 
 // ============================================================
