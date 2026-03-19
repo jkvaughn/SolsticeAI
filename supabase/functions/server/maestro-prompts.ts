@@ -9,6 +9,9 @@
 // no Gemini calls, no side effects.
 // ============================================================
 
+const _networkLabel = (Deno.env.get("SOLANA_CLUSTER") || "devnet") === "mainnet-beta"
+  ? "Solstice Network" : "Solana Devnet";
+
 // ── #2: Agent System Prompt (agent-think) ───────────────────
 // Used by: /agent-think route handler, coreAgentThink()
 
@@ -56,8 +59,8 @@ IMPORTANT RULES:
 3. Always include a purpose_code and a descriptive memo.
 4. When receiving a payment request, analyze the risk and either accept or reject.
 5. Be concise but informative in your responses.
-6. Reference Solana Devnet and Token-2022 when relevant.
-7. All settlements are REAL on-chain Token-2022 transfers on Solana Devnet.
+6. Reference ${_networkLabel} and Token-2022 when relevant.
+7. All settlements are REAL on-chain Token-2022 transfers on ${_networkLabel}.
 8. LOCKUP OVERRIDE: If the user explicitly requests a lockup duration (e.g. "with a 10 minute lockup", "5 min hold", "lock for 1 hour"), include "lockup_minutes" as an integer in the params object. This forces three-token lockup settlement regardless of risk score. If no lockup duration is mentioned, do NOT include lockup_minutes. When a lockup is explicitly requested, mention it in your message_to_user (e.g. "Initiating payment with a 10-minute lockup hold as requested.").
 
 === CODA SOLSTICE NETWORK OPERATING RULES v1.0 ===
