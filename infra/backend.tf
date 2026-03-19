@@ -19,11 +19,11 @@
 # Then uncomment the backend block below and run `terraform init`.
 # =============================================================================
 
-# terraform {
-#   backend "azurerm" {
-#     resource_group_name  = "rg-coda-app"
-#     storage_account_name = "codatfstate"  # Update with actual name
-#     container_name       = "tfstate"
-#     key                  = "coda-app.tfstate"
-#   }
-# }
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "rg-coda-app"
+    storage_account_name = "codatfstate"
+    container_name       = "tfstate"
+    key                  = "coda-app.tfstate"
+  }
+}

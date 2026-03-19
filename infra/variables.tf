@@ -102,3 +102,19 @@ variable "solana_rpc_url" {
   type        = string
   default     = "https://rpc.solsticenetwork.xyz"
 }
+
+# --- Supabase (used by backend for DB access and KV store) ---
+
+variable "supabase_url" {
+  description = "Supabase project URL (e.g. https://xxx.supabase.co)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "supabase_service_role_key" {
+  description = "Supabase service role key for admin DB operations"
+  type        = string
+  sensitive   = true
+  default     = ""
+}

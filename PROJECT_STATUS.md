@@ -1,7 +1,7 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-03-19T21:00:00Z
-> Phase: All infrastructure + product tasks complete through Task 143
+> Last updated: 2026-03-19T22:00:00Z
+> Phase: Phase C production stack on Azure complete (Tasks 133-135, 137)
 > Server version: v7 Task-125 (lockup-route-dedup-iso20022-fix)
 > History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-143)
 
@@ -598,5 +598,45 @@ Made frontend environment-aware for Solstice Network production deployment. Hide
 | `NetworkInfrastructureWidget.tsx` | "Solstice Network" label on production |
 | `useNetworkSimulation.ts` | Auto-start simulation when VITE_USE_LIVE_NETWORK_DATA=true |
 | `.env.production` | Added VITE_USE_LIVE_NETWORK_DATA=true |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Phase C — Tasks 133, 134, 135, 137 — Azure Production Stack
+Timestamp: 2026-03-19T22:00:00Z
+Status: DONE
+
+### Summary:
+Completed full Phase C production stack on Azure:
+
+**Task 133 — Terraform Remote State:** Created Azure Storage Account (`codatfstate`) in `rg-coda-app` with blob container `tfstate`. Migrated Terraform state from local to Azure Blob Storage backend. 13 resources tracked remotely.
+
+**Task 134 — Dockerfile + Container Apps:** Created `Dockerfile` (Deno 1.44.0, port 8000) and `.dockerignore`. Built amd64 image, pushed to ACR (`codaacrem64sl.azurecr.io/coda-api:latest`). Container App `coda-prod-api` running with all env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY, SOLANA_RPC_URL (Solstice Network), SOLANA_CLUSTER (mainnet-beta). Health endpoint verified at `https://coda-prod-api.whitemoss-8572d17c.westus2.azurecontainerapps.io/make-server-49d15288/health`.
+
+**Task 135 — Azure Entra ID + Google Auth:** Entra ID app registration (`2ee2ac1c-de08-4c39-a7f8-e2621a856079`) with redirect URIs for localhost, staging, production, and default hostname. Google OAuth also configured. App settings (AAD_CLIENT_ID, AAD_CLIENT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET) set on Static Web App. `staticwebapp.config.json` has both providers. `AuthContext.tsx` has dual-provider support via `VITE_AUTH_PROVIDER=azure|supabase`.
+
+**Task 137 — Custom Domain:** `coda.solsticenetwork.xyz` bound to Static Web App `coda-prod-web` (Standard tier), status Ready, serving 200.
+
+### Azure Production Resources (rg-coda-app):
+| Resource | Name | Endpoint |
+|----------|------|----------|
+| Container App | coda-prod-api | `coda-prod-api.whitemoss-8572d17c.westus2.azurecontainerapps.io` |
+| Static Web App | coda-prod-web | `coda.solsticenetwork.xyz` (custom) / `brave-meadow-0e8d1fe1e.6.azurestaticapps.net` |
+| PostgreSQL | coda-prod-pgdb-o1jyyxla | `coda-prod-pgdb-o1jyyxla.postgres.database.azure.com` |
+| Container Registry | codaacrem64sl | `codaacrem64sl.azurecr.io` |
+| Terraform State | codatfstate | Azure Blob: `tfstate/coda-app.tfstate` |
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `Dockerfile` | New — Deno 1.44.0, port 8000 |
+| `.dockerignore` | New — excludes node_modules, dist, src, etc. |
+| `infra/backend.tf` | Uncommented azurerm backend block |
+| `infra/container.tf` | Added SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars |
+| `infra/variables.tf` | Added supabase_url and supabase_service_role_key variables |
+| `infra/terraform.tfvars.example` | Added Supabase section |
+| `staticwebapp.config.json` | Entra ID + Google providers, route protection |
+| `src/app/contexts/AuthContext.tsx` | Dual-provider support (Azure/Supabase) |
+| `src/app/components/LoginPage.tsx` | Azure (Microsoft + Google) and Supabase login flows |
 
 ---END_TASK---
