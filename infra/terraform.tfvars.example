@@ -17,3 +17,7 @@ db_admin_password = "CHANGE_ME_strong_password_here"
 # Secrets
 gemini_api_key = "your-gemini-api-key"
 solana_rpc_url = "https://rpc.solsticenetwork.xyz"
+
+# Supabase (backend uses for DB access and KV store)
+supabase_url              = "https://your-project.supabase.co"
+supabase_service_role_key = "your-service-role-key"

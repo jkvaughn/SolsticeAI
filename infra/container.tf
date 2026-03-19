@@ -63,6 +63,14 @@ resource "azurerm_container_app" "backend" {
         name  = "SOLANA_FAUCET_URL"
         value = ""
       }
+      env {
+        name  = "SUPABASE_URL"
+        value = var.supabase_url
+      }
+      env {
+        name  = "SUPABASE_SERVICE_ROLE_KEY"
+        value = var.supabase_service_role_key
+      }
     }
   }
 

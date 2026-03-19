@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.claude
+infra
+.env*
+*.md
+src
+public
