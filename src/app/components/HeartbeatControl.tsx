@@ -67,7 +67,7 @@ const STATUS_BADGE: Record<string, { bg: string; text: string; pulse?: boolean }
 
 // Transaction status styling for the expanded view
 const TX_STATUS_MAP: Record<string, { bg: string; text: string }> = {
-  initiated:        { bg: 'bg-gray-500/15',    text: 'text-gray-400' },
+  initiated:        { bg: 'bg-coda-text-muted/15',    text: 'text-coda-text-muted' },
   compliance_check: { bg: 'bg-blue-500/15',    text: 'text-blue-400' },
   risk_scored:      { bg: 'bg-yellow-500/15',  text: 'text-yellow-400' },
   executing:        { bg: 'bg-orange-500/15',  text: 'text-orange-400' },

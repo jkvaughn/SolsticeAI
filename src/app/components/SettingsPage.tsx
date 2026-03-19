@@ -220,7 +220,7 @@ export function SettingsPage() {
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                       active
                         ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text'
-                        : isDark ? 'bg-white/5 text-gray-400' : 'bg-black/[0.04] text-gray-500'
+                        : isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted'
                     }`}>
                       <Icon size={20} />
                     </div>
@@ -266,7 +266,7 @@ export function SettingsPage() {
                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
                       active
                         ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text'
-                        : isDark ? 'bg-white/5 text-gray-400' : 'bg-black/[0.04] text-gray-500'
+                        : isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted'
                     }`}>
                       <Icon size={18} />
                     </div>
@@ -337,7 +337,7 @@ export function SettingsPage() {
                             ? opt.mode === 'devnet'
                               ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text'
                               : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                            : isDark ? 'bg-white/5 text-gray-400' : 'bg-black/[0.04] text-gray-500'
+                            : isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted'
                         }`}>
                           <Icon size={18} />
                         </div>
@@ -544,7 +544,7 @@ function NotificationToggle({
       <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
         enabled
           ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400'
-          : isDark ? 'bg-white/5 text-gray-500' : 'bg-black/[0.04] text-gray-400'
+          : isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted'
       }`}>
         {enabled ? <Bell size={15} /> : <BellOff size={15} />}
       </div>

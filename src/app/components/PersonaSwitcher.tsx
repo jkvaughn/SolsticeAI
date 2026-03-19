@@ -101,7 +101,7 @@ export function PersonaSwitcher() {
                   ? opt.value
                     ? `${opt.color.includes('violet') ? 'bg-violet-500/10' : opt.color.includes('emerald') ? 'bg-emerald-500/10' : opt.color.includes('blue') ? 'bg-blue-500/10' : 'bg-coda-brand/10'} ${opt.color}`
                     : 'bg-coda-brand/10 text-coda-brand'
-                  : isDark ? 'bg-white/5 text-gray-400' : 'bg-black/[0.04] text-gray-500'
+                  : isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted'
               }`}>
                 <Icon size={18} />
               </div>

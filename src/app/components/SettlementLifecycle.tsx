@@ -430,7 +430,7 @@ export function SettlementLifecycle({ tx, lockup, messages, senderCode, receiver
             tx.settlement_method === 'lockup_hard_finality' ? 'bg-emerald-500/20 text-emerald-400' :
             tx.settlement_method?.includes('reversal') ? 'bg-red-500/20 text-red-400' :
             tx.settlement_method?.includes('lockup') ? 'bg-purple-500/20 text-purple-400' :
-            'bg-gray-500/20 text-gray-400'
+            'bg-coda-text-muted/20 text-coda-text-muted'
           }`}>
             {tx.settlement_method === 'pvp_burn_mint' ? 'PvP Burn-Mint' :
              tx.settlement_method === 'lockup_hard_finality' ? 'Lockup \u2192 Finality' :

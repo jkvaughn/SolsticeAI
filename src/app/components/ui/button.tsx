@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "liquid-glass-card text-[#1d1d1f] dark:text-[#f5f5f7] hover:liquid-glass-elevated",
+          "liquid-glass-card text-coda-text hover:liquid-glass-elevated",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "liquid-glass-subtle text-[#1d1d1f] dark:text-[#f5f5f7] hover:liquid-glass-card",
+          "liquid-glass-subtle text-coda-text hover:liquid-glass-card",
         secondary:
-          "liquid-glass-subtle text-[#1d1d1f] dark:text-[#f5f5f7] hover:liquid-glass-card",
+          "liquid-glass-subtle text-coda-text hover:liquid-glass-card",
         ghost:
-          "hover:liquid-glass-subtle text-[#1d1d1f] dark:text-[#f5f5f7]",
+          "hover:liquid-glass-subtle text-coda-text",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

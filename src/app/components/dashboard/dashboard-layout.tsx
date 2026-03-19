@@ -177,11 +177,11 @@ export function DashboardLayout({
               w-full flex items-center gap-3 px-3 py-2.5 squircle-sm transition-all duration-500 ease-out relative cursor-pointer
               ${active
                 ? isDark
-                  ? 'bg-white text-black hover:bg-gray-100 shadow-lg'
-                  : 'bg-black text-white hover:bg-gray-900 shadow-lg'
+                  ? 'bg-white text-black hover:bg-black/[0.04] shadow-lg'
+                  : 'bg-black text-white hover:bg-white/10 shadow-lg'
                 : isDark
-                  ? 'text-gray-300 hover:bg-white/10 hover:text-white backdrop-blur-sm'
-                  : 'text-gray-700 hover:bg-gray-900/10 hover:text-black backdrop-blur-sm'
+                  ? 'text-coda-text-secondary hover:bg-white/10 hover:text-white backdrop-blur-sm'
+                  : 'text-coda-text-secondary hover:bg-black/10 hover:text-black backdrop-blur-sm'
               }
             `}
           >
@@ -223,7 +223,7 @@ export function DashboardLayout({
   const userEmail = user?.email || '';
 
   return (
-    <div className="min-h-screen bg-[#e8e8ed] dark:bg-[#17181c] transition-colors duration-500 relative overflow-hidden">
+    <div className="min-h-screen bg-coda-bg transition-colors duration-500 relative overflow-hidden">
       {/* ===== ANIMATED BACKGROUND ORBS ===== */}
       <AnimatedBackground />
 
@@ -255,7 +255,7 @@ export function DashboardLayout({
                     <div className="absolute inset-0 flex items-center justify-center">
                       <ArrowLeftIcon
                         size={30}
-                        color={isDark ? '#ffffff' : '#000000'}
+                        className="text-coda-text"
                         isCollapsed={true}
                       />
                     </div>
@@ -274,7 +274,7 @@ export function DashboardLayout({
                   >
                     <ArrowLeftIcon
                       size={30}
-                      color={isDark ? '#ffffff' : '#000000'}
+                      className="text-coda-text"
                       isCollapsed={false}
                     />
                   </button>
@@ -328,10 +328,10 @@ export function DashboardLayout({
                       </div>
                       {sidebarExpanded && (
                         <div className="flex-1 min-w-0 text-left">
-                          <p className={`text-[12px] font-medium truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                          <p className={`text-[12px] font-medium truncate text-coda-text`}>
                             {userName}
                           </p>
-                          <p className={`text-[9px] truncate font-mono ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                          <p className={`text-[9px] truncate font-mono text-coda-text-muted`}>
                             {userEmail}
                           </p>
                         </div>

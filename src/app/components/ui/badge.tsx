@@ -10,13 +10,13 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "liquid-glass-card text-[#1d1d1f] dark:text-[#f5f5f7] [a&]:hover:liquid-glass-elevated",
+          "liquid-glass-card text-coda-text [a&]:hover:liquid-glass-elevated",
         secondary:
-          "liquid-glass-subtle text-[#1d1d1f] dark:text-[#f5f5f7] [a&]:hover:liquid-glass-card",
+          "liquid-glass-subtle text-coda-text [a&]:hover:liquid-glass-card",
         destructive:
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90",
         outline:
-          "liquid-glass-subtle text-[#1d1d1f] dark:text-[#f5f5f7] [a&]:hover:liquid-glass-card",
+          "liquid-glass-subtle text-coda-text [a&]:hover:liquid-glass-card",
       },
     },
     defaultVariants: {

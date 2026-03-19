@@ -13,7 +13,7 @@ export function AuthGate() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#e8e8ed] dark:bg-[#17181c] flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-screen bg-coda-bg flex items-center justify-center relative overflow-hidden">
         <AnimatedBackground />
         <div className="relative z-10 flex flex-col items-center gap-4">
           <Loader2 size={32} className="text-emerald-500 animate-spin" />

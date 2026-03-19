@@ -5,21 +5,36 @@ import { sidebarExpandAnimation } from './sidebar-expand-animation';
 
 interface ArrowLeftIconProps {
   size?: number;
+  /** @deprecated Use className="text-coda-text" instead */
   color?: string;
+  className?: string;
   isCollapsed?: boolean;
 }
 
-export const ArrowLeftIcon = ({ size = 24, color = "#000000", isCollapsed = false }: ArrowLeftIconProps) => {
+export const ArrowLeftIcon = ({ size = 24, color, className, isCollapsed = false }: ArrowLeftIconProps) => {
   const lottieRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Apply color filter to the animation
+  // Apply color filter to the animation — prefers className-based dark detection,
+  // falls back to legacy color prop for backward compat.
   useEffect(() => {
-    if (containerRef.current) {
+    function applyFilter() {
+      if (!containerRef.current) return;
       const svgElement = containerRef.current.querySelector('svg');
-      if (svgElement) {
+      if (!svgElement) return;
+      if (color) {
         svgElement.style.filter = color === '#ffffff' ? 'invert(1)' : 'invert(0)';
+      } else {
+        const isDark = document.documentElement.classList.contains('dark');
+        svgElement.style.filter = isDark ? 'invert(1)' : 'invert(0)';
       }
+    }
+    applyFilter();
+    // Re-apply when dark mode class changes (no color prop)
+    if (!color) {
+      const observer = new MutationObserver(applyFilter);
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      return () => observer.disconnect();
     }
   }, [color]);
 
@@ -33,8 +48,9 @@ export const ArrowLeftIcon = ({ size = 24, color = "#000000", isCollapsed = fals
   const animationData = isCollapsed ? sidebarExpandAnimation : sidebarCloseAnimation;
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
+      className={className}
       style={{ width: size * 0.936, height: size * 0.936, opacity: 0.4 }}
       onMouseEnter={handleMouseEnter}
     >

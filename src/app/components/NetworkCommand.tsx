@@ -139,7 +139,7 @@ export function NetworkCommand() {
   const flagCount = sim.cadenzaFlags.length;
 
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none bg-[#dce1eb] dark:bg-[#080a12]">
+    <div className="fixed inset-0 z-0 pointer-events-none bg-coda-bg">
 
       {/* ===== GLOBE — FULL BLEED (behind everything) ===== */}
       <div className="absolute inset-0 pointer-events-auto">

@@ -3,7 +3,7 @@ import { motion } from "../motion-shim";
 
 export function LiquidGlassLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#e8e8ed] dark:bg-[#1c1c1c] transition-colors duration-500">
+    <div className="min-h-screen flex items-center justify-center bg-coda-bg transition-colors duration-500">
       <div className="flex flex-col items-center gap-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -95,7 +95,7 @@ export function LiquidGlassLoader() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-sm text-gray-500 dark:text-white/40 tracking-wide"
+          className="text-sm text-coda-text-muted tracking-wide"
           style={{ fontFamily: "var(--font-clash-grotesk, system-ui)" }}
         >
           Initializing

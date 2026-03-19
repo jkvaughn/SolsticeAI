@@ -15,8 +15,10 @@ import { motion, AnimatePresence } from './motion-shim';
 import { Brain, Shield, Scale, Zap, Link2, Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-// ── Brand accent (matches --coda-brand) ────────────────────────
-export const BRAND_HEX = '#34d399';
+// ── Brand accent — must match var(--coda-brand) in theme.css ────
+// Used for inline SVG styles where Tailwind classes can't reach.
+// If you change --coda-brand in theme.css, update this too.
+export const BRAND_HEX = '#34d399'; // emerald-400, matches --coda-brand
 const BRAND_RING_GLOW = 'rgba(52, 211, 153, 0.40)';
 
 // ── Agent configuration ────────────────────────────────────────

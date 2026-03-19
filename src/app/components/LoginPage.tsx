@@ -87,7 +87,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#e8e8ed] dark:bg-[#17181c] transition-colors duration-500 relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-screen bg-coda-bg transition-colors duration-500 relative overflow-hidden flex items-center justify-center p-4">
       <AnimatedBackground />
 
       {/* Theme toggle — top right */}
@@ -130,8 +130,8 @@ export function LoginPage() {
                 onClick={() => signIn('', '')}
                 className={`w-full py-3.5 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
                   isDark
-                    ? 'bg-white text-black hover:bg-gray-100'
-                    : 'bg-black text-white hover:bg-gray-900'
+                    ? 'bg-white text-black hover:bg-black/[0.04]'
+                    : 'bg-black text-white hover:bg-white/10'
                 } shadow-lg`}
               >
                 <ShieldCheck size={18} />
@@ -295,8 +295,8 @@ export function LoginPage() {
               disabled={submitting || loading}
               className={`w-full py-3.5 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
                 isDark
-                  ? 'bg-white text-black hover:bg-gray-100 disabled:bg-white/30 disabled:text-white/40'
-                  : 'bg-black text-white hover:bg-gray-900 disabled:bg-black/20 disabled:text-black/40'
+                  ? 'bg-white text-black hover:bg-black/[0.04] disabled:bg-white/30 disabled:text-white/40'
+                  : 'bg-black text-white hover:bg-white/10 disabled:bg-black/20 disabled:text-black/40'
               } shadow-lg disabled:shadow-none`}
             >
               {submitting ? (
