@@ -32,6 +32,7 @@ jobs:
           VITE_SUPABASE_FUNCTION_NAME: ${{ secrets.VITE_SUPABASE_FUNCTION_NAME }}
           VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN }}
           VITE_AUTH_PROVIDER: ${{ secrets.VITE_AUTH_PROVIDER }}
+          VITE_ADMIN_EMAIL: jeremy@rimark.io
 
   close_pull_request:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
