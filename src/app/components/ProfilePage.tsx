@@ -215,14 +215,14 @@ export function ProfilePage() {
               ) : (
                 <button
                   onClick={() => { setEditBuffer(name); setIsEditingName(true); }}
-                  className="group flex items-center justify-center gap-2 cursor-pointer bg-transparent border-none mx-auto"
+                  className="group relative cursor-pointer bg-transparent border-none"
                 >
-                  <h3 className="text-xl font-semibold font-sans text-coda-text">
+                  <h3 className="text-xl font-semibold font-sans text-coda-text text-center">
                     {name}
                   </h3>
                   <Pencil
                     size={14}
-                    className="text-coda-text-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -right-5 top-1/2 -translate-y-1/2 text-coda-text-muted opacity-0 group-hover:opacity-100 transition-opacity"
                   />
                 </button>
               )}
