@@ -1593,3 +1593,27 @@ Added Google OAuth sign-in for both Supabase (dev/staging) and Azure SWA (produc
 - Supabase redirect URL added to Google authorized redirect URIs
 
 ---END_TASK---
+
+---
+
+## Task 142: Solstice Network Production Integration (2026-03-19)
+
+---TASK_COMPLETE---
+Step: Task 142 — Solstice Network Production Integration
+Timestamp: 2026-03-19T19:00:00Z
+Status: DONE
+
+### Summary:
+Made frontend environment-aware for Solstice Network production deployment. Hide Devnet faucet on production, show "Solstice Network" branding instead of "Production", auto-start network simulation with live data when `VITE_USE_LIVE_NETWORK_DATA=true`. Added "Active Connection" panel to Settings page showing Cluster, Auth Provider, Explorer URL, Realtime mode, Live Data, and Environment for real-time environment verification.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `LoginPage.tsx` | Environment-aware footer: "Solstice Network" vs "Solana Devnet" |
+| `SetupPage.tsx` | Hide faucet on production, Solstice CLI funding instructions, SNT branding |
+| `SettingsPage.tsx` | "Solstice Network" label + Active Connection details panel |
+| `NetworkInfrastructureWidget.tsx` | "Solstice Network" label on production |
+| `useNetworkSimulation.ts` | Auto-start simulation when VITE_USE_LIVE_NETWORK_DATA=true |
+| `.env.production` | Added VITE_USE_LIVE_NETWORK_DATA=true |
+
+---END_TASK---
