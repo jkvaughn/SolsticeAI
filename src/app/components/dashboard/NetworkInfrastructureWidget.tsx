@@ -9,7 +9,8 @@ import {
   Globe, Server, Coins, Wifi, WifiOff, ArrowRight,
   CheckCircle2, AlertTriangle, Loader2,
 } from 'lucide-react';
-import { supabase, callServer } from '../../supabaseClient';
+import { callServer } from '../../supabaseClient';
+import { fetchBanks, fetchWallets } from '../../dataClient';
 import { useSWRCache } from '../../hooks/useSWRCache';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 import { useBanks } from '../../contexts/BanksContext';
@@ -38,14 +39,11 @@ interface NetworkInfraData {
 
 async function fetchNetworkInfra(): Promise<NetworkInfraData> {
   // Parallel queries
-  const [banksRes, walletsRes, healthRes] = await Promise.all([
-    supabase.from('banks').select('id, status, token_mint_address, jurisdiction'),
-    supabase.from('wallets').select('id, balance_lamports, balance_tokens'),
+  const [banks, wallets, healthRes] = await Promise.all([
+    fetchBanks(),
+    fetchWallets(),
     callServer<{ status: string }>('/health').catch(() => ({ status: 'error' })),
   ]);
-
-  const banks = banksRes.data ?? [];
-  const wallets = walletsRes.data ?? [];
 
   const jurisdictions = [...new Set(banks.map((b: any) => b.jurisdiction).filter(Boolean))];
 

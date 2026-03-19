@@ -12,6 +12,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase, callServer } from '../supabaseClient';
+import { fetchBanks, fetchLockupTokens, fetchNetworkWallets, fetchCadenzaFlags } from '../dataClient';
 
 // ============================================================
 // Types
@@ -193,27 +194,21 @@ export function useNetworkSimulation(): NetworkSimulationControls {
           }
         }
 
-        const { data: lockups } = await supabase
-          .from('lockup_tokens')
-          .select('id, yield_accrued, status')
-          .in('status', ['active', 'escalated']);
-        const activeLockups = lockups?.length || 0;
-        const yieldAccruing = (lockups || []).reduce((sum, l) => sum + (Number(l.yield_accrued) || 0), 0) / 1e6;
+        const [activeLockupData, escalatedLockupData] = await Promise.all([
+          fetchLockupTokens({ status: 'active' }),
+          fetchLockupTokens({ status: 'escalated' }),
+        ]);
+        const lockups = [...activeLockupData, ...escalatedLockupData];
+        const activeLockups = lockups.length;
+        const yieldAccruing = lockups.reduce((sum, l) => sum + (Number(l.yield_accrued) || 0), 0) / 1e6;
 
-        const { data: netWallets } = await supabase
-          .from('network_wallets')
-          .select('balance')
-          .eq('code', 'SOLSTICE_FEES')
-          .limit(1);
-        const feesCollected = netWallets?.[0]?.balance || 0;
+        const netWallets = await fetchNetworkWallets();
+        const feesWallet = netWallets.find((w: any) => w.code === 'SOLSTICE_FEES');
+        const feesCollected = feesWallet?.balance || 0;
 
         const networkMode = (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta' ? 'production' : 'devnet';
 
-        const { data: flags } = await supabase
-          .from('cadenza_flags')
-          .select('*')
-          .order('detected_at', { ascending: false })
-          .limit(20);
+        const flags = await fetchCadenzaFlags();
 
         const { data: recentTxns } = await supabase
           .from('transactions')
@@ -223,8 +218,8 @@ export function useNetworkSimulation(): NetworkSimulationControls {
           .limit(50);
 
         const bankMap: Record<string, string> = {};
-        const { data: allBanks } = await supabase.from('banks').select('id, short_code');
-        for (const b of allBanks || []) bankMap[b.id] = b.short_code;
+        const allBanks = await fetchBanks();
+        for (const b of allBanks) bankMap[b.id] = b.short_code;
 
         const settlementEvents: SettlementEvent[] = (recentTxns || []).map(tx => ({
           id: tx.id,
@@ -245,7 +240,7 @@ export function useNetworkSimulation(): NetworkSimulationControls {
           activeLockups,
           yieldAccruing,
           feesCollected: Number(feesCollected) || 0,
-          cadenzaFlags: (flags || []) as CadenzaFlag[],
+          cadenzaFlags: flags as CadenzaFlag[],
           settlementEvents,
           networkMode,
           banks: (metrics.agent_fleet || []).map(b => ({
@@ -461,12 +456,9 @@ export function useNetworkSimulation(): NetworkSimulationControls {
         async (payload) => {
           const tx = payload.new as any;
           if (tx.status === 'settled' && tx.settled_at) {
-            const { data: banks } = await supabase
-              .from('banks')
-              .select('id, short_code')
-              .in('id', [tx.sender_bank_id, tx.receiver_bank_id]);
+            const allBanks = await fetchBanks();
             const bankMap: Record<string, string> = {};
-            for (const b of banks || []) bankMap[b.id] = b.short_code;
+            for (const b of allBanks) bankMap[b.id] = b.short_code;
 
             const event: SettlementEvent = {
               id: tx.id,

@@ -11,6 +11,7 @@ import {
   UserCheck, RotateCcw, FastForward, Plus, Lock, Loader2,
 } from 'lucide-react';
 import { supabase, callServer } from '../supabaseClient';
+import { fetchRiskScore, fetchComplianceLogs, fetchWallets, fetchLockupToken, fetchCadenzaFlags } from '../dataClient';
 import { PageTransition } from './PageTransition';
 import { SettlementLifecycle } from './SettlementLifecycle';
 import type { Transaction, AgentMessage, Wallet as WalletType } from '../types';
@@ -73,7 +74,7 @@ interface TxPrimaryData {
 async function fetchTxPrimary(key: string): Promise<TxPrimaryData> {
   const txId = key.replace('tx-primary/', '');
 
-  const [txRes, msgRes, riskRes, compRes] = await Promise.all([
+  const [txRes, msgRes, riskData, compData] = await Promise.all([
     supabase
       .from('transactions')
       .select('*, sender_bank:banks!transactions_sender_bank_id_fkey(id, name, short_code, jurisdiction, tier, swift_bic, status, token_mint_address, token_symbol, agent_system_prompt), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, name, short_code, jurisdiction, tier, swift_bic, status, token_mint_address, token_symbol, agent_system_prompt)')
@@ -84,16 +85,16 @@ async function fetchTxPrimary(key: string): Promise<TxPrimaryData> {
       .select('*, from_bank:banks!agent_messages_from_bank_id_fkey(short_code, name), to_bank:banks!agent_messages_to_bank_id_fkey(short_code, name)')
       .eq('transaction_id', txId)
       .order('created_at', { ascending: true }),
-    supabase.from('risk_scores').select('*').eq('transaction_id', txId).maybeSingle(),
-    supabase.from('compliance_logs').select('*').eq('transaction_id', txId).order('created_at', { ascending: true }),
+    fetchRiskScore(txId),
+    fetchComplianceLogs(txId),
   ]);
 
   if (txRes.error) throw txRes.error;
   return {
     tx: txRes.data as Transaction,
     messages: (msgRes.data || []) as AgentMessage[],
-    riskScore: riskRes.data || null,
-    complianceLogs: compRes.data || [],
+    riskScore: riskData || null,
+    complianceLogs: compData || [],
   };
 }
 
@@ -117,17 +118,17 @@ async function fetchTxSecondary(key: string): Promise<TxSecondaryData> {
   const receiverBankId = parts[2];
   const createdAt = parts[3] || null;
 
-  const [sWallet, rWallet, corridorRes, lockupRes, flagsRes] = await Promise.all([
-    supabase.from('wallets').select('*').eq('bank_id', senderBankId).eq('is_default', true).maybeSingle(),
-    supabase.from('wallets').select('*').eq('bank_id', receiverBankId).eq('is_default', true).maybeSingle(),
+  const [senderWallets, receiverWallets, corridorRes, lockupData, flagsData] = await Promise.all([
+    fetchWallets(senderBankId),
+    fetchWallets(receiverBankId),
     supabase.from('transactions')
       .select('id, amount_display, status, purpose_code, risk_level, created_at, solana_tx_signature')
       .or(`and(sender_bank_id.eq.${senderBankId},receiver_bank_id.eq.${receiverBankId}),and(sender_bank_id.eq.${receiverBankId},receiver_bank_id.eq.${senderBankId})`)
       .neq('id', txId)
       .order('created_at', { ascending: false })
       .limit(10),
-    supabase.from('lockup_tokens').select('*').eq('transaction_id', txId).maybeSingle(),
-    supabase.from('cadenza_flags').select('*').eq('transaction_id', txId).order('detected_at', { ascending: true }),
+    fetchLockupToken(txId),
+    fetchCadenzaFlags({ transaction_id: txId }),
   ]);
 
   let cycle: any = null;
@@ -170,14 +171,14 @@ async function fetchTxSecondary(key: string): Promise<TxSecondaryData> {
   }
 
   return {
-    senderWallet: sWallet.data || null,
-    receiverWallet: rWallet.data || null,
+    senderWallet: senderWallets.find((w: any) => w.is_default) || senderWallets[0] || null,
+    receiverWallet: receiverWallets.find((w: any) => w.is_default) || receiverWallets[0] || null,
     corridorHistory: corridorRes.data || [],
     cycle,
     cycleTxCount,
     mandates,
-    lockup: lockupRes.data || null,
-    cadenzaFlags: flagsRes.data || [],
+    lockup: lockupData || null,
+    cadenzaFlags: flagsData || [],
   };
 }
 

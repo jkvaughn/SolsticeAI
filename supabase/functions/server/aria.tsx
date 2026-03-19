@@ -12,7 +12,7 @@
 //   reject     — acknowledge cancellation, no-op
 // ============================================================
 
-import { getAdminClient } from "./supabase-admin.tsx";
+import sql from "./db.tsx";
 import { callGemini } from "./gemini.tsx";
 import {
   NETWORK_DEFAULTS,
@@ -271,14 +271,10 @@ async function handleInterpret(body: {
     return Response.json({ error: "Missing or empty message" }, { status: 400 });
   }
 
-  const supabase = getAdminClient();
-
   // Load bank info
-  const { data: bank } = await supabase
-    .from("banks")
-    .select("id, name, short_code")
-    .eq("id", bank_id)
-    .single();
+  const [bank] = await sql`
+    SELECT id, name, short_code FROM banks WHERE id = ${bank_id}
+  `;
 
   if (!bank) {
     return Response.json({ error: `Bank not found: ${bank_id}` }, { status: 404 });
@@ -449,27 +445,20 @@ async function handleConfirm(body: {
     configUpdate[ch.parameter] = ch.proposed_value;
   }
 
-  const supabase = getAdminClient();
-
-  // Apply config changes via upsert (same logic as agent-config "update" action)
+  // Apply config changes via upsert
   if (Object.keys(configUpdate).length > 0) {
-    const { error } = await supabase
-      .from("bank_agent_config")
-      .upsert(
-        {
-          bank_id,
-          ...configUpdate,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "bank_id" },
-      )
-      .select()
-      .single();
-
-    if (error) {
-      console.log(`[aria] Config upsert failed: ${error.message}`);
+    try {
+      const row = { bank_id, ...configUpdate, updated_at: new Date().toISOString() };
+      // Build dynamic columns for the SET clause
+      const cols = Object.keys(row);
+      await sql`
+        INSERT INTO bank_agent_config ${sql(row, ...cols)}
+        ON CONFLICT (bank_id) DO UPDATE SET ${sql(configUpdate, ...Object.keys(configUpdate))}, updated_at = NOW()
+      `;
+    } catch (err) {
+      console.log(`[aria] Config upsert failed: ${(err as Error).message}`);
       return Response.json(
-        { success: false, applied: [], message: `Database error: ${error.message}` },
+        { success: false, applied: [], message: `Database error: ${(err as Error).message}` },
         { status: 500 },
       );
     }
@@ -478,15 +467,15 @@ async function handleConfirm(body: {
   // Handle agent_system_prompt separately (stored on banks table)
   const promptChange = changes.find((ch) => ch.parameter === "agent_system_prompt");
   if (promptChange) {
-    const { error } = await supabase
-      .from("banks")
-      .update({ agent_system_prompt: promptChange.proposed_value })
-      .eq("id", bank_id);
-
-    if (error) {
-      console.log(`[aria] Personality update failed: ${error.message}`);
+    try {
+      await sql`
+        UPDATE banks SET agent_system_prompt = ${promptChange.proposed_value as string}
+        WHERE id = ${bank_id}
+      `;
+    } catch (err) {
+      console.log(`[aria] Personality update failed: ${(err as Error).message}`);
       return Response.json(
-        { success: false, applied: [], message: `Personality update error: ${error.message}` },
+        { success: false, applied: [], message: `Personality update error: ${(err as Error).message}` },
         { status: 500 },
       );
     }
