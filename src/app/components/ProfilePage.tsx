@@ -7,6 +7,7 @@ import { usePersona } from '../contexts/PersonaContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useIsAdmin } from '../hooks/useIsAdmin';
 import { PageHeader } from './PageHeader';
+import { PersonaSwitcher } from './PersonaSwitcher';
 import { motion } from './motion-shim';
 import { supabase } from '../supabaseClient';
 import {
@@ -146,14 +147,28 @@ export function ProfilePage() {
     () => localStorage.getItem(DEFAULT_BANK_KEY) || '',
   );
 
+  const { setPersona, setSelectedBankId: setContextBankId } = usePersona();
+  const [prefsApplied, setPrefsApplied] = useState(false);
+
   const handlePersonaChange = (val: string) => {
     setDefaultPersona(val);
     localStorage.setItem(DEFAULT_PERSONA_KEY, val);
+    setPrefsApplied(false);
   };
 
   const handleBankChange = (val: string) => {
     setDefaultBank(val);
     localStorage.setItem(DEFAULT_BANK_KEY, val);
+    setPrefsApplied(false);
+  };
+
+  const applyPreferences = () => {
+    const personaVal = (defaultPersona === 'compliance' || defaultPersona === 'treasury' || defaultPersona === 'leadership')
+      ? defaultPersona : null;
+    setPersona(personaVal);
+    setContextBankId(defaultBank || null);
+    setPrefsApplied(true);
+    setTimeout(() => setPrefsApplied(false), 2000);
   };
 
   // ── Sign out ──
@@ -379,62 +394,8 @@ export function ProfilePage() {
               Defaults & Preferences
             </h4>
 
-            {/* Default persona */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-coda-text-secondary">
-                Default Persona
-              </label>
-              <div className="relative">
-                <select
-                  value={defaultPersona}
-                  onChange={e => handlePersonaChange(e.target.value)}
-                  className={`w-full appearance-none rounded-xl px-4 py-2.5 pr-10 text-sm font-sans text-coda-text outline-none transition-colors cursor-pointer ${
-                    isDark
-                      ? 'bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.08]'
-                      : 'bg-black/[0.03] border border-black/[0.06] hover:bg-black/[0.05]'
-                  }`}
-                >
-                  {PERSONA_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={14}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-coda-text-muted pointer-events-none"
-                />
-              </div>
-            </div>
-
-            {/* Default bank scope */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-coda-text-secondary">
-                Default Bank Scope
-              </label>
-              <div className="relative">
-                <select
-                  value={defaultBank}
-                  onChange={e => handleBankChange(e.target.value)}
-                  className={`w-full appearance-none rounded-xl px-4 py-2.5 pr-10 text-sm font-sans text-coda-text outline-none transition-colors cursor-pointer ${
-                    isDark
-                      ? 'bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.08]'
-                      : 'bg-black/[0.03] border border-black/[0.06] hover:bg-black/[0.05]'
-                  }`}
-                >
-                  <option value="">All Banks</option>
-                  {activeBanks.map(bank => (
-                    <option key={bank.id} value={bank.id}>
-                      {bank.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={14}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-coda-text-muted pointer-events-none"
-                />
-              </div>
-            </div>
+            {/* Persona + Bank selector — card picker, applies instantly */}
+            <PersonaSwitcher />
           </div>
         </motion.div>
       </div>
