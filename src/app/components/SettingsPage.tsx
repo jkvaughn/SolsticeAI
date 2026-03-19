@@ -6,7 +6,7 @@ import { PageHeader } from './PageHeader';
 import { PageTransition } from './PageTransition';
 import { motion } from './motion-shim';
 import {
-  Settings, Sun, Moon, Monitor, Wifi, WifiOff,
+  Settings, Sun, Moon, Monitor, Wifi, Globe,
   ChevronDown, ChevronRight, Bell, BellOff,
   AlertTriangle, Trash2, RotateCcw, Gauge, Timer,
   Layers, Maximize2, Minimize2,
@@ -309,10 +309,10 @@ export function SettingsPage() {
                     },
                     {
                       mode: 'production' as const,
-                      icon: WifiOff,
+                      icon: Globe,
                       label: 'Production',
-                      desc: 'No Devnet safety context injected',
-                      dot: 'bg-amber-500',
+                      desc: 'Solstice Network — live settlement',
+                      dot: 'bg-coda-brand',
                     },
                   ]).map(opt => {
                     const Icon = opt.icon;
@@ -338,7 +338,7 @@ export function SettingsPage() {
                           active
                             ? opt.mode === 'devnet'
                               ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text'
-                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                              : 'bg-coda-brand/10 text-coda-brand'
                             : isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted'
                         }`}>
                           <Icon size={18} />
@@ -359,8 +359,8 @@ export function SettingsPage() {
                   isDark ? 'bg-white/[0.03] border-white/[0.06]' : 'bg-black/[0.02] border-black/[0.04]'
                 }`}>
                   <div className="relative flex-shrink-0">
-                    <div className={`w-2.5 h-2.5 rounded-full ${networkMode === 'devnet' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                    <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full animate-pulse ${networkMode === 'devnet' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full ${networkMode === 'devnet' ? 'bg-emerald-500' : 'bg-coda-brand'}`} />
+                    <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full animate-pulse ${networkMode === 'devnet' ? 'bg-emerald-500' : 'bg-coda-brand'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium text-coda-text">
@@ -383,11 +383,12 @@ export function SettingsPage() {
                   </div>
                   <div className="px-3 py-2 space-y-1.5">
                     {[
-                      { label: 'Cluster', value: import.meta.env.VITE_SOLANA_CLUSTER || 'devnet' },
+                      { label: 'Cluster', value: networkMode === 'production' ? (import.meta.env.VITE_SOLANA_CLUSTER || 'mainnet-beta') : 'devnet' },
+                      { label: 'Network', value: networkMode === 'production' ? 'Solstice Network' : 'Solana Devnet' },
                       { label: 'Auth Provider', value: (import.meta.env.VITE_AUTH_PROVIDER || 'supabase').toUpperCase() },
-                      { label: 'Explorer', value: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com' },
+                      { label: 'Explorer', value: networkMode === 'production' ? (import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solsticenetwork.xyz') : 'https://explorer.solana.com?cluster=devnet' },
                       { label: 'Realtime', value: import.meta.env.VITE_USE_SUPABASE_REALTIME === 'false' ? 'Polling' : 'Supabase Realtime' },
-                      { label: 'Live Data', value: import.meta.env.VITE_USE_LIVE_NETWORK_DATA === 'true' ? 'Enabled' : 'Simulation' },
+                      { label: 'Live Data', value: networkMode === 'production' ? 'Enabled' : 'Simulation' },
                       { label: 'Environment', value: import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development' },
                     ].map(row => (
                       <div key={row.label} className="flex items-center justify-between gap-4">
