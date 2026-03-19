@@ -28,6 +28,7 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error?: string }>;
+  signInWithGoogle: () => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   accessToken: string | null;
   authProvider: string;
@@ -105,11 +106,17 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/.auth/logout?post_logout_redirect_uri=/login';
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    window.location.href = '/.auth/login/google?post_login_redirect_uri=/';
+    return {};
+  }, []);
+
   return (
     <AuthContext.Provider value={{
       ...state,
       signIn,
       signUp,
+      signInWithGoogle,
       signOut,
       accessToken: null, // Azure auth uses cookies, not bearer tokens
       authProvider: 'azure',
@@ -206,6 +213,21 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [signIn]);
 
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) {
+      const msg = friendlyAuthError(error.message);
+      setState(prev => ({ ...prev, error: msg }));
+      return { error: msg };
+    }
+    return {};
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setState({ user: null, supabaseUser: null, session: null, loading: false, error: null });
@@ -218,6 +240,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       ...state,
       signIn,
       signUp,
+      signInWithGoogle,
       signOut,
       accessToken,
       authProvider: 'supabase',

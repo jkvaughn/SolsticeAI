@@ -19,7 +19,7 @@ const THEME_CYCLE: { pref: ThemePreference; icon: ElementType; label: string }[]
 ];
 
 export function LoginPage() {
-  const { signIn, signUp, loading, error: authError, user, authProvider } = useAuth();
+  const { signIn, signUp, signInWithGoogle, loading, error: authError, user, authProvider } = useAuth();
   const { resolved, preference, cycleTheme } = useTheme();
   const isDark = resolved === 'dark';
   const navigate = useNavigate();
@@ -123,11 +123,11 @@ export function LoginPage() {
             </p>
           </div>
 
-          {/* Azure Entra ID login — production */}
+          {/* Azure + Google login — production */}
           {authProvider === 'azure' && (
-            <div className="px-8 pb-8">
+            <div className="px-8 pb-8 space-y-3">
               <button
-                onClick={() => signIn('', '')}
+                onClick={() => { window.location.href = '/.auth/login/aad?post_login_redirect_uri=/'; }}
                 className={`w-full py-3.5 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
                   isDark
                     ? 'bg-white text-black hover:bg-black/[0.04]'
@@ -137,14 +137,57 @@ export function LoginPage() {
                 <ShieldCheck size={18} />
                 Sign in with Microsoft
               </button>
-              <p className="text-[10px] text-coda-text-muted text-center mt-4">
-                Authenticates through Microsoft Entra ID
+              <button
+                onClick={() => { window.location.href = '/.auth/login/google?post_login_redirect_uri=/'; }}
+                className={`w-full py-3 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 border ${
+                  isDark
+                    ? 'bg-white/[0.06] border-white/[0.12] text-coda-text hover:bg-white/[0.1]'
+                    : 'bg-white border-black/[0.08] text-coda-text hover:bg-black/[0.03]'
+                }`}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Sign in with Google
+              </button>
+              <p className="text-[10px] text-coda-text-muted text-center mt-2">
+                Use the same email with either provider for consistent access
               </p>
             </div>
           )}
 
           {/* Supabase email/password login — dev/staging */}
           {authProvider !== 'azure' && <>
+          {/* Google OAuth button */}
+          <div className="px-8 mb-4">
+            <button
+              onClick={() => signInWithGoogle()}
+              className={`w-full py-3 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 border ${
+                isDark
+                  ? 'bg-white/[0.06] border-white/[0.12] text-coda-text hover:bg-white/[0.1]'
+                  : 'bg-white border-black/[0.08] text-coda-text hover:bg-black/[0.03]'
+              }`}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              Sign in with Google
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 mt-4">
+              <div className="flex-1 h-px bg-black/[0.08] dark:bg-white/[0.1]" />
+              <span className="text-[11px] text-coda-text-muted uppercase tracking-wider">or</span>
+              <div className="flex-1 h-px bg-black/[0.08] dark:bg-white/[0.1]" />
+            </div>
+          </div>
+
           {/* Tab switcher */}
           <div className="px-8 mb-6">
             <div className="flex p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.06]">
