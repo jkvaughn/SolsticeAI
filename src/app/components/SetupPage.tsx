@@ -606,7 +606,7 @@ export function SetupPage() {
       <PageHeader
         icon={Network}
         title="Solstice Network"
-        subtitle="Manage member banks and tokenized deposit wallets on Solana Devnet"
+        subtitle={`Manage member banks and tokenized deposit wallets on ${isProductionCluster ? 'Solstice Network' : 'Solana Devnet'}`}
       >
         <div className="flex gap-2">
           <button

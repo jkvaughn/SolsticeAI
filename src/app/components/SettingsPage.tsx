@@ -383,12 +383,13 @@ export function SettingsPage() {
                   </div>
                   <div className="px-3 py-2 space-y-1.5">
                     {[
-                      { label: 'Cluster', value: networkMode === 'production' ? (import.meta.env.VITE_SOLANA_CLUSTER || 'mainnet-beta') : 'devnet' },
-                      { label: 'Network', value: networkMode === 'production' ? 'Solstice Network' : 'Solana Devnet' },
+                      { label: 'Cluster', value: import.meta.env.VITE_SOLANA_CLUSTER || 'devnet' },
+                      { label: 'Network', value: (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta' ? 'Solstice Network' : 'Solana Devnet' },
                       { label: 'Auth Provider', value: (import.meta.env.VITE_AUTH_PROVIDER || 'supabase').toUpperCase() },
-                      { label: 'Explorer', value: networkMode === 'production' ? (import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solsticenetwork.xyz') : 'https://explorer.solana.com?cluster=devnet' },
+                      { label: 'Explorer', value: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com' },
                       { label: 'Realtime', value: import.meta.env.VITE_USE_SUPABASE_REALTIME === 'false' ? 'Polling' : 'Supabase Realtime' },
-                      { label: 'Live Data', value: networkMode === 'production' ? 'Enabled' : 'Simulation' },
+                      { label: 'Live Data', value: import.meta.env.VITE_USE_LIVE_NETWORK_DATA === 'true' ? 'Enabled' : 'Simulation' },
+                      { label: 'Agent Mode', value: networkMode === 'production' ? 'Production' : 'Devnet' },
                       { label: 'Environment', value: import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development' },
                     ].map(row => (
                       <div key={row.label} className="flex items-center justify-between gap-4">
