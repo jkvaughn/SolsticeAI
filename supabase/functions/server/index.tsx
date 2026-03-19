@@ -437,7 +437,17 @@ export async function getBankConfig(bankId: string) {
 // ============================================================
 // Health check
 // ============================================================
-app.get("/make-server-49d15288/health", (c) => {
+app.get("/make-server-49d15288/health", async (c) => {
+  // Basic health check + optional DB connectivity test
+  const dbTest = c.req.query("db");
+  if (dbTest) {
+    try {
+      const [row] = await sql`SELECT 1 as ok, now() as ts`;
+      return c.json({ status: "ok", db: "connected", db_time: row.ts, timestamp: new Date().toISOString() });
+    } catch (err) {
+      return c.json({ status: "ok", db: "error", db_error: (err as Error).message, timestamp: new Date().toISOString() });
+    }
+  }
   return c.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
