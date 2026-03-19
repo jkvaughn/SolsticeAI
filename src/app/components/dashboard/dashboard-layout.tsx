@@ -18,6 +18,7 @@ import { supabase } from "../../supabaseClient";
 import { useRealtimeSubscription } from "../../hooks/useRealtimeSubscription";
 import { usePersona } from "../../contexts/PersonaContext";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
+import { PersonaSwitcher } from "../PersonaSwitcher";
 import type { PersonaType } from "../../types";
 
 // ============================================================
@@ -283,6 +284,13 @@ export function DashboardLayout({
                 )}
               </div>
             </div>
+
+            {/* Persona Switcher — only when expanded */}
+            {sidebarExpanded && (
+              <div className="px-3 py-3 border-b border-black/[0.06] dark:border-white/[0.06]">
+                <PersonaSwitcher />
+              </div>
+            )}
 
             {/* Primary Navigation */}
             <div className="px-3 py-[1.1rem] flex-1 overflow-y-auto overflow-x-hidden min-h-0">
