@@ -364,13 +364,37 @@ export function SettingsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium text-coda-text">
-                      {networkMode === 'devnet' ? 'Solana Devnet' : 'Production Mode'}
+                      {networkMode === 'devnet' ? 'Solana Devnet' : 'Solstice Network'}
                     </p>
                     <p className="text-[10px] text-coda-text-muted">
                       {networkMode === 'devnet'
                         ? 'Connected — synthetic token settlement active'
-                        : 'Live evaluation — no Devnet safety context injected'}
+                        : 'Connected — production SPE settlement active'}
                     </p>
+                  </div>
+                </div>
+
+                {/* Network details */}
+                <div className={`mt-3 rounded-xl border overflow-hidden ${
+                  isDark ? 'bg-white/[0.02] border-white/[0.06]' : 'bg-black/[0.015] border-black/[0.04]'
+                }`}>
+                  <div className="px-3 py-2 border-b border-black/[0.04] dark:border-white/[0.06]">
+                    <p className="text-[10px] font-bold text-coda-text-muted uppercase tracking-wider">Active Connection</p>
+                  </div>
+                  <div className="px-3 py-2 space-y-1.5">
+                    {[
+                      { label: 'Cluster', value: import.meta.env.VITE_SOLANA_CLUSTER || 'devnet' },
+                      { label: 'Auth Provider', value: (import.meta.env.VITE_AUTH_PROVIDER || 'supabase').toUpperCase() },
+                      { label: 'Explorer', value: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com' },
+                      { label: 'Realtime', value: import.meta.env.VITE_USE_SUPABASE_REALTIME === 'false' ? 'Polling' : 'Supabase Realtime' },
+                      { label: 'Live Data', value: import.meta.env.VITE_USE_LIVE_NETWORK_DATA === 'true' ? 'Enabled' : 'Simulation' },
+                      { label: 'Environment', value: import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development' },
+                    ].map(row => (
+                      <div key={row.label} className="flex items-center justify-between gap-4">
+                        <span className="text-[10px] font-mono text-coda-text-muted whitespace-nowrap">{row.label}</span>
+                        <span className="text-[10px] font-mono text-coda-text-secondary truncate text-right">{row.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </>

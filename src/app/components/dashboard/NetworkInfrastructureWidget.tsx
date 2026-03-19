@@ -121,7 +121,7 @@ export function NetworkInfrastructureWidget() {
                 : 'bg-red-500/10 text-red-500 dark:text-red-400'
             }`}>
               {infra.healthOk ? <Wifi className="w-2.5 h-2.5" /> : <WifiOff className="w-2.5 h-2.5" />}
-              {infra.networkMode === 'devnet' ? 'Devnet' : 'Production'}
+              {infra.networkMode === 'devnet' ? 'Devnet' : 'Solstice Network'}
             </span>
           )}
         </div>

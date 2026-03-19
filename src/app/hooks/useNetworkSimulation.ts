@@ -511,6 +511,17 @@ export function useNetworkSimulation(): NetworkSimulationControls {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // ── Auto-start on production (live data mode) ──────────────
+  const isLiveData = import.meta.env.VITE_USE_LIVE_NETWORK_DATA === 'true';
+  useEffect(() => {
+    if (isLiveData && state.metricsLoaded && !state.running) {
+      setState(prev => {
+        const { cadenzaFlags: _dbFlags, ...baseline } = (fetchedBaselineRef.current || {}) as Partial<NetworkSimulationState>;
+        return { ...prev, ...baseline, cadenzaFlags: [], running: true, tpsPhase: 'ramp' };
+      });
+    }
+  }, [isLiveData, state.metricsLoaded]);
+
   // ── Controls ────────────────────────────────────────────────
   const start = useCallback(() => {
     setState(prev => {
