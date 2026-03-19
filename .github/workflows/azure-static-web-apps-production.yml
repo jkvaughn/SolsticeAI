@@ -34,6 +34,7 @@ jobs:
           VITE_AUTH_PROVIDER: ${{ secrets.VITE_AUTH_PROVIDER }}
           VITE_SOLANA_CLUSTER: ${{ secrets.VITE_SOLANA_CLUSTER }}
           VITE_SOLANA_EXPLORER_URL: ${{ secrets.VITE_SOLANA_EXPLORER_URL }}
+          VITE_SERVER_BASE_URL: ${{ secrets.VITE_SERVER_BASE_URL }}
           VITE_ADMIN_EMAIL: jeremy@rimark.io
 
   close_pull_request:
