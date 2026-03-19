@@ -26,6 +26,10 @@ import {
   AlertDialogTrigger,
 } from './ui/alert-dialog';
 
+// ── Environment detection ──
+const isProductionCluster = (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta';
+const gasToken = isProductionCluster ? 'SNT' : 'SOL';
+
 // Demo bank configurations — all 3 banks included (FNBT re-enabled)
 const DEMO_BANKS: SetupBankRequest[] = [
   {
@@ -59,7 +63,7 @@ const DEMO_SHORT_CODES = DEMO_BANKS.map((b) => b.short_code.toUpperCase());
 const JURISDICTIONS = ['US', 'UK', 'EU', 'SG', 'JP', 'CH'];
 
 const DEPLOYMENT_STEPS = [
-  { id: 'keypair', label: 'Generating Solana keypair (Devnet)' },
+  { id: 'keypair', label: isProductionCluster ? 'Generating Solana keypair (Solstice)' : 'Generating Solana keypair (Devnet)' },
   { id: 'mint', label: 'Creating SPL Token-2022 mint' },
   { id: 'ata', label: 'Creating ATA + enabling MemoTransfer' },
   { id: 'supply', label: 'Minting initial token supply' },
@@ -304,7 +308,7 @@ export function SetupPage() {
             short_code: b.short_code,
             name: b.name,
             status: 'awaiting_funding' as SeedCardStatus,
-            detail: 'Wallet created — needs SOL funding',
+            detail: 'Wallet created — needs funding',
             public_key: b.solana_wallet_pubkey || undefined,
             bank_id: b.id,
             config: config || { name: b.name, short_code: b.short_code, jurisdiction: b.jurisdiction || 'US', initial_deposit_supply: b.initial_deposit_supply || 10_000_000 },
@@ -377,7 +381,7 @@ export function SetupPage() {
           } else if (result.stage === 'wallet_created') {
             updateCard(bank.short_code, {
               status: 'awaiting_funding',
-              detail: result.reused ? 'Wallet reused — needs SOL funding' : 'Wallet created — needs SOL funding',
+              detail: result.reused ? 'Wallet reused — needs funding' : 'Wallet created — needs funding',
               public_key: result.public_key,
               bank_id: result.bank_id,
             });
@@ -454,7 +458,7 @@ export function SetupPage() {
       if (errMsg.includes('insufficient_sol') || errMsg.includes('Insufficient SOL')) {
         updateCard(card.short_code, {
           status: 'awaiting_funding',
-          detail: 'Still needs SOL funding',
+          detail: 'Still needs funding',
         });
       } else {
         updateCard(card.short_code, { status: 'error', detail: errMsg });
@@ -498,7 +502,7 @@ export function SetupPage() {
           short_code: request.short_code.toUpperCase(),
           name: request.name,
           status: 'awaiting_funding',
-          detail: 'Wallet created — needs SOL funding',
+          detail: 'Wallet created — needs funding',
           public_key: result.public_key,
           bank_id: result.bank_id,
           config: request,
@@ -938,7 +942,7 @@ export function SetupPage() {
                   <th className="px-4 py-2 font-medium">Status</th>
                   <th className="px-4 py-2 font-medium">Jurisdiction</th>
                   <th className="px-4 py-2 font-medium">Wallet</th>
-                  <th className="px-4 py-2 font-medium">SOL</th>
+                  <th className="px-4 py-2 font-medium">{gasToken}</th>
                   <th className="px-4 py-2 font-medium">Token Mint</th>
                   <th className="px-4 py-2 font-medium">Balance</th>
                   <th className="px-4 py-2 font-medium">Token</th>
@@ -1075,7 +1079,7 @@ export function SetupPage() {
             <div>
               <p className="text-xs font-medium text-amber-500 dark:text-amber-400">Reset Tokens</p>
               <p className="text-[11px] text-coda-text-muted mt-0.5">
-                Clear transactions and rebuild token mints. Preserves bank keypairs and SOL balances.
+                Clear transactions and rebuild token mints. Preserves bank keypairs and {gasToken} balances.
               </p>
             </div>
             <AlertDialog>
@@ -1108,7 +1112,7 @@ export function SetupPage() {
                         with fresh Token-2022 mints.
                       </p>
                       <p className="text-coda-brand">
-                        Preserved: Bank keypairs, SOL balances, bank names/codes.
+                        Preserved: Bank keypairs, {gasToken} balances, bank names/codes.
                       </p>
                       <p className="text-coda-text-muted">
                         After reset, fund wallets via {isProductionCluster ? 'the Solstice CLI' : 'the Solana Faucet'} if needed, then click
@@ -1137,7 +1141,7 @@ export function SetupPage() {
             <div>
               <p className="text-xs font-medium text-red-500 dark:text-red-400">Reset Network</p>
               <p className="text-[11px] text-coda-text-muted mt-0.5">
-                Delete everything including bank keypairs. Requires new wallet generation and SOL funding.
+                Delete everything including bank keypairs. Requires new wallet generation and {gasToken} funding.
               </p>
             </div>
             <AlertDialog>
@@ -1191,8 +1195,6 @@ export function SetupPage() {
 }
 
 // ── Seed Bank Card Component ───────────────────────────────
-const isProductionCluster = (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta';
-
 function SeedBankCardUI({ card, onActivate }: {
   card: SeedBankCard;
   onActivate: () => void;
@@ -1287,7 +1289,7 @@ function SeedBankCardUI({ card, onActivate }: {
       icon: <Wallet className="w-4 h-4 text-amber-500 dark:text-amber-400" />,
       color: 'text-amber-500 dark:text-amber-400',
       bg: NEUTRAL_CARD_BG,
-      label: isFunded ? 'Funded' : 'Awaiting SOL',
+      label: isFunded ? 'Funded' : `Awaiting ${gasToken}`,
     },
     activating: {
       icon: <Loader2 className="w-4 h-4 text-coda-brand animate-spin" />,
@@ -1384,19 +1386,19 @@ function SeedBankCardUI({ card, onActivate }: {
       {/* ── Awaiting Funding: Manual funding flow ── */}
       {card.status === 'awaiting_funding' && (
         <div className="mt-3 space-y-3">
-          {/* SOL Balance display */}
+          {/* Gas token balance display */}
           <div className="flex items-center gap-2 text-xs font-mono">
-            <span className="text-coda-text-muted">SOL Balance:</span>
+            <span className="text-coda-text-muted">{gasToken} Balance:</span>
             {localSolBalance !== null ? (
               <span className={isFunded ? 'text-coda-brand' : 'text-red-500 dark:text-red-400'}>
-                {localSolBalance.toFixed(4)} SOL {isFunded ? '\u2713' : '\u2717'}
+                {localSolBalance.toFixed(4)} {gasToken} {isFunded ? '\u2713' : '\u2717'}
               </span>
             ) : (
               <span className="text-coda-text-muted">Unknown — click Check Balance</span>
             )}
             {!isFunded && (
               <span className="text-coda-text-muted text-[10px]">
-                (min: {MIN_SOL_REQUIRED} SOL)
+                (min: {MIN_SOL_REQUIRED} {gasToken})
               </span>
             )}
           </div>
@@ -1447,7 +1449,7 @@ function SeedBankCardUI({ card, onActivate }: {
             <div className="bg-coda-brand-bg border border-coda-brand/20 rounded-xl p-2.5 flex items-center gap-2">
               <CheckCircle2 className="w-3.5 h-3.5 text-coda-brand shrink-0" />
               <span className="text-[11px] font-mono text-coda-brand">
-                SOL detected! Ready to activate and deploy Token-2022.
+                {gasToken} detected! Ready to activate and deploy Token-2022.
               </span>
             </div>
           )}
@@ -1573,7 +1575,7 @@ function BankRow({ bank, wallet, solBalance }: { bank: Bank; wallet?: WalletType
           )}
         </td>
         <td className="px-4 py-3 text-coda-text">
-          {solBalance !== undefined ? `${solBalance.toFixed(4)} SOL` : '--'}
+          {solBalance !== undefined ? `${solBalance.toFixed(4)} ${gasToken}` : '--'}
         </td>
         <td className="px-4 py-3">
           {bank.token_mint_address ? (
@@ -1618,8 +1620,8 @@ function BankRow({ bank, wallet, solBalance }: { bank: Bank; wallet?: WalletType
                 <div className="text-blue-500 dark:text-blue-400 break-all mt-0.5">{wallet?.token_account_address || '--'}</div>
               </div>
               <div>
-                <span className="text-coda-text-muted">SOL Balance (live):</span>
-                <div className="text-coda-text mt-0.5">{solBalance !== undefined && solBalance !== null ? `${solBalance.toFixed(4)} SOL` : (wallet ? `${(wallet.balance_lamports / 1_000_000_000).toFixed(4)} SOL (cached)` : '--')}</div>
+                <span className="text-coda-text-muted">{gasToken} Balance (live):</span>
+                <div className="text-coda-text mt-0.5">{solBalance !== undefined && solBalance !== null ? `${solBalance.toFixed(4)} ${gasToken}` : (wallet ? `${(wallet.balance_lamports / 1_000_000_000).toFixed(4)} ${gasToken} (cached)` : '--')}</div>
               </div>
               <div className="col-span-2">
                 <span className="text-coda-text-muted">Agent System Prompt:</span>
@@ -1725,9 +1727,9 @@ function InfraWalletCard({
       <div className="flex items-center justify-between pt-1 border-t border-coda-border/20">
         <div className="flex items-center gap-3">
           <div>
-            <span className="text-[10px] font-mono text-coda-text-muted">SOL Balance</span>
+            <span className="text-[10px] font-mono text-coda-text-muted">{gasToken} Balance</span>
             <div className={`text-xs font-mono font-medium ${isFunded ? 'text-coda-brand' : 'text-amber-400'}`}>
-              {solBalance.toFixed(4)} SOL
+              {solBalance.toFixed(4)} {gasToken}
             </div>
           </div>
           {!isFunded && !isProductionCluster && (
@@ -1801,10 +1803,10 @@ function NetworkFeeProtocolCard() {
             {/* Fee model + rate */}
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400">
-                SOL Gas-Layer Fee
+                {gasToken} Gas-Layer Fee
               </span>
               <span className="text-[10px] text-coda-text-muted font-mono">
-                {feeInfo ? `${feeInfo.network_fee_sol} SOL / settlement` : '\u2014'}
+                {feeInfo ? `${feeInfo.network_fee_sol} ${gasToken} / settlement` : '\u2014'}
               </span>
             </div>
 
@@ -1816,7 +1818,7 @@ function NetworkFeeProtocolCard() {
                   Network fees are mandatory and cannot be bypassed.
                 </p>
                 <p className="text-[11px] text-coda-text-secondary leading-relaxed">
-                  Every settlement transaction requires a <code className="text-amber-400/80 bg-amber-500/10 px-1 rounded">SystemProgram.transfer</code> of {feeInfo?.network_fee_sol ?? 0.001} SOL from the sender bank to the Solstice Network Fees wallet. If fee collection fails, the settlement will be blocked and the transaction will not complete. No agent or user can override this protocol-level requirement.
+                  Every settlement transaction requires a <code className="text-amber-400/80 bg-amber-500/10 px-1 rounded">SystemProgram.transfer</code> of {feeInfo?.network_fee_sol ?? 0.001} {gasToken} from the sender bank to the Solstice Network Fees wallet. If fee collection fails, the settlement will be blocked and the transaction will not complete. No agent or user can override this protocol-level requirement.
                 </p>
               </div>
             </div>
@@ -1842,7 +1844,7 @@ function NetworkFeeProtocolCard() {
               <div className="bg-black/[0.03] dark:bg-white/[0.04] rounded-lg p-3 border border-coda-border/50">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] uppercase tracking-wider text-coda-text-muted font-mono">Solstice Network Fees Wallet</span>
-                  <span className="text-[10px] font-mono text-amber-400">{feeInfo.fees_wallet.balance?.toFixed(6) ?? '0'} SOL collected</span>
+                  <span className="text-[10px] font-mono text-amber-400">{feeInfo.fees_wallet.balance?.toFixed(6) ?? '0'} {gasToken} collected</span>
                 </div>
                 <div className="text-[11px] font-mono text-coda-text-muted truncate" title={feeInfo.fees_wallet.wallet_address}>
                   {feeInfo.fees_wallet.wallet_address}
