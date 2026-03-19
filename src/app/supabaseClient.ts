@@ -18,7 +18,10 @@ if (!projectId || !publicAnonKey || !functionName) {
 }
 
 const supabaseUrl = `https://${projectId}.supabase.co`;
-const serverBaseUrl = `${supabaseUrl}/functions/v1/${functionName}`;
+// Production can override the server URL to point at Azure Container Apps
+// instead of Supabase Edge Functions (different RPC endpoint).
+const serverBaseUrl = import.meta.env.VITE_SERVER_BASE_URL
+  || `${supabaseUrl}/functions/v1/${functionName}`;
 
 // ============================================================
 // Global request queue — serializes ALL outgoing fetch calls to
