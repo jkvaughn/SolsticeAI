@@ -207,11 +207,7 @@ export function useNetworkSimulation(): NetworkSimulationControls {
           .limit(1);
         const feesCollected = netWallets?.[0]?.balance || 0;
 
-        let networkMode = 'devnet';
-        try {
-          const modeRes = await callServer<{ mode: string }>('/network-mode', { action: 'get' });
-          networkMode = modeRes.mode || 'devnet';
-        } catch { /* ignore */ }
+        const networkMode = (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta' ? 'production' : 'devnet';
 
         const { data: flags } = await supabase
           .from('cadenza_flags')
@@ -510,6 +506,17 @@ export function useNetworkSimulation(): NetworkSimulationControls {
 
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // ── Auto-start on production (live data mode) ──────────────
+  const isLiveData = import.meta.env.VITE_USE_LIVE_NETWORK_DATA === 'true';
+  useEffect(() => {
+    if (isLiveData && state.metricsLoaded && !state.running) {
+      setState(prev => {
+        const { cadenzaFlags: _dbFlags, ...baseline } = (fetchedBaselineRef.current || {}) as Partial<NetworkSimulationState>;
+        return { ...prev, ...baseline, cadenzaFlags: [], running: true, tpsPhase: 'ramp' };
+      });
+    }
+  }, [isLiveData, state.metricsLoaded]);
 
   // ── Controls ────────────────────────────────────────────────
   const start = useCallback(() => {

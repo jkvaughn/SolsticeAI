@@ -38,11 +38,10 @@ interface NetworkInfraData {
 
 async function fetchNetworkInfra(): Promise<NetworkInfraData> {
   // Parallel queries
-  const [banksRes, walletsRes, healthRes, modeRes] = await Promise.all([
+  const [banksRes, walletsRes, healthRes] = await Promise.all([
     supabase.from('banks').select('id, status, token_mint_address, jurisdiction'),
     supabase.from('wallets').select('id, balance_lamports, balance_tokens'),
     callServer<{ status: string }>('/health').catch(() => ({ status: 'error' })),
-    callServer<{ mode: string }>('/network-mode', { action: 'get' }).catch(() => ({ mode: 'devnet' })),
   ]);
 
   const banks = banksRes.data ?? [];
@@ -62,7 +61,7 @@ async function fetchNetworkInfra(): Promise<NetworkInfraData> {
       funded: wallets.filter((w: any) => w.balance_lamports > 0).length,
       totalTokenBalance: wallets.reduce((sum: number, w: any) => sum + (w.balance_tokens || 0), 0),
     },
-    networkMode: (modeRes as any).mode || 'devnet',
+    networkMode: (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta' ? 'production' : 'devnet',
     healthOk: (healthRes as any).status === 'ok',
     jurisdictions,
   };
@@ -121,7 +120,7 @@ export function NetworkInfrastructureWidget() {
                 : 'bg-red-500/10 text-red-500 dark:text-red-400'
             }`}>
               {infra.healthOk ? <Wifi className="w-2.5 h-2.5" /> : <WifiOff className="w-2.5 h-2.5" />}
-              {infra.networkMode === 'devnet' ? 'Devnet' : 'Production'}
+              {infra.networkMode === 'devnet' ? 'Devnet' : 'Solstice Network'}
             </span>
           )}
         </div>

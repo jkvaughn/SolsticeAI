@@ -1,9 +1,9 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-03-19T17:40:00Z
-> Phase: All infrastructure + product tasks complete through Task 140
+> Last updated: 2026-03-19T21:00:00Z
+> Phase: All infrastructure + product tasks complete through Task 143
 > Server version: v7 Task-125 (lockup-route-dedup-iso20022-fix)
-> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-140)
+> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-143)
 
 ---
 
@@ -578,5 +578,25 @@ Moved PersonaSwitcher card picker from sidebar to Profile page's Preferences sec
 | `ProfilePage.tsx` | Replaced dropdown selects with PersonaSwitcher component, removed Apply button |
 | `dashboard-layout.tsx` | Reverted PersonaSwitcher import/render (sidebar stays clean) |
 | `PersonaSwitcher.tsx` | Restored original 2x2 card grid (reverted compact dropdown version) |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 142 — Solstice Network Production Integration
+Timestamp: 2026-03-19T19:00:00Z
+Status: DONE
+
+### Summary:
+Made frontend environment-aware for Solstice Network production deployment. Hide Devnet faucet on production, show "Solstice Network" branding instead of "Production", auto-start network simulation with live data when `VITE_USE_LIVE_NETWORK_DATA=true`. Added "Active Connection" panel to Settings page showing Cluster, Network, Auth Provider, Explorer URL, Realtime mode, Live Data, and Environment — panel updates reactively when switching between Devnet and Production modes. Production card uses Globe icon with brand blue styling (replaced WifiOff/amber).
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `LoginPage.tsx` | Environment-aware footer: "Solstice Network" vs "Solana Devnet" |
+| `SetupPage.tsx` | Hide faucet on production, Solstice CLI funding instructions, SNT branding |
+| `SettingsPage.tsx` | "Solstice Network" label, Globe icon for Production, reactive Active Connection panel |
+| `NetworkInfrastructureWidget.tsx` | "Solstice Network" label on production |
+| `useNetworkSimulation.ts` | Auto-start simulation when VITE_USE_LIVE_NETWORK_DATA=true |
+| `.env.production` | Added VITE_USE_LIVE_NETWORK_DATA=true |
 
 ---END_TASK---

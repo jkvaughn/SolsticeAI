@@ -364,7 +364,7 @@ export function LoginPage() {
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <div className="absolute inset-0 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               </div>
-              <span className="font-mono">Solana Devnet</span>
+              <span className="font-mono">{(import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta' ? 'Solstice Network' : 'Solana Devnet'}</span>
               <span className="mx-1">|</span>
               <span className="font-mono">Token-2022</span>
             </div>

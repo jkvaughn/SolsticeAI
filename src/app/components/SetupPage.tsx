@@ -606,7 +606,7 @@ export function SetupPage() {
       <PageHeader
         icon={Network}
         title="Solstice Network"
-        subtitle="Manage member banks and tokenized deposit wallets on Solana Devnet"
+        subtitle={`Manage member banks and tokenized deposit wallets on ${isProductionCluster ? 'Solstice Network' : 'Solana Devnet'}`}
       >
         <div className="flex gap-2">
           <button
@@ -661,7 +661,7 @@ export function SetupPage() {
               {networkMode === 'devnet' ? (
                 <><FlaskConical className="w-3 h-3" />Devnet Mode</>
               ) : (
-                <><Building2 className="w-3 h-3" />Production Mode</>
+                <><Building2 className="w-3 h-3" />Solstice Network</>
               )}
             </span>
           )}
@@ -683,12 +683,12 @@ export function SetupPage() {
               ) : (
                 <>
                   <p className="text-xs text-coda-text-secondary leading-relaxed">
-                    AI agents operate in <span className="text-coda-text font-medium">production assessment mode</span>.
-                    No demo context is injected &mdash; agents will independently evaluate settlement infrastructure
-                    and may flag Devnet as an operational risk for high-value transactions.
+                    AI agents operate in <span className="text-coda-text font-medium">production assessment mode</span> on
+                    the <span className="text-coda-brand font-medium">Solstice Network</span>.
+                    Token-2022 settlements execute on the production SPE with full institutional-grade infrastructure.
                   </p>
-                  <p className="text-[11px] text-amber-400/80 mt-1.5">
-                    Expect higher risk scores and potential settlement deferrals due to Devnet infrastructure concerns.
+                  <p className="text-[11px] text-coda-text-muted mt-1.5">
+                    Agents evaluate transactions on financial merit with production-grade risk assessment.
                   </p>
                 </>
               )}
@@ -736,8 +736,12 @@ export function SetupPage() {
             </h3>
             <p className="text-xs dashboard-text-muted font-mono max-w-lg mx-auto">
               {seedCards.some((c) => c.status === 'awaiting_funding')
-                ? 'Wallets created! Fund each wallet via the Solana Faucet, then click Activate.'
-                : 'Step 1: Generate wallets instantly. Step 2: Fund via Solana Faucet. Step 3: Activate to deploy tokens.'}
+                ? isProductionCluster
+                  ? 'Wallets created! Fund each wallet via the Solstice CLI, then click Activate.'
+                  : 'Wallets created! Fund each wallet via the Solana Faucet, then click Activate.'
+                : isProductionCluster
+                  ? 'Step 1: Generate wallets. Step 2: Fund via Solstice CLI. Step 3: Activate to deploy tokens.'
+                  : 'Step 1: Generate wallets instantly. Step 2: Fund via Solana Faucet. Step 3: Activate to deploy tokens.'}
               {onboardedDemoCodes.length > 0 && (
                 <> Already active: <span className="text-coda-text font-medium">{onboardedDemoCodes.join(', ')}</span>.</>
               )}
@@ -1107,7 +1111,7 @@ export function SetupPage() {
                         Preserved: Bank keypairs, SOL balances, bank names/codes.
                       </p>
                       <p className="text-coda-text-muted">
-                        After reset, fund wallets via the Solana Faucet if needed, then click
+                        After reset, fund wallets via {isProductionCluster ? 'the Solstice CLI' : 'the Solana Faucet'} if needed, then click
                         "Activate" on each bank card to re-deploy tokens.
                       </p>
                     </div>
@@ -1160,9 +1164,9 @@ export function SetupPage() {
                   <AlertDialogTitle className="text-coda-text text-sm font-medium">Reset Solstice Network</AlertDialogTitle>
                   <AlertDialogDescription className="text-coda-text-secondary text-xs leading-relaxed">
                     This will delete all banks, wallets, transactions, messages, and conversation
-                    history from all 7 tables. On-chain Solana assets (tokens, mints) will remain
-                    on Devnet but will no longer be tracked. New wallet generation and SOL funding
-                    via the Solana Faucet will be required. This cannot be undone.
+                    history from all 7 tables. On-chain assets (tokens, mints) will remain
+                    on {isProductionCluster ? 'Solstice Network' : 'Devnet'} but will no longer be tracked. New wallet generation and {isProductionCluster ? 'SNT' : 'SOL'} funding
+                    via {isProductionCluster ? 'the Solstice CLI' : 'the Solana Faucet'} will be required. This cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -1187,6 +1191,8 @@ export function SetupPage() {
 }
 
 // ── Seed Bank Card Component ───────────────────────────────
+const isProductionCluster = (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta';
+
 function SeedBankCardUI({ card, onActivate }: {
   card: SeedBankCard;
   onActivate: () => void;
@@ -1398,22 +1404,41 @@ function SeedBankCardUI({ card, onActivate }: {
           {/* Funding instructions */}
           {!isFunded && (
             <div className="bg-black/[0.03] dark:bg-white/[0.03] border border-coda-border-subtle rounded-xl p-3 space-y-1.5">
-              <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
-                <span className="text-coda-text-muted font-bold w-4">1.</span>
-                Copy the wallet address above
-              </div>
-              <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
-                <span className="text-coda-text-muted font-bold w-4">2.</span>
-                Visit the Solana Faucet and paste the address
-              </div>
-              <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
-                <span className="text-coda-text-muted font-bold w-4">3.</span>
-                Complete CAPTCHA, request airdrop
-              </div>
-              <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
-                <span className="text-coda-text-muted font-bold w-4">4.</span>
-                Come back here and click <strong className="text-coda-brand">Activate Bank</strong>
-              </div>
+              {isProductionCluster ? (
+                <>
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
+                    <span className="text-coda-text-muted font-bold w-4">1.</span>
+                    Copy the wallet address above
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
+                    <span className="text-coda-text-muted font-bold w-4">2.</span>
+                    Fund via Solstice CLI: <code className="text-coda-brand ml-1">solstice airdrop --address &lt;addr&gt;</code>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
+                    <span className="text-coda-text-muted font-bold w-4">3.</span>
+                    Come back here and click <strong className="text-coda-brand">Activate Bank</strong>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
+                    <span className="text-coda-text-muted font-bold w-4">1.</span>
+                    Copy the wallet address above
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
+                    <span className="text-coda-text-muted font-bold w-4">2.</span>
+                    Visit the Solana Faucet and paste the address
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
+                    <span className="text-coda-text-muted font-bold w-4">3.</span>
+                    Complete CAPTCHA, request airdrop
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
+                    <span className="text-coda-text-muted font-bold w-4">4.</span>
+                    Come back here and click <strong className="text-coda-brand">Activate Bank</strong>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1429,14 +1454,16 @@ function SeedBankCardUI({ card, onActivate }: {
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleOpenFaucet}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-coda-border-subtle rounded-lg text-xs font-mono text-coda-text-secondary hover:text-coda-text hover:border-coda-text-muted transition-colors"
-            >
-              <Globe className="w-3 h-3" />
-              Open Solana Faucet
-              <ExternalLink className="w-2.5 h-2.5" />
-            </button>
+            {!isProductionCluster && (
+              <button
+                onClick={handleOpenFaucet}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-coda-border-subtle rounded-lg text-xs font-mono text-coda-text-secondary hover:text-coda-text hover:border-coda-text-muted transition-colors"
+              >
+                <Globe className="w-3 h-3" />
+                Open Solana Faucet
+                <ExternalLink className="w-2.5 h-2.5" />
+              </button>
+            )}
             <button
               onClick={handleCheckBalance}
               disabled={checkingBalance}
@@ -1703,7 +1730,7 @@ function InfraWalletCard({
               {solBalance.toFixed(4)} SOL
             </div>
           </div>
-          {!isFunded && (
+          {!isFunded && !isProductionCluster && (
             <a
               href={`${import.meta.env.VITE_SOLANA_FAUCET_URL || 'https://faucet.solana.com'}/?address=${walletAddress}`}
               target="_blank"
@@ -1713,6 +1740,12 @@ function InfraWalletCard({
               <Wallet className="w-3 h-3" />
               Fund via Faucet
             </a>
+          )}
+          {!isFunded && isProductionCluster && (
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-[10px] font-mono text-amber-400">
+              <Wallet className="w-3 h-3" />
+              Fund via Solstice CLI
+            </span>
           )}
         </div>
         <div className="text-right">
