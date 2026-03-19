@@ -7,6 +7,9 @@
 // no Gemini calls, no side effects.
 // ============================================================
 
+const _networkLabel = (Deno.env.get("SOLANA_CLUSTER") || "devnet") === "mainnet-beta"
+  ? "Solstice Network" : "Solana Devnet";
+
 // ── Valid value sets (shared with validation in aria.tsx) ────
 
 export const VALID_JURISDICTIONS = [
@@ -77,7 +80,7 @@ NETWORK FEES:
 - Paid to Solstice Network Fees wallet (Rimark entity).
 
 ON-CHAIN DETAILS:
-- Solana Devnet with Token-2022 standard.
+- ${_networkLabel} with Token-2022 standard.
 - Token symbol format: {CODE}-USDTD (e.g. JPM-USDTD for deposit tokens).
 - LOCKUP-USTB is the shared lockup escrow token with PermanentDelegate extension.
 - ISO 20022 pacs.009 memo format on all on-chain operations (~400 bytes).

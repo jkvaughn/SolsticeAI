@@ -233,6 +233,10 @@ export function getNetworkModeContext(): string {
   return DEVNET_CONTEXT; // Devnet/default — inject demo-mode context
 }
 
+// Environment-aware network label for agent messages and prompts
+export const networkLabel = (Deno.env.get("SOLANA_CLUSTER") || "devnet") === "mainnet-beta"
+  ? "Solstice Network" : "Solana Devnet";
+
 app.use("*", logger(console.log));
 
 app.use(
@@ -2234,7 +2238,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
         },
         natural_language: shouldLock
           ? `Maestro \u2014 Settlement executed with deferred finality. Tx: ${transferResult.signature.slice(0, 16)}... locked until ${tx.lockup_until}. Amount: $${tx.amount_display?.toLocaleString()}. Fee: ${feeResult.feeSol} SOL`
-          : `Maestro \u2014 Settlement confirmed on Solana Devnet. Tx: ${transferResult.signature.slice(0, 16)}... Amount: $${tx.amount_display?.toLocaleString()} transferred successfully. Fee: ${feeResult.feeSol} SOL`,
+          : `Maestro \u2014 Settlement confirmed on ${networkLabel}. Tx: ${transferResult.signature.slice(0, 16)}... Amount: $${tx.amount_display?.toLocaleString()} transferred successfully. Fee: ${feeResult.feeSol} SOL`,
         processed: false,
         created_at: now,
       });
@@ -3529,13 +3533,13 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
           content: { agent_id: aid, action: finalStatus, tx_signature: primarySignature, amount: txExec.amount, amount_display: txExec.amount_display, locked_until: lockupUntilOrch, settlement_type: isLockupFlowOrch ? "lockup_escrow" : "PvP", phase: isLockupFlowOrch ? 1 : undefined },
           natural_language: isLockupFlowOrch
             ? `Maestro \u2014 Phase 1 escrow complete. $${txExec.amount_display?.toLocaleString()} LOCKUP-USTB minted to BNY escrow. Receiver has NO tokens. Lockup: ${effectiveLockupOrch}min until ${lockupUntilOrch}. Phase 2 (finality) triggers at expiry.`
-            : `Maestro \u2014 Settlement confirmed on Solana Devnet. Tx: ${primarySignature.slice(0, 16)}... Amount: $${txExec.amount_display?.toLocaleString()} transferred.`,
+            : `Maestro \u2014 Settlement confirmed on ${networkLabel}. Tx: ${primarySignature.slice(0, 16)}... Amount: $${txExec.amount_display?.toLocaleString()} transferred.`,
           processed: false, created_at: execNow,
         });
 
         const settlementConfirmMsg = isLockupFlowOrch
           ? `Phase 1 escrow complete. ${senderBank?.short_code} \u2192 ${receiverBank?.short_code} $${txExec.amount_display?.toLocaleString()}.\\n\\nSender burn sig: ${primarySignature}\\nLockup: ${effectiveLockupOrch}min\\nPhase 2 at: ${lockupUntilOrch}\\nReceiver gets tokens at Phase 2.`
-          : `Settlement confirmed. ${senderBank?.short_code} \u2192 ${receiverBank?.short_code} $${txExec.amount_display?.toLocaleString()} settled on Solana Devnet.\\n\\nSignature: ${primarySignature}\\nSlot: ${primarySlot}`;
+          : `Settlement confirmed. ${senderBank?.short_code} \u2192 ${receiverBank?.short_code} $${txExec.amount_display?.toLocaleString()} settled on ${networkLabel}.\\n\\nSignature: ${primarySignature}\\nSlot: ${primarySlot}`;
         await supabase.from("agent_conversations").insert({
           id: crypto.randomUUID(), bank_id: bankId,
           transaction_id: txId, role: "model",
