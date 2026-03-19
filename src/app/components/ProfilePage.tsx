@@ -192,7 +192,7 @@ export function ProfilePage() {
             </div>
 
             {/* Editable name */}
-            <div className="space-y-1">
+            <div className="space-y-2 flex flex-col items-center">
               {isEditingName ? (
                 <div className="flex items-center gap-2">
                   <input
