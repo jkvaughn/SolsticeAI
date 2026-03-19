@@ -1545,3 +1545,24 @@ Real auth identity via useCurrentUser, provider badge, account ID, recent escala
 | `ProfilePage.tsx` | Full upgrade with useCurrentUser + layout fixes |
 
 ---END_TASK---
+
+---
+
+## Task 134: PersonaSwitcher UX — Move to Profile Page (2026-03-19)
+
+---TASK_COMPLETE---
+Step: Task 134 — PersonaSwitcher UX: Move to Profile Page
+Timestamp: 2026-03-19T01:15:00Z
+Status: DONE
+
+### Summary:
+Moved PersonaSwitcher card picker (2x2 grid + bank scope) from sidebar to Profile page Preferences section. Applies instantly on click. Reverted sidebar addition that caused double-nav visual. Sidebar stays clean icon-only nav.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `ProfilePage.tsx` | Embedded PersonaSwitcher component in Preferences |
+| `dashboard-layout.tsx` | Reverted sidebar PersonaSwitcher |
+| `PersonaSwitcher.tsx` | Restored 2x2 card grid |
+
+---END_TASK---

@@ -1,9 +1,9 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-03-19T01:00:00Z
-> Phase: All infrastructure + product tasks complete through Task 133
+> Last updated: 2026-03-19T01:15:00Z
+> Phase: All infrastructure + product tasks complete through Task 134
 > Server version: v7 Task-125 (lockup-route-dedup-iso20022-fix)
-> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-133)
+> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-134)
 
 ---
 
@@ -561,5 +561,22 @@ Upgraded Profile page with real auth-backed identity via `useCurrentUser` hook. 
 | File | Change |
 |------|--------|
 | `ProfilePage.tsx` | Full upgrade: useCurrentUser, provider badge, account ID, recent escalations table, centered layout, Sign Out standalone |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 134 — PersonaSwitcher UX: Move to Profile Page
+Timestamp: 2026-03-19T01:15:00Z
+Status: DONE
+
+### Summary:
+Moved PersonaSwitcher card picker from sidebar to Profile page's Preferences section. The 2x2 persona card grid + bank scope dropdown now lives in the Profile page and applies instantly on click (no Apply button needed). Reverted sidebar PersonaSwitcher addition that was causing double-nav visual. Sidebar remains clean icon-only nav with persona-based dimming.
+
+### Modified files:
+| File | Change |
+|------|--------|
+| `ProfilePage.tsx` | Replaced dropdown selects with PersonaSwitcher component, removed Apply button |
+| `dashboard-layout.tsx` | Reverted PersonaSwitcher import/render (sidebar stays clean) |
+| `PersonaSwitcher.tsx` | Restored original 2x2 card grid (reverted compact dropdown version) |
 
 ---END_TASK---
