@@ -130,10 +130,10 @@ export function CadenzaEscalationsWidget() {
   const hasEscalations = summary && summary.activeEscalations.length > 0;
 
   return (
-    <div className={`dashboard-card p-5 ${hasEscalations ? 'border-purple-500/20' : ''}`}>
+    <div className={`dashboard-card p-5 ${hasEscalations ? 'border-coda-brand/20' : ''}`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-purple-400" />
+          <Shield className="w-4 h-4 text-coda-brand" />
           <h2 className="text-sm font-bold dashboard-text">Cadenza Escalations</h2>
         </div>
         <div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export function CadenzaEscalationsWidget() {
             <Loader2 className="w-3 h-3 text-coda-text-muted animate-spin" />
           )}
           {hasEscalations && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/15 text-purple-400 tabular-nums">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-coda-brand/15 text-coda-brand tabular-nums">
               <AlertOctagon className="w-2.5 h-2.5" />
               {summary!.activeEscalations.length} Active
             </span>
@@ -166,7 +166,7 @@ export function CadenzaEscalationsWidget() {
             </div>
             <div className="dashboard-card-nested p-3 text-center">
               <p className="text-[10px] text-coda-text-muted uppercase tracking-wider mb-1">Flags</p>
-              <p className="text-sm font-bold text-purple-400 tabular-nums">{summary.totalFlags}</p>
+              <p className="text-sm font-bold text-coda-brand tabular-nums">{summary.totalFlags}</p>
             </div>
             <div className="dashboard-card-nested p-3 text-center">
               <p className="text-[10px] text-coda-text-muted uppercase tracking-wider mb-1">Resolved 24h</p>
@@ -196,7 +196,7 @@ export function CadenzaEscalationsWidget() {
           {/* Link to full dashboard */}
           <Link
             to="/escalations"
-            className="flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium text-purple-400 hover:bg-purple-500/5 transition-colors group"
+            className="flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium text-coda-brand hover:bg-coda-brand/5 transition-colors group"
           >
             View Escalation Dashboard
             <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
@@ -246,7 +246,7 @@ function EscalationRow({ item }: { item: EscalationSummaryItem }) {
       className="flex items-center gap-3 p-2.5 rounded-lg dashboard-card-nested dashboard-hover transition-all group"
     >
       <div className="flex-shrink-0">
-        <AlertOctagon className="w-3.5 h-3.5 text-purple-400" />
+        <AlertOctagon className="w-3.5 h-3.5 text-coda-brand" />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -258,7 +258,7 @@ function EscalationRow({ item }: { item: EscalationSummaryItem }) {
         <div className="flex items-center gap-2 mt-0.5">
           <span className={`text-[10px] font-mono ${riskColor}`}>{item.risk_level?.toUpperCase()}</span>
           {item.flag_count > 0 && (
-            <span className="flex items-center gap-0.5 text-[10px] text-purple-400">
+            <span className="flex items-center gap-0.5 text-[10px] text-coda-brand">
               <Flag className="w-2 h-2" /> {item.flag_count}
             </span>
           )}
@@ -274,7 +274,7 @@ function EscalationRow({ item }: { item: EscalationSummaryItem }) {
         </p>
       </div>
 
-      <ArrowRight className="w-3 h-3 text-coda-text-muted group-hover:text-purple-400 transition-colors flex-shrink-0" />
+      <ArrowRight className="w-3 h-3 text-coda-text-muted group-hover:text-coda-brand transition-colors flex-shrink-0" />
     </Link>
   );
 }

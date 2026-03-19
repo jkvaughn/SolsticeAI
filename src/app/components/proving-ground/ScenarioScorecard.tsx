@@ -12,7 +12,7 @@ const AGENT_BADGE: Record<string, { bg: string; text: string; border: string }> 
   Fermata: { bg: 'bg-white/8', text: 'text-coda-text-secondary', border: 'border-white/10' },
   Maestro: { bg: 'bg-white/8', text: 'text-coda-text-secondary', border: 'border-white/10' },
   Canto:   { bg: 'bg-white/8', text: 'text-coda-text-secondary', border: 'border-white/10' },
-  Cadenza: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20' },
+  Cadenza: { bg: 'bg-coda-brand/10', text: 'text-coda-brand', border: 'border-coda-brand/20' },
 };
 
 const RESULT_BADGE: Record<string, { icon: React.ElementType; style: string; label: string }> = {

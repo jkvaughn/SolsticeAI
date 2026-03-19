@@ -21,7 +21,7 @@ const AGENTS: Record<AgentId, { glyph: string; name: string; role: string; color
 
 const BANK_COLORS: Record<string, string> = {
   JPM: 'text-blue-400', BOA: 'text-red-400', WFC: 'text-amber-400',
-  GS: 'text-violet-400', MS: 'text-emerald-400', CITI: 'text-cyan-400',
+  GS: 'text-coda-brand', MS: 'text-emerald-400', CITI: 'text-cyan-400',
   FNBT: 'text-orange-400',
 };
 
@@ -36,7 +36,7 @@ const VERB_COLORS: Record<string, { text: string; bg: string }> = {
   settled:     { text: 'text-emerald-400', bg: 'bg-emerald-500/15' },
   confirmed:   { text: 'text-emerald-400', bg: 'bg-emerald-500/15' },
   checking:    { text: 'text-amber-400',   bg: 'bg-amber-500/15' },
-  verified:    { text: 'text-violet-400',  bg: 'bg-violet-500/15' },
+  verified:    { text: 'text-coda-brand',  bg: 'bg-coda-brand/15' },
   evaluated:   { text: 'text-blue-300',    bg: 'bg-blue-500/10' },
   initiating:  { text: 'text-cyan-400',    bg: 'bg-cyan-500/15' },
   assessing:   { text: 'text-amber-400',   bg: 'bg-amber-500/15' },

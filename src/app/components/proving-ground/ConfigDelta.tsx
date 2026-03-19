@@ -62,7 +62,7 @@ const AGENT_COLORS: Record<string, string> = {
   Concord:  'text-coda-text-secondary',
   Fermata:  'text-coda-text-secondary',
   Treasury: 'text-coda-text-secondary',
-  Cadenza:  'text-purple-400',
+  Cadenza:  'text-coda-brand',
 };
 
 // ── Types ───────────────────────────────────────────────────
@@ -181,7 +181,7 @@ export function ConfigDelta({ bankIdA, bankIdB, bankNameA, bankNameB, diffs: ext
         <p className="text-[10px] font-mono uppercase text-coda-text-muted tracking-wider mb-2 flex items-center gap-1.5">
           <Sliders size={10} />
           Configuration Delta ({filteredDiffs.length} difference{filteredDiffs.length !== 1 ? 's' : ''})
-          {filterAgents && <span className="text-purple-400/60 ml-1">({filterAgents.join(', ')})</span>}
+          {filterAgents && <span className="text-coda-brand/60 ml-1">({filterAgents.join(', ')})</span>}
         </p>
       )}
       <table className="w-full text-xs">

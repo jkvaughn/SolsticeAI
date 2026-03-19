@@ -94,7 +94,7 @@ const SEVERITY_STYLES: Record<string, { bg: string; text: string; border: string
   info:     { bg: 'bg-blue-500/10',   text: 'text-blue-400',   border: 'border-blue-500/20' },
   warn:     { bg: 'bg-amber-500/10',  text: 'text-amber-400',  border: 'border-amber-500/20' },
   critical: { bg: 'bg-red-500/10',    text: 'text-red-400',    border: 'border-red-500/20' },
-  escalate: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20' },
+  escalate: { bg: 'bg-coda-brand/10', text: 'text-coda-brand', border: 'border-coda-brand/20' },
 };
 
 // ============================================================
@@ -335,7 +335,7 @@ function EscalationCard({
             {/* Flags count */}
             <div>
               <p className="text-[10px] uppercase tracking-wider text-coda-text-muted mb-0.5">Cadenza Flags</p>
-              <div className="flex items-center gap-1.5 text-sm text-purple-400">
+              <div className="flex items-center gap-1.5 text-sm text-coda-brand">
                 <Flag size={13} />
                 <span className="font-mono">{item.flag_count}</span>
               </div>
@@ -420,7 +420,7 @@ function EscalationCard({
             ) : (
               <ChevronRight size={13} />
             )}
-            <Brain size={13} className="text-purple-400" />
+            <Brain size={13} className="text-coda-brand" />
             <span className="font-medium">
               {briefingLoading ? 'Generating AI Briefing...' : briefing ? 'AI Briefing' : 'View Briefing'}
             </span>
@@ -442,7 +442,7 @@ function EscalationCard({
           {briefingExpanded && briefing && (
             <div className="pb-4 space-y-3">
               {/* Summary */}
-              <div className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/15">
+              <div className="p-3 rounded-lg bg-coda-brand/5 border border-coda-brand/15">
                 <p className="text-xs text-coda-text-secondary leading-relaxed">{briefing.summary}</p>
               </div>
 
@@ -558,7 +558,7 @@ function EscalationCard({
 
                       {/* Typology + Action badges */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-purple-500/15 text-purple-400 border border-purple-500/20">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-coda-brand/15 text-coda-brand border border-coda-brand/20">
                           {sarDraft.typology.replace(/_/g, ' ')}
                         </span>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase border ${
@@ -808,7 +808,7 @@ export function EscalationDashboard() {
         subtitle="Human-in-the-loop review for escalated lockup transactions"
       >
         {escalations.length > 0 && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/15 text-purple-400 text-sm font-bold tabular-nums">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-coda-brand/15 text-coda-brand text-sm font-bold tabular-nums">
             <AlertOctagon size={14} />
             {escalations.length} Active
           </span>
@@ -861,7 +861,7 @@ export function EscalationDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2 mt-2 px-4 py-2 rounded-lg bg-coda-surface-alt">
-              <InfinityIcon size={14} className="text-purple-400" />
+              <InfinityIcon size={14} className="text-coda-brand" />
               <p className="text-xs text-coda-text-muted">
                 Escalated transactions will appear here for human review
               </p>

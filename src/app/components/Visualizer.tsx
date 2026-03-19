@@ -396,7 +396,7 @@ export function Visualizer() {
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
-                <filter id="purple-glow">
+                <filter id="coda-brand-glow">
                   <feGaussianBlur stdDeviation="3" result="coloredBlur" />
                   <feMerge>
                     <feMergeNode in="coloredBlur" />
@@ -642,7 +642,7 @@ export function Visualizer() {
                       x1={bnyNode.x} y1={bnyNode.y} x2={to.x} y2={to.y}
                       stroke="#a855f7" strokeWidth="2" strokeDasharray="6 18"
                       className="lockup-flow"
-                      filter="url(#purple-glow)"
+                      filter="url(#coda-brand-glow)"
                       markerEnd="url(#arrow-purple)"
                     />
 
@@ -929,7 +929,7 @@ export function Visualizer() {
                 : null;
 
               const lockupColor = hasLockup
-                ? tx.lockup_status === 'cadenza_escalated' ? 'bg-purple-500/20 text-purple-400'
+                ? tx.lockup_status === 'cadenza_escalated' ? 'bg-coda-brand/20 text-coda-brand'
                 : tx.lockup_status === 'cadenza_flagged' ? 'bg-amber-500/20 text-amber-400'
                 : tx.lockup_status === 'reversed' ? 'bg-red-500/20 text-red-400'
                 : tx.lockup_status === 'hard_finality' ? 'bg-emerald-500/20 text-emerald-400'

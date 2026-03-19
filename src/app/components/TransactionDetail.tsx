@@ -404,7 +404,7 @@ function BankProfileCard({ bank, wallet, role }: { bank: any; wallet: WalletType
     <div className="liquid-glass-subtle squircle-sm p-5">
       <div className="flex items-center gap-3 mb-4">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[13px] font-bold font-mono ${
-          role === 'Sender' ? 'bg-blue-500/10 text-blue-500' : 'bg-violet-500/10 text-violet-500'
+          role === 'Sender' ? 'bg-blue-500/10 text-blue-500' : 'bg-coda-brand/10 text-coda-brand'
         }`}>
           {(bank?.short_code || '??').slice(0, 2)}
         </div>
@@ -960,7 +960,7 @@ export function TransactionDetail() {
               <div className="text-[15px] font-medium text-coda-text text-right">{receiverBank?.name || receiverCode}</div>
               <div className="text-xs text-coda-text-muted font-mono text-right">{receiverCode}{receiverBank?.jurisdiction ? ` \u00B7 ${receiverBank.jurisdiction}` : ''}</div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center text-sm font-bold font-mono text-violet-500">{receiverCode.slice(0, 2)}</div>
+            <div className="w-10 h-10 rounded-lg bg-coda-brand/10 flex items-center justify-center text-sm font-bold font-mono text-coda-brand">{receiverCode.slice(0, 2)}</div>
           </div>
         </div>
 
@@ -1007,7 +1007,7 @@ export function TransactionDetail() {
             <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-4 flex items-center gap-2">
               <Activity className="w-5 h-5" />
               Treasury Cycle Origin
-              <span className="ml-auto px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-500/15 text-violet-400 border border-violet-500/20">
+              <span className="ml-auto px-2.5 py-1 rounded-full text-xs font-semibold bg-coda-brand/15 text-coda-brand border border-coda-brand/20">
                 Cycle #{cycle.cycle_number}
               </span>
             </h3>
@@ -1417,7 +1417,7 @@ export function TransactionDetail() {
                   <div key={m.id} className="flex items-start gap-3 p-3 rounded-lg bg-coda-surface-hover/10">
                     <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 mt-0.5 ${
                       m.mandate_type === 'liquidity_rebalance' ? 'bg-blue-500/15 text-blue-400' :
-                      m.mandate_type === 'regulatory_payment' ? 'bg-violet-500/15 text-violet-400' :
+                      m.mandate_type === 'regulatory_payment' ? 'bg-coda-brand/15 text-coda-brand' :
                       'bg-emerald-500/15 text-emerald-400'
                     }`}>
                       <FileText className="w-3.5 h-3.5" />
@@ -1502,7 +1502,7 @@ export function TransactionDetail() {
                 Three-Token Lockup Flow
                 <span className={`ml-auto px-2.5 py-1 rounded-full text-xs font-semibold transition-all duration-500 ${
                   effectiveLockupStatus === 'active' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 dark:border-amber-500/20' :
-                  effectiveLockupStatus === 'escalated' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/25 dark:border-purple-500/20' :
+                  effectiveLockupStatus === 'escalated' ? 'bg-coda-brand/15 text-coda-brand border border-coda-brand/25 dark:border-coda-brand/20' :
                   effectiveLockupStatus === 'settled' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 dark:border-emerald-500/20' :
                   effectiveLockupStatus === 'reversed' ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/25 dark:border-red-500/20' :
                   'bg-coda-surface-hover/30 text-coda-text-muted border border-coda-border/20'
@@ -1540,10 +1540,10 @@ export function TransactionDetail() {
                     </div>
                   )}
                   {!lockup.lockup_end && (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/[0.08] border border-purple-500/25 dark:border-purple-500/15">
-                      <span className="text-purple-500 dark:text-purple-400">Effective:</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-coda-brand/[0.08] border border-coda-brand/25 border-coda-brand/15">
+                      <span className="text-coda-brand">Effective:</span>
                       <span className="text-coda-text-secondary font-semibold">Indefinite</span>
-                      <span className="text-[10px] text-purple-400/70">(escalation eligible)</span>
+                      <span className="text-[10px] text-coda-brand/70">(escalation eligible)</span>
                     </div>
                   )}
                 </div>
@@ -1686,7 +1686,7 @@ export function TransactionDetail() {
                       ? 'bg-emerald-500/[0.06] border border-emerald-500/25 dark:bg-emerald-500/5 dark:border-emerald-500/20'
                       : isLockupReversed
                         ? 'bg-red-500/[0.06] border border-red-500/25 dark:bg-red-500/5 dark:border-red-500/20'
-                        : 'bg-violet-500/[0.06] border border-violet-500/25 dark:bg-violet-500/8 dark:border-violet-500/20'
+                        : 'bg-coda-brand/[0.06] border border-coda-brand/25 dark:bg-coda-brand/8 dark:border-coda-brand/20'
                   } ${justTransitioned === 'settled' && isLockupSettled ? 'animate-[fadeSlideIn_0.6s_ease-out] ring-1 ring-emerald-400/30' : ''}`}>
                     {isLockupFinalized && (
                       <div className="absolute top-2.5 right-2.5">
@@ -1698,15 +1698,15 @@ export function TransactionDetail() {
                     )}
                     <div className="flex items-center gap-2 mb-3">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        isLockupSettled ? 'bg-emerald-500/15' : isLockupReversed ? 'bg-red-500/15' : 'bg-violet-500/15'
+                        isLockupSettled ? 'bg-emerald-500/15' : isLockupReversed ? 'bg-red-500/15' : 'bg-coda-brand/15'
                       }`}>
                         <Landmark className={`w-4 h-4 ${
-                          isLockupSettled ? 'text-emerald-400' : isLockupReversed ? 'text-red-400' : 'text-violet-400'
+                          isLockupSettled ? 'text-emerald-400' : isLockupReversed ? 'text-red-400' : 'text-coda-brand'
                         }`} />
                       </div>
                       <div>
                         <div className={`text-[12px] font-semibold font-mono ${
-                          isLockupSettled ? 'text-emerald-400' : isLockupReversed ? 'text-red-400' : 'text-violet-400'
+                          isLockupSettled ? 'text-emerald-400' : isLockupReversed ? 'text-red-400' : 'text-coda-brand'
                         }`}>3. T-BILL TOKEN</div>
                         <div className="text-[11px] text-coda-text-muted">
                           {isLockupSettled ? `${receiverCode} received` : isLockupReversed ? 'Not minted' : `${receiverCode} holds`}
@@ -1717,7 +1717,7 @@ export function TransactionDetail() {
                       <div>
                         <span className="text-[10px] text-coda-text-muted block">Token</span>
                         <span className={`text-[13px] font-mono font-semibold ${
-                          isLockupSettled ? 'text-emerald-400' : isLockupReversed ? 'text-red-400 line-through opacity-60' : 'text-violet-400'
+                          isLockupSettled ? 'text-emerald-400' : isLockupReversed ? 'text-red-400 line-through opacity-60' : 'text-coda-brand'
                         }`}>{lockup.tb_token_symbol}</span>
                         {isLockupSettled && (
                           <span className="text-[10px] ml-1.5 text-emerald-400/70">(minted)</span>
@@ -1850,7 +1850,7 @@ export function TransactionDetail() {
                         </div>
                         <div className={`text-[12px] font-mono ${
                           isLockupFinalized ? (isLockupSettled ? 'text-emerald-400' : 'text-red-400')
-                          : isEscalated ? 'text-purple-400' : 'text-coda-text-muted'
+                          : isEscalated ? 'text-coda-brand' : 'text-coda-text-muted'
                         }`}>
                           {isLockupFinalized
                             ? (isLockupSettled ? 'lockup complete — settled' : 'lockup complete — reversed')
@@ -1912,7 +1912,7 @@ export function TransactionDetail() {
                 <p className="text-[13px] text-coda-text-muted mb-4 leading-relaxed">
                   This transaction is in a lockup hold. Use these controls to manage it independently of Cadenza's automated monitoring.
                   {isEscalated && (
-                    <span className="text-purple-400 ml-1">Note: This lockup is escalated — use the Escalation Resolution panel below for Cadenza-specific actions.</span>
+                    <span className="text-coda-brand ml-1">Note: This lockup is escalated — use the Escalation Resolution panel below for Cadenza-specific actions.</span>
                   )}
                 </p>
 
@@ -2079,7 +2079,7 @@ export function TransactionDetail() {
                     const severityConfig: Record<string, { color: string; bg: string; icon: typeof Shield }> = {
                       info: { color: 'text-blue-400', bg: 'bg-blue-500/15', icon: Eye },
                       warning: { color: 'text-amber-400', bg: 'bg-amber-500/15', icon: AlertTriangle },
-                      escalate: { color: 'text-purple-400', bg: 'bg-purple-500/15', icon: Flag },
+                      escalate: { color: 'text-coda-brand', bg: 'bg-coda-brand/15', icon: Flag },
                       auto_reverse: { color: 'text-red-400', bg: 'bg-red-500/15', icon: RotateCcw },
                     };
                     const sc = severityConfig[flag.severity] || severityConfig.info;
@@ -2128,7 +2128,7 @@ export function TransactionDetail() {
                     <span className={`text-[15px] font-mono font-bold ${
                       lockup.status === 'settled' ? 'text-emerald-400' :
                       lockup.status === 'reversed' ? 'text-red-400' :
-                      lockup.status === 'escalated' ? 'text-purple-400' :
+                      lockup.status === 'escalated' ? 'text-coda-brand' :
                       'text-amber-400'
                     }`}>
                       {lockup.status === 'settled' ? 'CLEARED → SETTLED' :
@@ -2148,10 +2148,10 @@ export function TransactionDetail() {
 
               {/* Escalation: AI Briefing + Approve/Reverse */}
               {isEscalated && (
-                <div className="mt-5 pt-5 border-t border-purple-500/20">
+                <div className="mt-5 pt-5 border-t border-coda-brand/20">
                   <div className="flex items-center gap-2 mb-4">
-                    <Flag className="w-4 h-4 text-purple-400" />
-                    <span className="text-[12px] font-semibold text-purple-400 font-mono uppercase tracking-wider">
+                    <Flag className="w-4 h-4 text-coda-brand" />
+                    <span className="text-[12px] font-semibold text-coda-brand font-mono uppercase tracking-wider">
                       Human Review Required
                     </span>
                   </div>
@@ -2160,7 +2160,7 @@ export function TransactionDetail() {
                   {!briefing && !briefingLoading && (
                     <button
                       onClick={fetchBriefing}
-                      className="mb-4 px-4 py-2 rounded-lg text-[13px] font-mono font-medium bg-purple-500/15 text-purple-400 border border-purple-500/20 hover:bg-purple-500/25 transition-colors"
+                      className="mb-4 px-4 py-2 rounded-lg text-[13px] font-mono font-medium bg-coda-brand/15 text-coda-brand border border-coda-brand/20 hover:bg-coda-brand/25 transition-colors"
                     >
                       <Brain className="w-4 h-4 inline mr-2" />
                       Generate AI Briefing
@@ -2168,27 +2168,27 @@ export function TransactionDetail() {
                   )}
                   {briefingLoading && (
                     <div className="flex items-center gap-2 mb-4 text-[13px] text-coda-text-muted font-mono">
-                      <div className="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-coda-brand/30 border-t-coda-brand rounded-full animate-spin" />
                       Generating escalation briefing…
                     </div>
                   )}
                   {briefing && (
-                    <div className="mb-5 p-4 rounded-lg bg-purple-500/5 border border-purple-500/15 space-y-3">
+                    <div className="mb-5 p-4 rounded-lg bg-coda-brand/5 border border-coda-brand/15 space-y-3">
                       {briefing.executive_summary && (
                         <div>
-                          <div className="text-[11px] uppercase tracking-wider text-purple-400/60 font-mono mb-1">Executive Summary</div>
+                          <div className="text-[11px] uppercase tracking-wider text-coda-brand/60 font-mono mb-1">Executive Summary</div>
                           <p className="text-[14px] text-coda-text-secondary leading-relaxed">{briefing.executive_summary}</p>
                         </div>
                       )}
                       {briefing.risk_assessment && (
                         <div>
-                          <div className="text-[11px] uppercase tracking-wider text-purple-400/60 font-mono mb-1">Risk Assessment</div>
+                          <div className="text-[11px] uppercase tracking-wider text-coda-brand/60 font-mono mb-1">Risk Assessment</div>
                           <p className="text-[13px] text-coda-text-muted leading-relaxed">{briefing.risk_assessment}</p>
                         </div>
                       )}
                       {briefing.recommended_action && (
                         <div className="flex items-center gap-3">
-                          <span className="text-[11px] uppercase tracking-wider text-purple-400/60 font-mono">Recommendation:</span>
+                          <span className="text-[11px] uppercase tracking-wider text-coda-brand/60 font-mono">Recommendation:</span>
                           <span className={`text-[13px] font-mono font-bold ${
                             briefing.recommended_action === 'APPROVE_SETTLEMENT' ? 'text-emerald-400' :
                             briefing.recommended_action === 'REVERSE_TRANSACTION' ? 'text-red-400' :
@@ -2205,7 +2205,7 @@ export function TransactionDetail() {
                       )}
                       {briefing.reasoning && (
                         <div>
-                          <div className="text-[11px] uppercase tracking-wider text-purple-400/60 font-mono mb-1">Reasoning</div>
+                          <div className="text-[11px] uppercase tracking-wider text-coda-brand/60 font-mono mb-1">Reasoning</div>
                           <p className="text-[13px] text-coda-text-muted leading-relaxed">{briefing.reasoning}</p>
                         </div>
                       )}

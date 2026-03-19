@@ -12,7 +12,7 @@ const CATEGORY_META: Record<string, { label: string; icon: React.ElementType; co
   compliance:  { label: 'Compliance',  icon: Shield,    color: 'text-coda-text-muted' },
   risk:        { label: 'Risk',        icon: BarChart3, color: 'text-coda-text-muted' },
   operational: { label: 'Operational', icon: Zap,       color: 'text-coda-text-muted' },
-  dispute:     { label: 'Dispute',     icon: Scale,     color: 'text-purple-400' },
+  dispute:     { label: 'Dispute',     icon: Scale,     color: 'text-coda-brand' },
 };
 
 const AGENT_ORDER = ['Concord', 'Fermata', 'Maestro', 'Canto', 'Cadenza'] as const;
@@ -22,7 +22,7 @@ const AGENT_HEADER_COLORS: Record<string, string> = {
   Fermata:  'text-coda-text-secondary',
   Maestro:  'text-coda-text-secondary',
   Canto:    'text-coda-text-secondary',
-  Cadenza:  'text-purple-400',
+  Cadenza:  'text-coda-brand',
 };
 
 // ── Mini Resilience Ring ────────────────────────────────────

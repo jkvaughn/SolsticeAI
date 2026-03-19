@@ -33,8 +33,8 @@ const PERSONA_OPTIONS: {
     label: 'Compliance Officer',
     desc: 'Escalations, transactions, proving ground',
     icon: Shield,
-    color: 'text-violet-600 dark:text-violet-400',
-    dot: 'bg-violet-500',
+    color: 'text-coda-brand',
+    dot: 'bg-coda-brand',
     defaultRoute: '/escalations',
   },
   {
@@ -99,7 +99,7 @@ export function PersonaSwitcher() {
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                 active
                   ? opt.value
-                    ? `${opt.color.includes('violet') ? 'bg-violet-500/10' : opt.color.includes('emerald') ? 'bg-emerald-500/10' : opt.color.includes('blue') ? 'bg-blue-500/10' : 'bg-coda-brand/10'} ${opt.color}`
+                    ? `${opt.color.includes('coda-brand') ? 'bg-coda-brand/10' : opt.color.includes('emerald') ? 'bg-emerald-500/10' : opt.color.includes('blue') ? 'bg-blue-500/10' : 'bg-coda-brand/10'} ${opt.color}`
                     : 'bg-coda-brand/10 text-coda-brand'
                   : isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted'
               }`}>

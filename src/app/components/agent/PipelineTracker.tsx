@@ -449,7 +449,7 @@ function LockupCountdown({ lockupEnd }: { lockupEnd: string | null }) {
   const isInfinite = !lockupEnd;
 
   return (
-    <span className={`text-[10px] font-mono ${isInfinite ? 'text-purple-400' : 'text-amber-400'}`}>
+    <span className={`text-[10px] font-mono ${isInfinite ? 'text-coda-brand' : 'text-amber-400'}`}>
       {remaining}
     </span>
   );
@@ -465,7 +465,7 @@ function getLockupStatusIconColor(step: PipelineStep): string {
     case 'amber': return 'text-amber-400';
     case 'blue': return 'text-blue-400';
     case 'red': return 'text-red-400';
-    case 'purple': return 'text-purple-400';
+    case 'purple': return 'text-coda-brand';
     case 'green': return 'text-coda-brand';
     default: return '';
   }
@@ -487,7 +487,7 @@ function getLockupBadgeStyle(step: PipelineStep): string {
     case 'amber': return 'bg-amber-500/15 text-amber-400';
     case 'blue': return 'bg-blue-500/15 text-blue-400';
     case 'red': return 'bg-red-500/15 text-red-400';
-    case 'purple': return 'bg-purple-500/15 text-purple-400';
+    case 'purple': return 'bg-coda-brand/15 text-coda-brand';
     case 'green': return 'bg-emerald-500/15 text-emerald-400';
     default: return 'bg-coda-surface-hover text-coda-text-muted';
   }
@@ -581,7 +581,7 @@ export function PipelineTracker({
     : isLockupPipeline && activeStep?.lockupColor === 'amber'
       ? 'border-amber-800/40 bg-amber-950/10'
       : isLockupPipeline && activeStep?.lockupColor === 'purple'
-        ? 'border-purple-800/40 bg-purple-950/10'
+        ? 'border-coda-brand/40 bg-coda-brand/10'
         : isLockupPipeline && activeStep?.lockupColor === 'red'
           ? 'border-red-800/40 bg-red-950/10'
           : 'border-blue-800/40 bg-blue-950/10';
@@ -590,7 +590,7 @@ export function PipelineTracker({
   const dotClass = pipeline.isComplete
     ? (pipeline.steps.some(s => s.status === 'error') || isReversed) ? 'bg-red-400' : 'bg-coda-brand'
     : activeStep?.lockupColor === 'amber' ? 'bg-amber-400 animate-pulse'
-      : activeStep?.lockupColor === 'purple' ? 'bg-purple-400 animate-pulse'
+      : activeStep?.lockupColor === 'purple' ? 'bg-coda-brand animate-pulse'
         : activeStep?.lockupColor === 'red' ? 'bg-red-400 animate-pulse'
           : 'bg-blue-400 animate-pulse';
 
@@ -634,7 +634,7 @@ export function PipelineTracker({
           className={`h-full transition-all duration-500 ${
             (pipeline.steps.some(s => s.status === 'error') || isReversed) ? 'bg-red-500'
             : isLockupPipeline && activeStep?.lockupColor === 'amber' ? 'bg-amber-500'
-              : isLockupPipeline && activeStep?.lockupColor === 'purple' ? 'bg-purple-500'
+              : isLockupPipeline && activeStep?.lockupColor === 'purple' ? 'bg-coda-brand'
                 : 'bg-coda-brand'
           }`}
           style={{ width: `${progressPercent}%` }}
@@ -667,7 +667,7 @@ export function PipelineTracker({
             : step.status === 'error' ? 'bg-red-700/60'
               : step.status === 'active'
                 ? (step.lockupColor === 'amber' ? 'bg-amber-700/40'
-                  : step.lockupColor === 'purple' ? 'bg-purple-700/40'
+                  : step.lockupColor === 'purple' ? 'bg-coda-brand/40'
                     : step.lockupColor === 'red' ? 'bg-red-700/40'
                       : 'bg-blue-700/40')
                 : 'bg-coda-border/60';
@@ -806,7 +806,7 @@ export function PipelineTracker({
                   {/* Cadenza Monitor -- expanded lockup info */}
                   {step.id === 'cadenza_monitor' && step.status === 'active' && pipeline.lockupData && (
                     <div className="space-y-1.5">
-                      <div className={`flex items-center gap-1.5 text-[10px] ${!pipeline.lockupData.lockupEnd ? 'text-purple-400' : 'text-amber-400'}`}>
+                      <div className={`flex items-center gap-1.5 text-[10px] ${!pipeline.lockupData.lockupEnd ? 'text-coda-brand' : 'text-amber-400'}`}>
                         <Eye className="w-3 h-3 shrink-0" />
                         <span>
                           {!pipeline.lockupData.lockupEnd
@@ -916,7 +916,7 @@ export function PipelineTracker({
         ) : activeStep && (
           <span className={`text-[10px] animate-pulse ${
             activeStep.lockupColor === 'amber' ? 'text-amber-400'
-            : activeStep.lockupColor === 'purple' ? 'text-purple-400'
+            : activeStep.lockupColor === 'purple' ? 'text-coda-brand'
               : activeStep.lockupColor === 'red' ? 'text-red-400'
                 : 'text-blue-500 dark:text-blue-400'
           }`}>
@@ -946,7 +946,7 @@ export function MiniPipeline({ pipeline }: { pipeline: TransactionPipeline }) {
               ? (step.lockupColor === 'red' ? 'bg-red-400' : 'bg-coda-brand')
               : step.status === 'active'
                 ? (step.lockupColor === 'amber' ? 'bg-amber-400 animate-pulse'
-                  : step.lockupColor === 'purple' ? 'bg-purple-400 animate-pulse'
+                  : step.lockupColor === 'purple' ? 'bg-coda-brand animate-pulse'
                     : step.lockupColor === 'red' ? 'bg-red-400 animate-pulse'
                       : 'bg-blue-400 animate-pulse')
                 : step.status === 'error' ? 'bg-red-400'

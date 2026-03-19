@@ -194,11 +194,11 @@ export function CadenzaConfigComparison({
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-mono uppercase text-coda-text-muted tracking-wider flex items-center gap-1.5">
-          <Eye size={10} className="text-purple-400" />
+          <Eye size={10} className="text-coda-brand" />
           Cadenza Configuration Comparison
         </p>
         {diffCount > 0 ? (
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-coda-brand/10 text-coda-brand border border-coda-brand/20">
             {diffCount} difference{diffCount !== 1 ? 's' : ''}
           </span>
         ) : (
@@ -238,7 +238,7 @@ export function CadenzaConfigComparison({
         <tbody>
           {rows.map(row => (
             <React.Fragment key={row.key}>
-              <tr className={`border-t ${row.isDiff ? 'border-purple-500/20 bg-purple-500/[0.03]' : 'border-white/10'}`}>
+              <tr className={`border-t ${row.isDiff ? 'border-coda-brand/20 bg-coda-brand/[0.03]' : 'border-white/10'}`}>
                 <td className="py-1.5 px-2 text-coda-text">
                   {row.label}
                 </td>
@@ -256,8 +256,8 @@ export function CadenzaConfigComparison({
                 <tr className="border-0">
                   <td colSpan={3} className="px-2 pb-1.5 pt-0">
                     <div className="flex items-start gap-1.5 pl-2">
-                      <ArrowRight size={9} className="text-purple-400/60 mt-0.5 flex-shrink-0" />
-                      <span className="text-[10px] text-purple-400/80 leading-relaxed italic">
+                      <ArrowRight size={9} className="text-coda-brand/60 mt-0.5 flex-shrink-0" />
+                      <span className="text-[10px] text-coda-brand/80 leading-relaxed italic">
                         {row.impact}
                       </span>
                     </div>
@@ -271,8 +271,8 @@ export function CadenzaConfigComparison({
 
       {/* Summary when results diverge */}
       {hasDivergent && diffCount > 0 && (
-        <div className="p-2.5 rounded-lg bg-purple-500/5 border border-purple-500/15">
-          <p className="text-[10px] text-purple-400/90 leading-relaxed">
+        <div className="p-2.5 rounded-lg bg-coda-brand/5 border border-coda-brand/15">
+          <p className="text-[10px] text-coda-brand/90 leading-relaxed">
             <span className="font-semibold">Config impact:</span>{' '}
             {diffCount} Cadenza parameter{diffCount !== 1 ? 's differ' : ' differs'} between banks,
             which may explain the divergent {resultA.overall_result === 'PASS' ? (

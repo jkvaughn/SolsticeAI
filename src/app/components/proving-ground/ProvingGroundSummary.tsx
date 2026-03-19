@@ -10,7 +10,7 @@ const CATEGORY_META: Record<string, { label: string; icon: React.ElementType; co
   compliance:   { label: 'Compliance Gauntlet',  icon: Shield,    color: 'text-coda-text-muted' },
   risk:         { label: 'Risk Provocation',     icon: BarChart3, color: 'text-coda-text-muted' },
   operational:  { label: 'Operational Stress',   icon: Zap,       color: 'text-coda-text-muted' },
-  dispute:      { label: 'Dispute Resolution',   icon: Scale,     color: 'text-purple-400' },
+  dispute:      { label: 'Dispute Resolution',   icon: Scale,     color: 'text-coda-brand' },
 };
 
 // ── Agent colors ────────────────────────────────────────────
@@ -22,7 +22,7 @@ const AGENT_HEADER_COLORS: Record<string, string> = {
   Fermata:  'text-coda-text-secondary',
   Maestro:  'text-coda-text-secondary',
   Canto:    'text-coda-text-secondary',
-  Cadenza:  'text-purple-400',
+  Cadenza:  'text-coda-brand',
 };
 
 // ── Resilience Ring ─────────────────────────────────────────

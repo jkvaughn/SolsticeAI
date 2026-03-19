@@ -81,7 +81,7 @@ function SidebarLiveCard({
           {pipeline.senderCode}
         </span>
         <span className="text-coda-text-muted text-[8px]">→</span>
-        <span className="bg-violet-500/10 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 rounded text-[8px] font-medium font-mono">
+        <span className="bg-coda-brand/10 text-coda-brand px-1.5 py-0.5 rounded text-[8px] font-medium font-mono">
           {pipeline.receiverCode}
         </span>
       </div>
@@ -169,7 +169,7 @@ function SidebarCompletedRow({
               {pipeline.senderCode}
             </span>
             <span className="text-coda-text-muted text-[8px]">→</span>
-            <span className="bg-violet-500/10 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 rounded text-[8px] font-medium font-mono">
+            <span className="bg-coda-brand/10 text-coda-brand px-1.5 py-0.5 rounded text-[8px] font-medium font-mono">
               {pipeline.receiverCode}
             </span>
             <span className={`text-[8px] font-medium ml-auto px-1.5 py-0.5 rounded font-mono ${

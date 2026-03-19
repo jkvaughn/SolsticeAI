@@ -59,7 +59,7 @@ const STEP_CONFIG: Record<string, {
   activeBg: string;
 }> = {
   request:    { label: 'PAYMENT REQUEST',  icon: '↗', color: 'rgb(245,158,11)',   dotBg: 'bg-amber-500/10',   dotBorder: 'border-amber-500',   labelText: 'text-amber-600 dark:text-amber-400',   agentBg: 'bg-amber-500/5',   agentBorder: 'border-amber-500/10', activeBg: 'bg-amber-500/[0.04]' },
-  compliance: { label: 'COMPLIANCE',       icon: '◈', color: 'rgb(139,92,246)',   dotBg: 'bg-violet-500/10',  dotBorder: 'border-violet-500',  labelText: 'text-violet-600 dark:text-violet-400',  agentBg: 'bg-violet-500/5',  agentBorder: 'border-violet-500/10', activeBg: 'bg-violet-500/[0.04]' },
+  compliance: { label: 'COMPLIANCE',       icon: '◈', color: 'rgb(139,92,246)',   dotBg: 'bg-coda-brand/10',  dotBorder: 'border-coda-brand',  labelText: 'text-coda-brand',  agentBg: 'bg-coda-brand/5',  agentBorder: 'border-coda-brand/10', activeBg: 'bg-coda-brand/[0.04]' },
   risk:       { label: 'RISK ASSESSMENT',  icon: '△', color: 'rgb(236,72,153)',   dotBg: 'bg-pink-500/10',    dotBorder: 'border-pink-500',    labelText: 'text-pink-600 dark:text-pink-400',    agentBg: 'bg-pink-500/5',    agentBorder: 'border-pink-500/10', activeBg: 'bg-pink-500/[0.04]' },
   execution:  { label: 'EXECUTION',        icon: '⟿', color: 'rgb(34,211,238)',   dotBg: 'bg-cyan-500/10',    dotBorder: 'border-cyan-500',    labelText: 'text-cyan-600 dark:text-cyan-400',    agentBg: 'bg-cyan-500/5',    agentBorder: 'border-cyan-500/10', activeBg: 'bg-cyan-500/[0.04]' },
   accepted:   { label: 'ACCEPTED',         icon: '✓', color: 'rgb(96,165,250)',   dotBg: 'bg-blue-500/10',    dotBorder: 'border-blue-500',    labelText: 'text-blue-600 dark:text-blue-400',    agentBg: 'bg-blue-500/5',    agentBorder: 'border-blue-500/10', activeBg: 'bg-blue-500/[0.04]' },
@@ -112,7 +112,7 @@ function CompliancePanel({ data }: { data: NonNullable<VisualStep['complianceDat
   return (
     <div className="mt-2 space-y-2">
       {/* Score bar */}
-      <div className="flex items-center gap-3 px-2.5 py-2 rounded-md bg-violet-500/[0.03] dark:bg-violet-500/[0.05] border border-violet-500/10">
+      <div className="flex items-center gap-3 px-2.5 py-2 rounded-md bg-coda-brand/[0.03] border border-coda-brand/10">
         <div className="flex-1">
           <div className="flex justify-between mb-1">
             <span className="text-[9px] uppercase tracking-wider text-coda-text-muted font-mono">Risk Score</span>
@@ -152,7 +152,7 @@ function CompliancePanel({ data }: { data: NonNullable<VisualStep['complianceDat
 
       {/* Reasoning */}
       {data.reasoning && (
-        <div className="mt-1.5 px-2.5 py-2 text-[11px] text-coda-text-muted leading-relaxed border-l-2 border-violet-500/20 bg-violet-500/[0.02] rounded-r">
+        <div className="mt-1.5 px-2.5 py-2 text-[11px] text-coda-text-muted leading-relaxed border-l-2 border-coda-brand/20 bg-coda-brand/[0.02] rounded-r">
           {data.reasoning}
         </div>
       )}
@@ -375,7 +375,7 @@ export function TransactionRow({
             {pipeline.senderCode}
           </span>
           <span className="text-coda-text-muted text-[9px]">→</span>
-          <span className="bg-violet-500/10 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 rounded text-[9px] font-medium font-mono">
+          <span className="bg-coda-brand/10 text-coda-brand px-1.5 py-0.5 rounded text-[9px] font-medium font-mono">
             {pipeline.receiverCode}
           </span>
         </div>
@@ -488,7 +488,7 @@ export function LiveTransactionCard({
             {pipeline.senderCode}
           </span>
           <span className="text-coda-text-muted text-[9px]">→</span>
-          <span className="bg-violet-500/10 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded text-[10px] font-medium font-mono">
+          <span className="bg-coda-brand/10 text-coda-brand px-2 py-0.5 rounded text-[10px] font-medium font-mono">
             {pipeline.receiverCode}
           </span>
         </div>

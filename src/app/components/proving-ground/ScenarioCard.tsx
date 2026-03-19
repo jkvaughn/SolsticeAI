@@ -58,7 +58,7 @@ const AGENT_COLORS: Record<string, string> = {
   Fermata:  'bg-white/8 text-coda-text-secondary border-white/10',
   Maestro:  'bg-white/8 text-coda-text-secondary border-white/10',
   Canto:    'bg-white/8 text-coda-text-secondary border-white/10',
-  Cadenza:  'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  Cadenza:  'bg-coda-brand/10 text-coda-brand border-coda-brand/20',
 };
 
 // ── Severity badge ──────────────────────────────────────────
@@ -135,9 +135,9 @@ export function ScenarioCard({
         <div className="flex items-start gap-2.5 flex-1 min-w-0">
           {/* Category icon */}
           <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
-            scenario.category === 'dispute' ? 'bg-purple-500/10' : 'bg-white/5'
+            scenario.category === 'dispute' ? 'bg-coda-brand/10' : 'bg-white/5'
           }`}>
-            <CatIcon size={14} className={scenario.category === 'dispute' ? 'text-purple-400' : 'text-coda-text-muted'} />
+            <CatIcon size={14} className={scenario.category === 'dispute' ? 'text-coda-brand' : 'text-coda-text-muted'} />
           </div>
 
           <div className="flex-1 min-w-0">

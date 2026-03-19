@@ -42,7 +42,7 @@ const CADENZA_STATUS_CONFIG: Record<string, { label: string; icon: string; bg: s
   soft_settled:        { label: 'Monitoring',  icon: '🔵', bg: 'bg-blue-500/15',    color: 'text-blue-400' },
   cadenza_monitoring:  { label: 'Monitoring',  icon: '🔵', bg: 'bg-blue-500/15',    color: 'text-blue-400' },
   cadenza_flagged:     { label: 'Flagged',     icon: '🟡', bg: 'bg-amber-500/15',   color: 'text-amber-400' },
-  cadenza_escalated:   { label: 'Escalated',   icon: '🔴', bg: 'bg-purple-500/15',  color: 'text-purple-400' },
+  cadenza_escalated:   { label: 'Escalated',   icon: '🔴', bg: 'bg-coda-brand/15',  color: 'text-coda-brand' },
   cadenza_cleared:     { label: 'Cleared',     icon: '✅', bg: 'bg-emerald-500/15', color: 'text-emerald-400' },
   cadenza_reversed:    { label: 'Reversed',    icon: '↩️', bg: 'bg-red-500/15',     color: 'text-red-400' },
   hard_settled:        { label: 'Finalized',   icon: '✅', bg: 'bg-emerald-500/15', color: 'text-emerald-400' },
@@ -655,7 +655,7 @@ function TransactionRow({ tx, lockup, expanded, onToggle, actionState, onRetry, 
         {isActiveLockup && tx.amount_display != null && (
           <span
             className={`shrink-0 flex items-center gap-1 text-[10px] font-mono ${
-              isEscalated ? 'text-purple-400' : 'text-amber-400'
+              isEscalated ? 'text-coda-brand' : 'text-amber-400'
             }`}
             title="Soft settled — pending hard finality. BNY-USTB held in custodian."
           >
@@ -865,7 +865,7 @@ function TransactionRow({ tx, lockup, expanded, onToggle, actionState, onRetry, 
                   </div>
                   <div>
                     <span className="text-coda-text-muted block">Lockup End</span>
-                    <span className={`font-mono ${isEscalated ? 'text-purple-400' : lockup.lockup_end ? 'text-coda-text' : 'text-coda-text-muted'}`}>
+                    <span className={`font-mono ${isEscalated ? 'text-coda-brand' : lockup.lockup_end ? 'text-coda-text' : 'text-coda-text-muted'}`}>
                       {isEscalated ? '∞ (escalated)' : lockup.lockup_end
                         ? new Date(lockup.lockup_end).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                         : 'Pending'}

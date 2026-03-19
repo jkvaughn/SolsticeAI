@@ -35,12 +35,12 @@ export interface DeploymentStep {
 }
 
 export const TX_STATUS_CONFIG: Record<TxStatus, { label: string; color: string; bg: string }> = {
-  initiated: { label: 'Initiated', color: 'text-gray-400', bg: 'bg-gray-500/20' },
+  initiated: { label: 'Initiated', color: 'text-coda-text-muted', bg: 'bg-coda-text-muted/20' },
   compliance_check: { label: 'Compliance', color: 'text-blue-400', bg: 'bg-blue-500/20' },
   risk_scored: { label: 'Risk Scored', color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
   executing: { label: 'Executing', color: 'text-orange-400', bg: 'bg-orange-500/20' },
   settled: { label: 'Settled', color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
-  locked: { label: 'Locked', color: 'text-purple-400', bg: 'bg-purple-500/20' },
+  locked: { label: 'Locked', color: 'text-coda-brand', bg: 'bg-coda-brand/20' },
   rejected: { label: 'Rejected', color: 'text-red-400', bg: 'bg-red-500/20' },
   reversed: { label: 'Reversed', color: 'text-red-600', bg: 'bg-red-900/20' },
 };
@@ -59,9 +59,9 @@ export const MESSAGE_TYPE_CONFIG: Record<MessageType, { label: string; color: st
   compliance_response: { label: 'Compliance Response', color: 'text-blue-300' },
   risk_alert: { label: 'Risk Alert', color: 'text-yellow-400' },
   settlement_confirm: { label: 'Settlement Confirmed', color: 'text-emerald-300' },
-  status_update: { label: 'Status Update', color: 'text-violet-400' },
-  system: { label: 'System', color: 'text-gray-400' },
-  lockup_action: { label: 'Lockup Action', color: 'text-purple-400' },
+  status_update: { label: 'Status Update', color: 'text-coda-brand' },
+  system: { label: 'System', color: 'text-coda-text-muted' },
+  lockup_action: { label: 'Lockup Action', color: 'text-coda-brand' },
   cadenza_decision: { label: 'Cadenza Decision', color: 'text-red-400' },
 };
 

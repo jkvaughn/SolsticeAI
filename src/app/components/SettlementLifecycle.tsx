@@ -144,7 +144,7 @@ function buildSubTransactions(
       annotation: `Lockup tokens are minted to the BNY Mellon custodian's escrow wallet. These tokens represent the locked funds and accrue yield at ${((lockup.yield_rate_bps || 525) / 100).toFixed(2)}% APY. The receiver has NO tokens at this point \u2014 funds are held in escrow until finality.`,
       status: tx.solana_tx_signature ? 'complete' : 'pending',
       icon: Lock,
-      iconColor: 'text-purple-400',
+      iconColor: 'text-coda-brand',
       mint: lockup.yb_token_mint,
       amount: formatTokenAmount(lockup.yb_token_amount),
       from: 'Token Program (Phase 1)',
@@ -429,7 +429,7 @@ export function SettlementLifecycle({ tx, lockup, messages, senderCode, receiver
             tx.settlement_method === 'pvp_burn_mint' ? 'bg-teal-500/20 text-teal-400' :
             tx.settlement_method === 'lockup_hard_finality' ? 'bg-emerald-500/20 text-emerald-400' :
             tx.settlement_method?.includes('reversal') ? 'bg-red-500/20 text-red-400' :
-            tx.settlement_method?.includes('lockup') ? 'bg-purple-500/20 text-purple-400' :
+            tx.settlement_method?.includes('lockup') ? 'bg-coda-brand/20 text-coda-brand' :
             'bg-coda-text-muted/20 text-coda-text-muted'
           }`}>
             {tx.settlement_method === 'pvp_burn_mint' ? 'PvP Burn-Mint' :

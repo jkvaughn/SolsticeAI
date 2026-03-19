@@ -175,12 +175,12 @@ export function Dashboard() {
 
       {/* Compliance: Compliance Overview strip (Task 126) */}
       {persona === 'compliance' && (
-        <Link to="/escalations" className="block dashboard-card-subtle p-4 hover:border-violet-500/30 transition-all group">
+        <Link to="/escalations" className="block dashboard-card-subtle p-4 hover:border-coda-brand/30 transition-all group">
           <div className="flex items-center gap-2 mb-3">
-            <Shield size={14} className="text-violet-500 dark:text-violet-400" />
-            <span className="text-[11px] font-bold tracking-wide font-mono text-violet-600 dark:text-violet-400 uppercase">Compliance Overview</span>
+            <Shield size={14} className="text-coda-brand" />
+            <span className="text-[11px] font-bold tracking-wide font-mono text-coda-brand uppercase">Compliance Overview</span>
             <div className="flex-1" />
-            <ArrowRight size={13} className="text-violet-500/50 group-hover:text-violet-500 transition-colors" />
+            <ArrowRight size={13} className="text-coda-brand/50 group-hover:text-coda-brand transition-colors" />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center">

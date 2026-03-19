@@ -393,14 +393,14 @@ function TreasuryCycleCard({ parsed, ts, fullText }: {
 
   return (
     <div className="flex items-start gap-2.5 py-2 px-4">
-      <div className="w-6 h-6 rounded-lg bg-violet-500/8 border border-violet-500/20 flex items-center justify-center shrink-0 mt-0.5">
-        <span className="text-[8px] font-bold font-mono text-violet-500 dark:text-violet-400">TC</span>
+      <div className="w-6 h-6 rounded-lg bg-coda-brand/8 border border-coda-brand/20 flex items-center justify-center shrink-0 mt-0.5">
+        <span className="text-[8px] font-bold font-mono text-coda-brand">TC</span>
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1.5">
           <span className="text-[10px] font-semibold text-coda-text-secondary">Mandate Evaluation</span>
-          <span className="text-[7px] font-bold font-mono px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-500 dark:text-violet-400 uppercase tracking-wider">
+          <span className="text-[7px] font-bold font-mono px-1.5 py-0.5 rounded bg-coda-brand/10 text-coda-brand uppercase tracking-wider">
             Cycle #{parsed.cycleNumber}
           </span>
           <span className="text-[7px] font-bold font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 uppercase tracking-wider">
@@ -426,7 +426,7 @@ function TreasuryCycleCard({ parsed, ts, fullText }: {
           </div>
 
           {/* What this is — a short explainer */}
-          <div className="px-3 py-1.5 border-b border-coda-border-subtle/30 bg-violet-500/[0.02]">
+          <div className="px-3 py-1.5 border-b border-coda-border-subtle/30 bg-coda-brand/[0.02]">
             <span className="text-[9px] text-coda-text-muted italic">
               Autonomous check — evaluating standing mandates against current market conditions
             </span>

@@ -68,7 +68,7 @@ export function ActionGuide({
   const categoryConfig = {
     payment: { label: 'Initiate Settlement', color: 'text-coda-brand', bg: 'bg-coda-brand/10 border-coda-brand/30 hover:bg-coda-brand/20', icon: DollarSign },
     query: { label: 'Check Status', color: 'text-blue-500 dark:text-blue-400', bg: 'bg-blue-500/10 border-blue-800/30 hover:bg-blue-500/20', icon: Search },
-    info: { label: 'Network Info', color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-800/30 hover:bg-purple-500/20', icon: BarChart3 },
+    info: { label: 'Network Info', color: 'text-coda-brand', bg: 'bg-coda-brand/10 border-coda-brand/30 hover:bg-coda-brand/20', icon: BarChart3 },
   };
 
   return (

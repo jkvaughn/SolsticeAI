@@ -650,7 +650,7 @@ export function SetupPage() {
           ) : (
             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono font-medium ${
               networkMode === 'devnet'
-                ? 'bg-violet-500/15 text-violet-400 border border-violet-500/20'
+                ? 'bg-coda-brand/15 text-coda-brand border border-coda-brand/20'
                 : 'bg-black/[0.06] dark:bg-white/[0.08] text-coda-text-secondary border border-black/[0.08] dark:border-white/[0.10]'
             }`}>
               {networkMode === 'devnet' ? (
@@ -667,7 +667,7 @@ export function SetupPage() {
               {networkMode === 'devnet' ? (
                 <>
                   <p className="text-xs text-coda-text-secondary leading-relaxed">
-                    AI agents are aware this is a <span className="text-violet-400 font-medium">controlled demo environment</span> on
+                    AI agents are aware this is a <span className="text-coda-brand font-medium">controlled demo environment</span> on
                     Solana Devnet. Token-2022 settlements are treated as the intended infrastructure &mdash;
                     Devnet will <span className="text-coda-text font-medium">not</span> be flagged as an operational risk in risk assessments.
                   </p>
@@ -693,7 +693,7 @@ export function SetupPage() {
               disabled={networkModeSaving || networkModeLoading}
               className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
                 networkMode === 'devnet'
-                  ? 'bg-violet-600'
+                  ? 'bg-coda-brand'
                   : 'bg-neutral-800 dark:bg-neutral-300'
               }`}
               title={`Switch to ${networkMode === 'devnet' ? 'Production' : 'Devnet'} mode`}
@@ -709,7 +709,7 @@ export function SetupPage() {
             </button>
           </div>
           <div className="mt-2.5 flex items-center gap-4 text-[10px] font-mono text-coda-text-muted">
-            <span className={networkMode === 'devnet' ? 'text-violet-400/70' : ''}>Devnet</span>
+            <span className={networkMode === 'devnet' ? 'text-coda-brand/70' : ''}>Devnet</span>
             <span className="text-coda-text-muted">/</span>
             <span className={networkMode === 'production' ? 'text-coda-text-secondary' : ''}>Production</span>
           </div>
@@ -979,8 +979,8 @@ export function SetupPage() {
                   <Landmark className="w-5 h-5 text-amber-500" />
                 </div>
                 <div className="w-px h-6 bg-coda-border/20" />
-                <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                  <Coins className="w-5 h-5 text-violet-500" />
+                <div className="w-10 h-10 rounded-xl bg-coda-brand/10 border border-coda-brand/20 flex items-center justify-center">
+                  <Coins className="w-5 h-5 text-coda-brand" />
                 </div>
               </div>
               <h3 className="font-mono text-sm font-bold dashboard-text mb-1">
@@ -1039,8 +1039,8 @@ export function SetupPage() {
               {feesWallet && (
                 <InfraWalletCard
                   icon={Coins}
-                  iconColor="text-violet-500"
-                  iconBg="bg-violet-500/10 border-violet-500/20"
+                  iconColor="text-coda-brand"
+                  iconBg="bg-coda-brand/10 border-coda-brand/20"
                   label="Yield Collection"
                   name={feesWallet.name}
                   code={feesWallet.code}

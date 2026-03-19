@@ -185,13 +185,13 @@ function HighlightedText({ text }: { text: string }) {
 
     let cls = 'font-medium';
     if (/^\$/.test(matchText)) cls = 'text-emerald-400 font-medium';
-    else if (/^(JPM|CITI|HSBC|BOA|GS|MS|WF|DB|BARC|BNP|UBS|CS|RBC|TD|SMBC)$/i.test(matchText)) cls = 'px-1 rounded bg-violet-500/15 text-violet-400 text-[10px] font-medium';
+    else if (/^(JPM|CITI|HSBC|BOA|GS|MS|WF|DB|BARC|BNP|UBS|CS|RBC|TD|SMBC)$/i.test(matchText)) cls = 'px-1 rounded bg-coda-brand/15 text-coda-brand text-[10px] font-medium';
     else if (/^(PASSED|APPROVED|ACCEPTED|SETTLED|CONFIRMED|FINALIZED)$/i.test(matchText)) cls = 'text-emerald-400 font-medium';
     else if (/^(FAILED|REJECTED|DENIED|REVERSED)$/i.test(matchText)) cls = 'text-red-400 font-medium';
     else if (/^(JPMorgan|Citibank|Goldman|Morgan Stanley|Wells Fargo|Deutsche|Bank of America)/i.test(matchText)) cls = 'text-coda-text font-medium';
     else if (/Tier/i.test(matchText)) cls = 'text-blue-500 dark:text-blue-400';
     else if (/Token/i.test(matchText)) cls = 'text-blue-500 dark:text-blue-400 font-medium';
-    else if (/Solana/i.test(matchText)) cls = 'text-purple-400';
+    else if (/Solana/i.test(matchText)) cls = 'text-coda-brand';
 
     segments.push({ text: matchText, className: cls });
     lastIdx = matchStart + matchText.length;
@@ -249,7 +249,7 @@ function DataSummaryCard({ data, agentData }: { data: ExtractedData; agentData?:
           <div>
             <div className="text-[9px] text-coda-text-muted uppercase tracking-wider mb-0.5">Receiver</div>
             <div className="text-[13px] text-coda-text flex items-center gap-1">
-              <span className="px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400 text-[10px] font-medium">
+              <span className="px-1.5 py-0.5 rounded bg-coda-brand/15 text-coda-brand text-[10px] font-medium">
                 {String(agentData.params.receiver_bank_code || '—')}
               </span>
             </div>
@@ -359,7 +359,7 @@ function AgentMessage({ message, onQuickAction }: { message: ChatMessage; onQuic
     accept_payment: { label: 'Payment Accepted', color: 'text-coda-brand', bgColor: 'bg-coda-brand/15', icon: CheckCircle2 },
     reject_payment: { label: 'Payment Rejected', color: 'text-red-400', bgColor: 'bg-red-500/15', icon: XCircle },
     check_status: { label: 'Status Check', color: 'text-blue-500 dark:text-blue-400', bgColor: 'bg-blue-500/15', icon: Info },
-    provide_info: { label: 'Information', color: 'text-purple-400', bgColor: 'bg-purple-500/15', icon: Info },
+    provide_info: { label: 'Information', color: 'text-coda-brand', bgColor: 'bg-coda-brand/15', icon: Info },
     no_action: { label: 'Acknowledged', color: 'text-coda-text-secondary', bgColor: 'bg-coda-surface-hover', icon: CheckCircle2 },
   };
 
@@ -473,7 +473,7 @@ function AgentMessage({ message, onQuickAction }: { message: ChatMessage; onQuic
               </span>
             )}
             {extractedData.solanaRef && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-coda-brand/10 text-coda-brand">
                 {extractedData.solanaRef}
               </span>
             )}
@@ -512,14 +512,14 @@ const COUNTERPARTY_MSG_CONFIG: Record<string, { label: string; icon: React.Compo
   settlement_confirm: { label: 'Settled', icon: Link2, color: 'text-emerald-400', bgColor: 'bg-emerald-500/15' },
   compliance_result: { label: 'Compliance', icon: Shield, color: 'text-blue-500 dark:text-blue-400', bgColor: 'bg-blue-500/15' },
   risk_assessment: { label: 'Risk Scored', icon: Gauge, color: 'text-amber-400', bgColor: 'bg-amber-500/15' },
-  payment_request: { label: 'Request Sent', icon: Send, color: 'text-violet-400', bgColor: 'bg-violet-500/15' },
+  payment_request: { label: 'Request Sent', icon: Send, color: 'text-coda-brand', bgColor: 'bg-coda-brand/15' },
 };
 
 function CounterpartyMessage({ message }: { message: ChatMessage }) {
   const [expanded, setExpanded] = useState(false);
   const code = message.counterpartyCode || '???';
   const msgType = message.counterpartyMessageType || '';
-  const config = COUNTERPARTY_MSG_CONFIG[msgType] || { label: msgType.replace(/_/g, ' '), icon: ArrowDownLeft, color: 'text-violet-400', bgColor: 'bg-violet-500/15' };
+  const config = COUNTERPARTY_MSG_CONFIG[msgType] || { label: msgType.replace(/_/g, ' '), icon: ArrowDownLeft, color: 'text-coda-brand', bgColor: 'bg-coda-brand/15' };
   const IconComp = config.icon;
 
   const displayContent = message.content.replace(/^Maestro\s*[—\-]\s*/i, '').trim();
@@ -533,14 +533,14 @@ function CounterpartyMessage({ message }: { message: ChatMessage }) {
 
   return (
     <div className="flex gap-2 justify-start">
-      <div className="w-7 h-7 rounded-lg bg-violet-500/20 flex items-center justify-center shrink-0 mt-5">
-        <Bot className="w-3.5 h-3.5 text-violet-400" />
+      <div className="w-7 h-7 rounded-lg bg-coda-brand/20 flex items-center justify-center shrink-0 mt-5">
+        <Bot className="w-3.5 h-3.5 text-coda-brand" />
       </div>
 
       <div className="max-w-[85%] min-w-[240px]">
         <div className="flex items-center gap-1.5 mb-1">
-          <span className="px-1.5 py-0.5 bg-violet-500/20 text-violet-400 rounded text-[10px] font-medium">{code}</span>
-          <span className="text-[11px] font-medium text-violet-400">Maestro</span>
+          <span className="px-1.5 py-0.5 bg-coda-brand/20 text-coda-brand rounded text-[10px] font-medium">{code}</span>
+          <span className="text-[11px] font-medium text-coda-brand">Maestro</span>
           <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium ${config.color} ${config.bgColor}`}>
             <IconComp className="w-2.5 h-2.5" />
             {config.label}
@@ -550,9 +550,9 @@ function CounterpartyMessage({ message }: { message: ChatMessage }) {
           </span>
         </div>
 
-        <div className="rounded-xl rounded-tl-sm border border-violet-500/20 bg-violet-500/[0.04] overflow-hidden">
+        <div className="rounded-xl rounded-tl-sm border border-coda-brand/20 bg-coda-brand/[0.04] overflow-hidden">
           {(extractedData.amounts.length > 0 || extractedData.compliance.status) && (
-            <div className="px-3 py-1.5 border-b border-violet-500/10 flex items-center gap-1.5 flex-wrap">
+            <div className="px-3 py-1.5 border-b border-coda-brand/10 flex items-center gap-1.5 flex-wrap">
               {extractedData.amounts.slice(0, 1).map((amt, i) => (
                 <span key={i} className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-medium">{amt.value}</span>
               ))}
@@ -569,13 +569,13 @@ function CounterpartyMessage({ message }: { message: ChatMessage }) {
                 }`}>Risk: {extractedData.risk.level}</span>
               )}
               {extractedData.solanaRef && (
-                <span className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 text-[10px]">{extractedData.solanaRef}</span>
+                <span className="px-1.5 py-0.5 rounded bg-coda-brand/10 text-coda-brand text-[10px]">{extractedData.solanaRef}</span>
               )}
             </div>
           )}
 
           <div className="flex">
-            <div className="w-0.5 bg-violet-500/40 shrink-0" />
+            <div className="w-0.5 bg-coda-brand/40 shrink-0" />
             <div className="flex-1 px-3 py-2">
               <p className="text-[12px] text-coda-text-secondary leading-relaxed">
                 <HighlightedText text={expanded || !hasMore ? displayContent : summary} />
@@ -583,7 +583,7 @@ function CounterpartyMessage({ message }: { message: ChatMessage }) {
               {hasMore && (
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="mt-1 text-[10px] text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-0.5"
+                  className="mt-1 text-[10px] text-coda-brand hover:text-coda-brand transition-colors flex items-center gap-0.5"
                 >
                   {expanded ? (
                     <><ChevronDown className="w-3 h-3 rotate-180" /> Show less</>
@@ -596,10 +596,10 @@ function CounterpartyMessage({ message }: { message: ChatMessage }) {
           </div>
 
           {message.transactionId && (
-            <div className="px-3 py-1 border-t border-violet-500/10 flex items-center gap-2">
-              <Hash className="w-2.5 h-2.5 text-violet-400/50" />
+            <div className="px-3 py-1 border-t border-coda-brand/10 flex items-center gap-2">
+              <Hash className="w-2.5 h-2.5 text-coda-brand/50" />
               <span className="text-[9px] text-coda-text-muted">{message.transactionId.slice(0, 8)}...</span>
-              <span className="text-[9px] text-violet-400/40 ml-auto">counterparty</span>
+              <span className="text-[9px] text-coda-brand/40 ml-auto">counterparty</span>
             </div>
           )}
         </div>
@@ -945,10 +945,10 @@ function ContentSection({ section, onQuickAction }: { section: ContentPart; onQu
 
     case 'quote':
       return (
-        <div className="my-3 rounded-lg bg-violet-500/10 border-l-[3px] border-violet-400 overflow-hidden">
-          <div className="px-3 py-1.5 flex items-center gap-1.5 bg-violet-500/10 border-b border-violet-500/20">
-            <MessageSquareQuote className="w-3 h-3 text-violet-400" />
-            <span className="text-[10px] font-medium text-violet-400 uppercase tracking-wider">
+        <div className="my-3 rounded-lg bg-coda-brand/10 border-l-[3px] border-coda-brand overflow-hidden">
+          <div className="px-3 py-1.5 flex items-center gap-1.5 bg-coda-brand/10 border-b border-coda-brand/20">
+            <MessageSquareQuote className="w-3 h-3 text-coda-brand" />
+            <span className="text-[10px] font-medium text-coda-brand uppercase tracking-wider">
               {section.label || 'Original Request'}
             </span>
           </div>
@@ -978,10 +978,10 @@ function ContentSection({ section, onQuickAction }: { section: ContentPart; onQu
           Icon: AlertTriangle,
         },
         decision: {
-          bg: 'bg-violet-500/10 border-2 border-violet-500/40',
-          headerBg: 'bg-violet-500/10',
-          iconColor: 'text-violet-400',
-          labelColor: 'text-violet-400',
+          bg: 'bg-coda-brand/10 border-2 border-coda-brand/40',
+          headerBg: 'bg-coda-brand/10',
+          iconColor: 'text-coda-brand',
+          labelColor: 'text-coda-brand',
           Icon: HelpCircle,
         },
         quote: {

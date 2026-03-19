@@ -56,7 +56,7 @@ const EVENT_BADGE: Record<string, { bg: string; text: string }> = {
   deposit_surge:    { bg: 'bg-amber-500/10',   text: 'text-amber-600 dark:text-amber-400' },
   liquidity_squeeze:{ bg: 'bg-red-500/10',     text: 'text-red-600 dark:text-red-400' },
   repo_maturity:    { bg: 'bg-blue-500/10',    text: 'text-blue-600 dark:text-blue-400' },
-  corridor_window:  { bg: 'bg-violet-500/10',  text: 'text-violet-600 dark:text-violet-400' },
+  corridor_window:  { bg: 'bg-coda-brand/10',  text: 'text-coda-brand' },
 };
 
 const STATUS_BADGE: Record<string, { bg: string; text: string; pulse?: boolean }> = {
@@ -72,7 +72,7 @@ const TX_STATUS_MAP: Record<string, { bg: string; text: string }> = {
   risk_scored:      { bg: 'bg-yellow-500/15',  text: 'text-yellow-400' },
   executing:        { bg: 'bg-orange-500/15',  text: 'text-orange-400' },
   settled:          { bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
-  locked:           { bg: 'bg-purple-500/15',  text: 'text-purple-400' },
+  locked:           { bg: 'bg-coda-brand/15',  text: 'text-coda-brand' },
   rejected:         { bg: 'bg-red-500/15',     text: 'text-red-400' },
   reversed:         { bg: 'bg-red-900/15',     text: 'text-red-600' },
 };

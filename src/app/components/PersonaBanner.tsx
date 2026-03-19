@@ -18,9 +18,9 @@ const PERSONA_CONFIG: Record<Exclude<PersonaType, null>, {
   compliance: {
     label: 'COMPLIANCE VIEW',
     icon: Shield,
-    bg: 'bg-violet-500/10',
-    border: 'border-violet-500/25',
-    text: 'text-violet-600 dark:text-violet-400',
+    bg: 'bg-coda-brand/10',
+    border: 'border-coda-brand/25',
+    text: 'text-coda-brand',
   },
   treasury: {
     label: 'TREASURY VIEW',

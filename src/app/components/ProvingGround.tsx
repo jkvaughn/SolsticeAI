@@ -644,9 +644,9 @@ export function ProvingGround() {
                       className="w-full flex items-center gap-2.5 p-3 cursor-pointer hover:bg-white/3 transition-colors"
                     >
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                        cat.key === 'dispute' ? 'bg-purple-500/10' : 'bg-white/5'
+                        cat.key === 'dispute' ? 'bg-coda-brand/10' : 'bg-white/5'
                       }`}>
-                        <CatIcon size={14} className={cat.key === 'dispute' ? 'text-purple-400' : 'text-coda-text-muted'} />
+                        <CatIcon size={14} className={cat.key === 'dispute' ? 'text-coda-brand' : 'text-coda-text-muted'} />
                       </div>
                       <div className="flex-1 text-left">
                         <span className="text-sm font-medium text-coda-text">{cat.label}</span>

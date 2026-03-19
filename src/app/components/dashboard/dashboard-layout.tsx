@@ -1,7 +1,7 @@
 import * as React from "react";
 import {
   LayoutDashboard, Network, Radio,
-  Activity, Landmark, Settings, Sliders, FlaskConical, Shield, Globe
+  Activity, Landmark, Settings, Sliders, FlaskConical, Shield, Globe, CircleUser
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router";
 import {
@@ -321,11 +321,7 @@ export function DashboardLayout({
                           : 'hover:bg-black/[0.04]'
                       } ${sidebarExpanded ? '' : 'justify-center'}`}
                     >
-                      <div className="w-8 h-8 rounded-lg bg-coda-brand/12 border border-coda-brand/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[11px] font-bold text-coda-brand uppercase">
-                          {userInitial}
-                        </span>
-                      </div>
+                      <CircleUser size={20} className="text-coda-text-muted flex-shrink-0" />
                       {sidebarExpanded && (
                         <div className="flex-1 min-w-0 text-left">
                           <p className={`text-[12px] font-medium truncate text-coda-text`}>

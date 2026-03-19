@@ -1208,7 +1208,7 @@ export function AgentTerminal() {
               disabled={sending || !input.trim()}
               className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
                 !sending && input.trim()
-                  ? 'bg-gradient-to-r from-blue-500 to-violet-500 text-white hover:from-blue-600 hover:to-violet-600'
+                  ? 'bg-gradient-to-r from-blue-500 to-coda-brand text-white hover:from-blue-600 hover:to-coda-brand'
                   : 'bg-coda-surface-hover/30 text-coda-text-muted cursor-default'
               }`}
             >
