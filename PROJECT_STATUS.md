@@ -1,9 +1,9 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-03-19T00:30:00Z
-> Phase: Phase C complete + Product Tasks 129–131 + Color Cleanup
+> Last updated: 2026-03-19T01:00:00Z
+> Phase: All infrastructure + product tasks complete through Task 133
 > Server version: v7 Task-125 (lockup-route-dedup-iso20022-fix)
-> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-139)
+> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-133)
 
 ---
 
@@ -517,5 +517,49 @@ Three-pass color audit and cleanup: (1) Replaced hardcoded hex backgrounds and g
 | Hardcoded bg-[#hex] | 5 | 0 |
 | text-[#1d1d1f] in UI | 13+ | 0 |
 | purple-*/violet-* | 145 | 0 |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 132 — Admin-Only Gate: God Mode + Danger Zone
+Timestamp: 2026-03-19T00:45:00Z
+Status: DONE
+
+### Summary:
+Admin gate system restricting god mode, Setup, Proving Ground, and Danger Zone to `VITE_ADMIN_EMAIL` user. Non-admin users forced into persona + bank selection on first login via onboarding modal. Feature gates on 8 components. ADMIN badge on Profile page.
+
+### New files:
+| File | Description |
+|------|-------------|
+| `src/app/hooks/useIsAdmin.ts` | Checks userEmail against VITE_ADMIN_EMAIL |
+| `src/app/hooks/useCurrentUser.ts` | Auth-agnostic identity hook (Azure + Supabase) |
+
+### Modified files:
+| File | Change |
+|------|--------|
+| `AuthContext.tsx` | Added `userEmail` to context value |
+| `PersonaSwitcher.tsx` | "All Views" only for admin |
+| `PersonaBanner.tsx` | "Exit View" only for admin |
+| `dashboard-layout.tsx` | Setup/ProvingGround nav hidden from non-admin |
+| `SettingsPage.tsx` | Danger Zone hidden from non-admin |
+| `NetworkCommand.tsx` | Redirect non-admin to / |
+| `SetupPage.tsx` | Redirect non-admin to / |
+| `ProvingGround.tsx` | Redirect non-admin to / |
+| `Layout.tsx` | OnboardingModal for non-admin first login |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 133 — Profile Page: Enterprise SaaS Upgrade
+Timestamp: 2026-03-19T01:00:00Z
+Status: DONE
+
+### Summary:
+Upgraded Profile page with real auth-backed identity via `useCurrentUser` hook. Shows real name, email, auth provider badge, account ID (copyable), ADMIN badge. Recent escalations mini-table with real Supabase data. Sign Out moved to standalone section. Name properly centered with absolute-positioned pencil edit icon.
+
+### Modified files:
+| File | Change |
+|------|--------|
+| `ProfilePage.tsx` | Full upgrade: useCurrentUser, provider badge, account ID, recent escalations table, centered layout, Sign Out standalone |
 
 ---END_TASK---

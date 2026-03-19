@@ -1507,3 +1507,41 @@ Three-pass audit: (1) gray-*/hex backgrounds → CODA tokens (27 files), (2) Sha
 56 files total across all three passes (some files touched in multiple passes)
 
 ---END_TASK---
+
+---
+
+## Task 132: Admin-Only Gate (2026-03-19)
+
+---TASK_COMPLETE---
+Step: Task 132 — Admin-Only Gate: God Mode + Danger Zone
+Timestamp: 2026-03-19T00:45:00Z
+Status: DONE
+
+### Summary:
+Admin gate via `useIsAdmin` hook + `VITE_ADMIN_EMAIL`. Feature gates on 8 components. Non-admin onboarding modal. ADMIN badge on Profile page.
+
+### Files created:
+| `src/app/hooks/useIsAdmin.ts` | Admin check hook |
+| `src/app/hooks/useCurrentUser.ts` | Auth-agnostic identity |
+
+### Files modified:
+AuthContext, PersonaSwitcher, PersonaBanner, dashboard-layout, SettingsPage, NetworkCommand, SetupPage, ProvingGround, Layout (9 files)
+
+---END_TASK---
+
+---
+
+## Task 133: Profile Page Enterprise Upgrade (2026-03-19)
+
+---TASK_COMPLETE---
+Step: Task 133 — Profile Page: Enterprise SaaS Upgrade
+Timestamp: 2026-03-19T01:00:00Z
+Status: DONE
+
+### Summary:
+Real auth identity via useCurrentUser, provider badge, account ID, recent escalations table, centered layout, Sign Out standalone.
+
+### Files modified:
+| `ProfilePage.tsx` | Full upgrade with useCurrentUser + layout fixes |
+
+---END_TASK---
