@@ -341,7 +341,6 @@ export function DashboardLayout({
                   </TooltipContent>
                 </Tooltip>
               )}
-              {isAdmin && <span className="text-[8px] font-bold uppercase tracking-wider text-coda-brand font-mono px-2 py-0.5 rounded bg-coda-brand/10 text-center">ADMIN</span>}
             </div>
           </div>
         </motion.div>
