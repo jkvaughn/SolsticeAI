@@ -1566,3 +1566,30 @@ Moved PersonaSwitcher card picker (2x2 grid + bank scope) from sidebar to Profil
 | `PersonaSwitcher.tsx` | Restored 2x2 card grid |
 
 ---END_TASK---
+---
+
+## Task 140: Google OAuth Sign-In (2026-03-19)
+
+---TASK_COMPLETE---
+Step: Task 140 — Google OAuth Sign-In
+Timestamp: 2026-03-19T17:40:00Z
+Status: DONE
+
+### Summary:
+Added Google OAuth sign-in for both Supabase (dev/staging) and Azure SWA (production) auth flows. Login page now shows "Sign in with Google" button with branded logo above the email/password form, separated by an "or" divider. Azure production uses custom OpenID Connect provider in staticwebapp.config.json. Supabase uses signInWithOAuth. Fixed user display name resolution for Google OAuth (full_name vs name in user_metadata). Fixed sidebar to read AppUser.name instead of raw user_metadata.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `LoginPage.tsx` | Google sign-in button for both auth modes |
+| `AuthContext.tsx` | signInWithGoogle method + full_name resolution |
+| `staticwebapp.config.json` | Google custom OpenID Connect provider |
+| `dashboard-layout.tsx` | Fixed user name display (AppUser.name) |
+| `EscalationDashboard.tsx` | full_name fallback for operator name |
+
+### Configuration:
+- Google OAuth credentials configured in Supabase Dashboard for staging
+- Google Cloud Console: OAuth consent screen branded as "CODA"
+- Supabase redirect URL added to Google authorized redirect URIs
+
+---END_TASK---
