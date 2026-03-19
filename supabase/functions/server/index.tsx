@@ -2,7 +2,7 @@
 import { Hono } from "npm:hono";
 import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
-import { getAdminClient } from "./supabase-admin.tsx";
+import sql from "./db.tsx";
 import { callGemini, callGeminiJSON } from "./gemini.tsx";
 import { handleProvingGround, setCadenzaDirectHandlers, setAgentDirectHandlers } from "./proving-ground.tsx";
 import { handleAria } from "./aria.tsx";
@@ -102,58 +102,57 @@ function resolveBic(bank: { swift_bic?: string; short_code: string }): string {
 
 let watchlistSeeded = false;
 
-async function seedWatchlistIfNeeded(supabase: any): Promise<void> {
+async function seedWatchlistIfNeeded(): Promise<void> {
   if (watchlistSeeded) return;
-  const { count } = await supabase.from("simulated_watchlist").select("id", { count: "exact", head: true });
+  const [{ count }] = await sql`SELECT count(*)::int AS count FROM simulated_watchlist`;
   if (count && count > 0) { watchlistSeeded = true; return; }
 
   const rows = [
     // 3 flagged entities
-    { entity_name: "Rogue State Bank", bic_code: "RGSTUS33", list_type: "OFAC_SDN", status: "active", reason: "State-sponsored financial institution" },
-    { entity_name: "Shadow Capital Ltd", bic_code: "SHCPKY22", list_type: "UN_CONSOLIDATED", status: "active", reason: "Proliferation financing" },
-    { entity_name: "Phantom Trust Co", bic_code: "PHTRRU44", list_type: "OFAC_SDN", status: "active", reason: "Sanctions evasion network" },
+    { id: crypto.randomUUID(), entity_name: "Rogue State Bank", bic_code: "RGSTUS33", list_type: "OFAC_SDN", status: "active", reason: "State-sponsored financial institution" },
+    { id: crypto.randomUUID(), entity_name: "Shadow Capital Ltd", bic_code: "SHCPKY22", list_type: "UN_CONSOLIDATED", status: "active", reason: "Proliferation financing" },
+    { id: crypto.randomUUID(), entity_name: "Phantom Trust Co", bic_code: "PHTRRU44", list_type: "OFAC_SDN", status: "active", reason: "Sanctions evasion network" },
     // 17 clean fictional entities
-    { entity_name: "Clearwater National Bank", bic_code: "CLWNUS33", list_type: "OFAC_SDN", status: "removed", reason: "Delisted 2024-01" },
-    { entity_name: "Pacific Rim Credit Union", bic_code: "PACRUS66", list_type: "OFAC_SDN", status: "removed", reason: "Compliance resolved" },
-    { entity_name: "Meridian Trade Finance", bic_code: "MRTFGB2L", list_type: "EU_CONSOLIDATED", status: "removed", reason: "Entity dissolved" },
-    { entity_name: "Alpine Savings AG", bic_code: "ALPSCHZZ", list_type: "OFAC_SDN", status: "removed", reason: "Delisted 2023-06" },
-    { entity_name: "Sunrise Commercial Bank", bic_code: "SRCBJPJT", list_type: "UN_CONSOLIDATED", status: "removed", reason: "Compliance resolved" },
-    { entity_name: "Northern Star Holdings", bic_code: "NSTHDKKK", list_type: "EU_CONSOLIDATED", status: "removed", reason: "Entity restructured" },
-    { entity_name: "Gateway Pacific Corp", bic_code: "GTWPAU2S", list_type: "OFAC_SDN", status: "removed", reason: "Delisted 2024-03" },
-    { entity_name: "Emerald Coast Financial", bic_code: "EMCFUS44", list_type: "OFAC_SDN", status: "removed", reason: "False positive cleared" },
-    { entity_name: "Ironclad Securities Ltd", bic_code: "IRCLGB22", list_type: "EU_CONSOLIDATED", status: "removed", reason: "Compliance resolved" },
-    { entity_name: "Horizon Wealth Management", bic_code: "HZWMHKHH", list_type: "UN_CONSOLIDATED", status: "removed", reason: "Delisted 2023-11" },
-    { entity_name: "Redwood Trust Company", bic_code: "RDWTCA33", list_type: "OFAC_SDN", status: "removed", reason: "Entity dissolved" },
-    { entity_name: "Starlight Investment Bank", bic_code: "STLISGSG", list_type: "OFAC_SDN", status: "removed", reason: "Compliance resolved" },
-    { entity_name: "Atlas Trade Corp", bic_code: "ATLTNL2A", list_type: "EU_CONSOLIDATED", status: "removed", reason: "False positive cleared" },
-    { entity_name: "Coral Bay Finance", bic_code: "CRBFKY11", list_type: "UN_CONSOLIDATED", status: "removed", reason: "Delisted 2024-02" },
-    { entity_name: "Summit Ridge Banking", bic_code: "SMRDUS77", list_type: "OFAC_SDN", status: "removed", reason: "Entity restructured" },
-    { entity_name: "Oceanic Trust Group", bic_code: "OCTGMUMU", list_type: "EU_CONSOLIDATED", status: "removed", reason: "Compliance resolved" },
-    { entity_name: "Pinnacle Financial Partners", bic_code: "PNFPUS55", list_type: "OFAC_SDN", status: "removed", reason: "Delisted 2023-09" },
+    { id: crypto.randomUUID(), entity_name: "Clearwater National Bank", bic_code: "CLWNUS33", list_type: "OFAC_SDN", status: "removed", reason: "Delisted 2024-01" },
+    { id: crypto.randomUUID(), entity_name: "Pacific Rim Credit Union", bic_code: "PACRUS66", list_type: "OFAC_SDN", status: "removed", reason: "Compliance resolved" },
+    { id: crypto.randomUUID(), entity_name: "Meridian Trade Finance", bic_code: "MRTFGB2L", list_type: "EU_CONSOLIDATED", status: "removed", reason: "Entity dissolved" },
+    { id: crypto.randomUUID(), entity_name: "Alpine Savings AG", bic_code: "ALPSCHZZ", list_type: "OFAC_SDN", status: "removed", reason: "Delisted 2023-06" },
+    { id: crypto.randomUUID(), entity_name: "Sunrise Commercial Bank", bic_code: "SRCBJPJT", list_type: "UN_CONSOLIDATED", status: "removed", reason: "Compliance resolved" },
+    { id: crypto.randomUUID(), entity_name: "Northern Star Holdings", bic_code: "NSTHDKKK", list_type: "EU_CONSOLIDATED", status: "removed", reason: "Entity restructured" },
+    { id: crypto.randomUUID(), entity_name: "Gateway Pacific Corp", bic_code: "GTWPAU2S", list_type: "OFAC_SDN", status: "removed", reason: "Delisted 2024-03" },
+    { id: crypto.randomUUID(), entity_name: "Emerald Coast Financial", bic_code: "EMCFUS44", list_type: "OFAC_SDN", status: "removed", reason: "False positive cleared" },
+    { id: crypto.randomUUID(), entity_name: "Ironclad Securities Ltd", bic_code: "IRCLGB22", list_type: "EU_CONSOLIDATED", status: "removed", reason: "Compliance resolved" },
+    { id: crypto.randomUUID(), entity_name: "Horizon Wealth Management", bic_code: "HZWMHKHH", list_type: "UN_CONSOLIDATED", status: "removed", reason: "Delisted 2023-11" },
+    { id: crypto.randomUUID(), entity_name: "Redwood Trust Company", bic_code: "RDWTCA33", list_type: "OFAC_SDN", status: "removed", reason: "Entity dissolved" },
+    { id: crypto.randomUUID(), entity_name: "Starlight Investment Bank", bic_code: "STLISGSG", list_type: "OFAC_SDN", status: "removed", reason: "Compliance resolved" },
+    { id: crypto.randomUUID(), entity_name: "Atlas Trade Corp", bic_code: "ATLTNL2A", list_type: "EU_CONSOLIDATED", status: "removed", reason: "False positive cleared" },
+    { id: crypto.randomUUID(), entity_name: "Coral Bay Finance", bic_code: "CRBFKY11", list_type: "UN_CONSOLIDATED", status: "removed", reason: "Delisted 2024-02" },
+    { id: crypto.randomUUID(), entity_name: "Summit Ridge Banking", bic_code: "SMRDUS77", list_type: "OFAC_SDN", status: "removed", reason: "Entity restructured" },
+    { id: crypto.randomUUID(), entity_name: "Oceanic Trust Group", bic_code: "OCTGMUMU", list_type: "EU_CONSOLIDATED", status: "removed", reason: "Compliance resolved" },
+    { id: crypto.randomUUID(), entity_name: "Pinnacle Financial Partners", bic_code: "PNFPUS55", list_type: "OFAC_SDN", status: "removed", reason: "Delisted 2023-09" },
   ];
 
-  const { error } = await supabase.from("simulated_watchlist").insert(rows.map(r => ({ id: crypto.randomUUID(), ...r })));
-  if (error) {
-    console.log(`[watchlist] Seed error: ${error.message}`);
-  } else {
+  try {
+    for (const r of rows) {
+      await sql`INSERT INTO simulated_watchlist ${sql(r, 'id', 'entity_name', 'bic_code', 'list_type', 'status', 'reason')}`;
+    }
     console.log(`[watchlist] Seeded ${rows.length} entities (3 flagged, 17 clean)`);
+  } catch (err) {
+    console.log(`[watchlist] Seed error: ${(err as Error).message}`);
   }
   watchlistSeeded = true;
 }
 
 /** Check if sender or receiver BIC is on the active watchlist */
-async function checkWatchlist(supabase: any, senderBic: string, receiverBic: string): Promise<{ hit: boolean; matches: any[] }> {
-  await seedWatchlistIfNeeded(supabase);
-  const { data, error } = await supabase
-    .from("simulated_watchlist")
-    .select("*")
-    .in("bic_code", [senderBic, receiverBic])
-    .eq("status", "active");
-  if (error) {
-    console.log(`[watchlist] Query error: ${error.message}`);
+async function checkWatchlist(senderBic: string, receiverBic: string): Promise<{ hit: boolean; matches: any[] }> {
+  await seedWatchlistIfNeeded();
+  try {
+    const data = await sql`SELECT * FROM simulated_watchlist WHERE bic_code = ANY(${[senderBic, receiverBic]}) AND status = 'active'`;
+    return { hit: data.length > 0, matches: data };
+  } catch (err) {
+    console.log(`[watchlist] Query error: ${(err as Error).message}`);
     return { hit: false, matches: [] };
   }
-  return { hit: (data || []).length > 0, matches: data || [] };
 }
 
 // ── ISO 20022 pacs.009 lockup memo builder ─────────────────
@@ -299,16 +298,11 @@ async function collectNetworkFee(
   logPrefix: string = "[network-fee]",
 ): Promise<{ feeSig: string; feeSol: number }> {
   // Load Solstice fees wallet — primary: network_wallets table, fallback: KV store
-  const supabase = getAdminClient();
   let feesWalletAddress: string | null = null;
 
   // Try network_wallets table first (source of truth)
   try {
-    const { data: solsticeRow } = await supabase
-      .from("network_wallets")
-      .select("wallet_address")
-      .eq("code", "SOLSTICE_FEES")
-      .maybeSingle();
+    const [solsticeRow] = await sql`SELECT wallet_address FROM network_wallets WHERE code = 'SOLSTICE_FEES' LIMIT 1`;
     if (solsticeRow?.wallet_address) {
       feesWalletAddress = solsticeRow.wallet_address;
     }
@@ -335,15 +329,9 @@ async function collectNetworkFee(
 
   // Update Solstice fees wallet balance in network_wallets table
   try {
-    const { data: solsticeRow } = await supabase
-      .from("network_wallets")
-      .select("id, balance")
-      .eq("code", "SOLSTICE_FEES")
-      .maybeSingle();
+    const [solsticeRow] = await sql`SELECT id, balance FROM network_wallets WHERE code = 'SOLSTICE_FEES' LIMIT 1`;
     if (solsticeRow) {
-      await supabase.from("network_wallets").update({
-        balance: (solsticeRow.balance || 0) + feeResult.feeSol,
-      }).eq("id", solsticeRow.id);
+      await sql`UPDATE network_wallets SET balance = ${(solsticeRow.balance || 0) + feeResult.feeSol} WHERE id = ${solsticeRow.id}`;
     }
   } catch (balErr) {
     console.log(`${logPrefix} ⚠ Failed to update fees wallet balance (non-critical): ${(balErr as Error).message}`);
@@ -351,11 +339,7 @@ async function collectNetworkFee(
 
   // Update transaction record with fee + settlement metadata
   try {
-    await supabase.from("transactions").update({
-      network_fee_sol: feeResult.feeSol,
-      settlement_method: settlementMethod,
-      settlement_memo: settlementMemo,
-    }).eq("id", transactionId);
+    await sql`UPDATE transactions SET network_fee_sol = ${feeResult.feeSol}, settlement_method = ${settlementMethod}, settlement_memo = ${settlementMemo} WHERE id = ${transactionId}`;
   } catch (txErr) {
     console.log(`${logPrefix} ⚠ Failed to update tx fee metadata (non-critical): ${(txErr as Error).message}`);
   }
@@ -372,14 +356,13 @@ async function collectNetworkFee(
 const KV_LOCKUP_MINT = "infra:lockup_mint:LOCKUP-USTB";
 
 async function getCustodianKeypair(): Promise<{ keypairEncrypted: string; walletAddress: string }> {
-  const supabase = getAdminClient();
   const rawCustodian = await kv.get("infra:custodian:BNY");
   if (!rawCustodian) throw new Error("BNY custodian not configured \u2014 run Network Setup first");
   const custodianData = JSON.parse(rawCustodian as string);
 
   let keypairEncrypted: string;
   if (custodianData.linked_bank_id) {
-    const { data: bnyBank } = await supabase.from("banks").select("solana_wallet_keypair_encrypted, solana_wallet_pubkey").eq("id", custodianData.linked_bank_id).maybeSingle();
+    const [bnyBank] = await sql`SELECT solana_wallet_keypair_encrypted, solana_wallet_pubkey FROM banks WHERE id = ${custodianData.linked_bank_id} LIMIT 1`;
     keypairEncrypted = bnyBank?.solana_wallet_keypair_encrypted || custodianData.keypair_encrypted;
   } else {
     keypairEncrypted = custodianData.keypair_encrypted;
@@ -415,19 +398,10 @@ async function ensureLockupMint(): Promise<{ mintAddress: string; ataAddress: st
 // Helper: Load bank config merged with network defaults
 // ============================================================
 export async function getBankConfig(bankId: string) {
-  const supabaseAdmin = getAdminClient();
   let data: any = null;
   try {
-    const result = await supabaseAdmin
-      .from('bank_agent_config')
-      .select('*')
-      .eq('bank_id', bankId)
-      .maybeSingle();
-    if (result.error) {
-      console.log(`[getBankConfig] Query error for ${bankId}: ${result.error.message} (code: ${result.error.code}) — using defaults`);
-    } else {
-      data = result.data;
-    }
+    const rows = await sql`SELECT * FROM bank_agent_config WHERE bank_id = ${bankId} LIMIT 1`;
+    data = rows[0] || null;
   } catch (err) {
     console.log(`[getBankConfig] Exception for ${bankId}: ${(err as Error).message} — using defaults`);
   }
@@ -508,22 +482,26 @@ app.post("/make-server-49d15288/auth/signup", async (c) => {
       return c.json({ error: "Password must be at least 6 characters" }, 400);
     }
 
-    const supabase = getAdminClient();
-    const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      user_metadata: { name: name || email.split("@")[0] },
-      // Automatically confirm the user's email since an email server hasn't been configured.
-      email_confirm: true,
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceRoleKey) {
+      return c.json({ error: "Auth not configured (missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY)" }, 500);
+    }
+    const authResp = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}`, "apikey": serviceRoleKey },
+      body: JSON.stringify({ email, password, user_metadata: { name: name || email.split("@")[0] }, email_confirm: true }),
     });
+    const authBody = await authResp.json();
 
-    if (error) {
-      console.log(`[auth/signup] Error creating user ${email}: ${error.message}`);
-      return c.json({ error: error.message }, 400);
+    if (!authResp.ok) {
+      const errMsg = authBody?.msg || authBody?.message || authBody?.error || "Unknown auth error";
+      console.log(`[auth/signup] Error creating user ${email}: ${errMsg}`);
+      return c.json({ error: errMsg }, 400);
     }
 
-    console.log(`[auth/signup] User created: ${data.user.id} (${email})`);
-    return c.json({ user: { id: data.user.id, email: data.user.email } });
+    console.log(`[auth/signup] User created: ${authBody.id} (${email})`);
+    return c.json({ user: { id: authBody.id, email: authBody.email } });
   } catch (err) {
     console.log(`[auth/signup] Unexpected error: ${(err as Error).message}`);
     return c.json({ error: `Signup error: ${(err as Error).message}` }, 500);
@@ -538,11 +516,18 @@ app.get("/make-server-49d15288/auth/me", async (c) => {
       return c.json({ error: "No access token provided" }, 401);
     }
 
-    const supabase = getAdminClient();
-    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
-    if (error || !user) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceRoleKey) {
+      return c.json({ error: "Auth not configured" }, 500);
+    }
+    const authResp = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { "Authorization": `Bearer ${accessToken}`, "apikey": serviceRoleKey },
+    });
+    if (!authResp.ok) {
       return c.json({ error: "Invalid or expired token" }, 401);
     }
+    const user = await authResp.json();
 
     return c.json({
       user: {
@@ -564,16 +549,13 @@ app.get("/make-server-49d15288/auth/me", async (c) => {
 // ============================================================
 app.post("/make-server-49d15288/backfill-swift", async (c) => {
   try {
-    const supabase = getAdminClient();
-
     // 1. Read all banks
-    const { data: banks, error: readErr } = await supabase
-      .from("banks")
-      .select("id, short_code, swift_bic, name, status");
-
-    if (readErr) {
-      console.log(`[backfill-swift] ✗ Error reading banks: ${readErr.message}`);
-      return c.json({ error: readErr.message }, 500);
+    let banks: any[];
+    try {
+      banks = await sql`SELECT id, short_code, swift_bic, name, status FROM banks`;
+    } catch (readErr) {
+      console.log(`[backfill-swift] ✗ Error reading banks: ${(readErr as Error).message}`);
+      return c.json({ error: (readErr as Error).message }, 500);
     }
     if (!banks || banks.length === 0) {
       return c.json({ message: "No banks found", updated: [] });
@@ -595,24 +577,17 @@ app.post("/make-server-49d15288/backfill-swift", async (c) => {
         continue;
       }
 
-      const { error: updateErr } = await supabase
-        .from("banks")
-        .update({ swift_bic: registryBic, updated_at: new Date().toISOString() })
-        .eq("id", bank.id);
-
-      if (updateErr) {
-        console.log(`[backfill-swift] ✗ Error updating ${bank.short_code}: ${updateErr.message}`);
-      } else {
+      try {
+        await sql`UPDATE banks SET swift_bic = ${registryBic}, updated_at = ${new Date().toISOString()} WHERE id = ${bank.id}`;
         console.log(`[backfill-swift] ✓ ${bank.short_code}: ${bank.swift_bic || "null"} → ${registryBic}`);
         updated.push({ short_code: bank.short_code, swift_bic: registryBic, was: bank.swift_bic || null });
+      } catch (updateErr) {
+        console.log(`[backfill-swift] ✗ Error updating ${bank.short_code}: ${(updateErr as Error).message}`);
       }
     }
 
     // 3. Re-read to confirm
-    const { data: confirmed } = await supabase
-      .from("banks")
-      .select("id, short_code, swift_bic, name, status")
-      .order("created_at", { ascending: true });
+    const confirmed = await sql`SELECT id, short_code, swift_bic, name, status FROM banks ORDER BY created_at ASC`;
 
     return c.json({
       message: `Backfill complete — ${updated.length} bank(s) updated`,
@@ -655,21 +630,23 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
       console.log(`[setup-bank] ✗ Missing required fields: name=${!!name}, short_code=${!!short_code}, jurisdiction=${!!jurisdiction}`);
       return c.json({ error: "Missing required fields: name, short_code, jurisdiction" }, 400);
     }
-
-    const supabase = getAdminClient();
     const initialSupply = initial_deposit_supply || 10_000_000;
     const codeUpper = short_code.toUpperCase();
 
     // ── Idempotency check ───────��──────────────────────────
     console.log(`[setup-bank] Querying banks table for short_code=${codeUpper}...`);
-    const { data: existing, error: existingError } = await supabase
-      .from("banks")
-      .select("*, wallets(*)")
-      .eq("short_code", codeUpper)
-      .maybeSingle();
-
-    if (existingError) {
-      console.log(`[setup-bank] ✗ Error querying existing bank: ${existingError.message} (code: ${existingError.code}, details: ${existingError.details}, hint: ${existingError.hint})`);
+    let existing: any = null;
+    let existingError: any = null;
+    try {
+      const bankRows = await sql`SELECT * FROM banks WHERE short_code = ${codeUpper} LIMIT 1`;
+      if (bankRows.length > 0) {
+        existing = bankRows[0];
+        const walletRows = await sql`SELECT * FROM wallets WHERE bank_id = ${existing.id}`;
+        existing.wallets = walletRows;
+      }
+    } catch (err) {
+      existingError = err;
+      console.log(`[setup-bank] ✗ Error querying existing bank: ${(err as Error).message}`);
     }
     console.log(`[setup-bank] Existing bank lookup result: ${existing ? `FOUND (id=${existing.id}, status=${existing.status}, pubkey=${existing.solana_wallet_pubkey || "null"}, wallets=${existing.wallets?.length || 0})` : "NOT FOUND — will create new"}`);
 
@@ -711,43 +688,26 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
         console.log(`[setup-bank] ${codeUpper} had no keypair — generated new wallet: ${walletResult.walletPubkey}`);
 
         const now = new Date().toISOString();
-        const { error: updateErr } = await supabase
-          .from("banks")
-          .update({
-            solana_wallet_pubkey: walletResult.walletPubkey,
-            solana_wallet_keypair_encrypted: walletResult.keypairEncrypted,
-            status: "onboarding",
-            updated_at: now,
-          })
-          .eq("id", existing.id);
-
-        if (updateErr) {
-          console.log(`[setup-bank] ✗ Error updating bank ${codeUpper} with new keypair: ${updateErr.message} (code: ${updateErr.code})`);
-          return c.json({ error: `Failed to update bank keypair: ${updateErr.message}` }, 500);
+        try {
+          await sql`UPDATE banks SET solana_wallet_pubkey = ${walletResult.walletPubkey}, solana_wallet_keypair_encrypted = ${walletResult.keypairEncrypted}, status = 'onboarding', updated_at = ${now} WHERE id = ${existing.id}`;
+        } catch (updateErr) {
+          console.log(`[setup-bank] ✗ Error updating bank ${codeUpper} with new keypair: ${(updateErr as Error).message}`);
+          return c.json({ error: `Failed to update bank keypair: ${(updateErr as Error).message}` }, 500);
         }
         console.log(`[setup-bank] ${codeUpper} bank row updated with new keypair, status=onboarding`);
 
         // Upsert wallet row
         if (defaultWallet) {
-          const { error: wuErr } = await supabase.from("wallets").update({
-            solana_pubkey: walletResult.walletPubkey,
-          }).eq("id", defaultWallet.id);
-          if (wuErr) console.log(`[setup-bank] ✗ wallet update error: ${wuErr.message}`);
-          else console.log(`[setup-bank] ${codeUpper} wallet row updated`);
+          try {
+            await sql`UPDATE wallets SET solana_pubkey = ${walletResult.walletPubkey} WHERE id = ${defaultWallet.id}`;
+            console.log(`[setup-bank] ${codeUpper} wallet row updated`);
+          } catch (wuErr) { console.log(`[setup-bank] ✗ wallet update error: ${(wuErr as Error).message}`); }
         } else {
-          const { error: wiErr } = await supabase.from("wallets").insert({
-            id: crypto.randomUUID(),
-            bank_id: existing.id,
-            label: `${codeUpper} Primary`,
-            solana_pubkey: walletResult.walletPubkey,
-            is_default: true,
-            token_account_address: null,
-            balance_lamports: 0,
-            balance_tokens: 0,
-            created_at: now,
-          });
-          if (wiErr) console.log(`[setup-bank] ✗ wallet insert error: ${wiErr.message}`);
-          else console.log(`[setup-bank] ${codeUpper} wallet row inserted`);
+          try {
+            await sql`INSERT INTO wallets (id, bank_id, label, solana_pubkey, is_default, token_account_address, balance_lamports, balance_tokens, created_at)
+              VALUES (${crypto.randomUUID()}, ${existing.id}, ${`${codeUpper} Primary`}, ${walletResult.walletPubkey}, ${true}, ${null}, ${0}, ${0}, ${now})`;
+            console.log(`[setup-bank] ${codeUpper} wallet row inserted`);
+          } catch (wiErr) { console.log(`[setup-bank] ✗ wallet insert error: ${(wiErr as Error).message}`); }
         }
 
         return c.json({
@@ -781,8 +741,8 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
 
         console.log(`[setup-bank] ${codeUpper} activating — wallet: ${existing.solana_wallet_pubkey}, setting status=onboarding`);
 
-        const { error: actStatusErr } = await supabase.from("banks").update({ status: "onboarding", updated_at: new Date().toISOString() }).eq("id", existing.id);
-        if (actStatusErr) console.log(`[setup-bank] ✗ Error setting onboarding status: ${actStatusErr.message}`);
+        try { await sql`UPDATE banks SET status = 'onboarding', updated_at = ${new Date().toISOString()} WHERE id = ${existing.id}`; }
+        catch (actStatusErr) { console.log(`[setup-bank] ✗ Error setting onboarding status: ${(actStatusErr as Error).message}`); }
 
         let result;
         try {
@@ -791,7 +751,7 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
           const errMsg = err instanceof Error ? err.message : String(err);
           console.log(`[setup-bank] ${codeUpper} activation error: ${errMsg}`);
           // Reset status back to onboarding so user can retry
-          await supabase.from("banks").update({ status: "onboarding", updated_at: new Date().toISOString() }).eq("id", existing.id);
+          await sql`UPDATE banks SET status = 'onboarding', updated_at = ${new Date().toISOString()} WHERE id = ${existing.id}`;
           return c.json({ error: `Activation failed: ${errMsg}`, stage: "error" }, 500);
         }
 
@@ -799,27 +759,19 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
         const now = new Date().toISOString();
         const supplyBaseUnits = initialSupply * Math.pow(10, TOKEN_DECIMALS);
 
-        await supabase.from("banks").update({
-          token_mint_address: result.tokenMintAddress,
-          token_symbol: result.tokenSymbol,
-          token_decimals: TOKEN_DECIMALS,
-          status: "active",
-          updated_at: now,
-        }).eq("id", existing.id);
+        await sql`UPDATE banks SET token_mint_address = ${result.tokenMintAddress}, token_symbol = ${result.tokenSymbol}, token_decimals = ${TOKEN_DECIMALS}, status = 'active', updated_at = ${now} WHERE id = ${existing.id}`;
 
         // Update wallet with token account and balances
         if (defaultWallet) {
-          await supabase.from("wallets").update({
-            token_account_address: result.tokenAccountAddress,
-            balance_lamports: result.solBalance,
-            balance_tokens: supplyBaseUnits,
-          }).eq("id", defaultWallet.id);
+          await sql`UPDATE wallets SET token_account_address = ${result.tokenAccountAddress}, balance_lamports = ${result.solBalance}, balance_tokens = ${supplyBaseUnits} WHERE id = ${defaultWallet.id}`;
         }
 
         console.log(`[setup-bank] ${codeUpper} activated — mint: ${result.tokenMintAddress}`);
 
         // Re-fetch full bank
-        const { data: updatedBank } = await supabase.from("banks").select("*, wallets(*)").eq("id", existing.id).single();
+        const [updatedBankRow] = await sql`SELECT * FROM banks WHERE id = ${existing.id}`;
+        const updatedBankWallets = await sql`SELECT * FROM wallets WHERE bank_id = ${existing.id}`;
+        const updatedBank = updatedBankRow ? { ...updatedBankRow, wallets: updatedBankWallets } : null;
 
         return c.json({
           stage: "activated",
@@ -877,10 +829,11 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
       };
 
       console.log(`[setup-bank] Inserting bank record: id=${newBankId}, status=${bankRecord.status}, short_code=${bankRecord.short_code}, jurisdiction=${bankRecord.jurisdiction}, prompt=${resolvedPrompt ? `${resolvedPrompt.length} chars` : "null"}`);
-      const { error: bankError } = await supabase.from("banks").insert(bankRecord);
-      if (bankError) {
-        console.log(`[setup-bank] ✗ Error creating bank record: ${bankError.message} (code: ${bankError.code}, details: ${bankError.details}, hint: ${bankError.hint})`);
-        return c.json({ error: `Failed to create bank: ${bankError.message}`, pg_code: bankError.code, pg_details: bankError.details }, 500);
+      try {
+        await sql`INSERT INTO banks ${sql(bankRecord, 'id', 'name', 'short_code', 'swift_bic', 'status', 'solana_wallet_pubkey', 'solana_wallet_keypair_encrypted', 'token_mint_address', 'token_symbol', 'token_decimals', 'agent_system_prompt', 'agent_model', 'jurisdiction', 'created_at', 'updated_at')}`;
+      } catch (bankError) {
+        console.log(`[setup-bank] ✗ Error creating bank record: ${(bankError as Error).message}`);
+        return c.json({ error: `Failed to create bank: ${(bankError as Error).message}` }, 500);
       }
       console.log(`[setup-bank] ✓ Bank record inserted successfully: ${newBankId}`);
 
@@ -897,10 +850,11 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
       };
 
       console.log(`[setup-bank] Inserting wallet record for bank ${newBankId}...`);
-      const { error: walletError } = await supabase.from("wallets").insert(walletRecord);
-      if (walletError) {
-        console.log(`[setup-bank] ✗ Error creating wallet record: ${walletError.message} (code: ${walletError.code}, details: ${walletError.details}, hint: ${walletError.hint})`);
-        return c.json({ error: `Failed to create wallet: ${walletError.message}`, pg_code: walletError.code, pg_details: walletError.details }, 500);
+      try {
+        await sql`INSERT INTO wallets ${sql(walletRecord, 'id', 'bank_id', 'label', 'solana_pubkey', 'is_default', 'token_account_address', 'balance_lamports', 'balance_tokens', 'created_at')}`;
+      } catch (walletError) {
+        console.log(`[setup-bank] ✗ Error creating wallet record: ${(walletError as Error).message}`);
+        return c.json({ error: `Failed to create wallet: ${(walletError as Error).message}` }, 500);
       }
 
       console.log(`[setup-bank] ✓ ${codeUpper} wallet stage complete — bank=${newBankId}, pubkey=${walletResult.walletPubkey}`);
@@ -938,7 +892,6 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
 app.post("/make-server-49d15288/setup-custodian", async (c) => {
   try {
     console.log("[setup-custodian] ▶ Setting up BNY custodian + Solstice fees wallet");
-    const supabase = getAdminClient();
 
     // Check if already set up
     const existingCustodianRaw = await kv.get("infra:custodian:BNY");
@@ -979,11 +932,9 @@ app.post("/make-server-49d15288/setup-custodian", async (c) => {
 
     // ── BNY Custodian: link to existing BNY bank from banks table ──
     if (!existingCustodian) {
-      const { data: bnyBank, error: bnyErr } = await supabase
-        .from("banks")
-        .select("id, name, short_code, solana_wallet_pubkey, solana_wallet_keypair_encrypted, status, created_at")
-        .eq("short_code", "BNY")
-        .maybeSingle();
+      let bnyBank: any = null;
+      let bnyErr: any = null;
+      try { [bnyBank] = await sql`SELECT id, name, short_code, solana_wallet_pubkey, solana_wallet_keypair_encrypted, status, created_at FROM banks WHERE short_code = ${"BNY"}` } catch (e) { bnyErr = e; }
 
       if (bnyErr) {
         console.log(`[setup-custodian] ✗ Error querying banks table for BNY: ${bnyErr.message}`);
@@ -1026,17 +977,10 @@ app.post("/make-server-49d15288/setup-custodian", async (c) => {
       console.log(`[setup-custodian] ✓ Solstice fees wallet created (KV): ${solsticeWallet.walletPubkey}`);
 
       // Also persist to network_wallets Postgres table for Realtime subscriptions
-      const { data: existingNwRow } = await supabase
-        .from("network_wallets")
-        .select("id")
-        .eq("code", "SOLSTICE_FEES")
-        .maybeSingle();
+      const [existingNwRow] = await sql`SELECT id FROM network_wallets WHERE code = ${"SOLSTICE_FEES"}`;
 
       if (!existingNwRow) {
-        const { error: insertErr } = await supabase
-          .from("network_wallets")
-          .insert({
-            id: solsticeRecord.id,
+        const _nwInsert = {
             name: solsticeRecord.name,
             code: solsticeRecord.code,
             wallet_address: solsticeRecord.wallet_address,
@@ -1044,7 +988,9 @@ app.post("/make-server-49d15288/setup-custodian", async (c) => {
             purpose: solsticeRecord.purpose,
             balance: 0,
             created_at: solsticeRecord.created_at,
-          });
+          };
+        let insertErr: any = null;
+        try { await sql`INSERT INTO network_wallets ${sql(_nwInsert, ...Object.keys(_nwInsert))}` } catch (e) { insertErr = e; }
 
         if (insertErr) {
           console.log(`[setup-custodian] ⚠ network_wallets INSERT failed (non-blocking): ${insertErr.message}`);
@@ -1087,7 +1033,6 @@ app.post("/make-server-49d15288/setup-custodian", async (c) => {
 // ============================================================
 app.post("/make-server-49d15288/custodian-status", async (c) => {
   try {
-    const supabase = getAdminClient();
     let rawCustodian = await kv.get("infra:custodian:BNY");
 
     // Auto-fix stale custodian records: if BNY record exists but has no linked_bank_id,
@@ -1096,11 +1041,9 @@ app.post("/make-server-49d15288/custodian-status", async (c) => {
       const parsed = JSON.parse(rawCustodian as string);
       if (!parsed.linked_bank_id) {
         console.log(`[custodian-status] Stale BNY custodian record detected (no linked_bank_id) — auto-re-linking to BNY bank`);
-        const { data: bnyBank, error: bnyErr } = await supabase
-          .from("banks")
-          .select("id, name, short_code, solana_wallet_pubkey, solana_wallet_keypair_encrypted, status, created_at")
-          .eq("short_code", "BNY")
-          .maybeSingle();
+        let bnyBank: any = null;
+        let bnyErr: any = null;
+        try { [bnyBank] = await sql`SELECT id, name, short_code, solana_wallet_pubkey, solana_wallet_keypair_encrypted, status, created_at FROM banks WHERE short_code = ${"BNY"}` } catch (e) { bnyErr = e; }
 
         if (!bnyErr && bnyBank && bnyBank.solana_wallet_pubkey) {
           const bnyRecord = {
@@ -1124,11 +1067,9 @@ app.post("/make-server-49d15288/custodian-status", async (c) => {
 
     // ── Solstice fees wallet: read from network_wallets table (primary), KV fallback with auto-migration ──
     let feesWallet: Record<string, unknown> | null = null;
-    const { data: nwRow, error: nwErr } = await supabase
-      .from("network_wallets")
-      .select("id, name, code, wallet_address, purpose, balance, created_at")
-      .eq("code", "SOLSTICE_FEES")
-      .maybeSingle();
+    let nwRow: any = null;
+    let nwErr: any = null;
+    try { [nwRow] = await sql`SELECT id, name, code, wallet_address, purpose, balance, created_at FROM network_wallets WHERE code = ${"SOLSTICE_FEES"}` } catch (e) { nwErr = e; }
 
     if (!nwErr && nwRow) {
       feesWallet = nwRow;
@@ -1139,10 +1080,7 @@ app.post("/make-server-49d15288/custodian-status", async (c) => {
       if (rawFees) {
         const kvFees = JSON.parse(rawFees as string);
         console.log(`[custodian-status] Solstice not in network_wallets — auto-migrating from KV`);
-        const { error: migrateErr } = await supabase
-          .from("network_wallets")
-          .insert({
-            id: kvFees.id,
+        const _migrateInsert = {
             name: kvFees.name,
             code: kvFees.code,
             wallet_address: kvFees.wallet_address,
@@ -1150,7 +1088,9 @@ app.post("/make-server-49d15288/custodian-status", async (c) => {
             purpose: kvFees.purpose,
             balance: kvFees.balance ?? 0,
             created_at: kvFees.created_at,
-          });
+          };
+        let migrateErr: any = null;
+        try { await sql`INSERT INTO network_wallets ${sql(_migrateInsert, ...Object.keys(_migrateInsert))}` } catch (e) { migrateErr = e; }
 
         if (migrateErr) {
           console.log(`[custodian-status] ⚠ Auto-migration INSERT failed: ${migrateErr.message} — falling back to KV data`);
@@ -1292,43 +1232,25 @@ app.post("/make-server-49d15288/agent-think", async (c) => {
     if (!bank_id || !input) {
       return c.json({ error: "Missing required fields: bank_id, input" }, 400);
     }
-
-    const supabase = getAdminClient();
     const aid = agentId(bank_id);
 
     // Load bank
-    const { data: bank, error: bankErr } = await supabase
-      .from("banks")
-      .select("*")
-      .eq("id", bank_id)
-      .single();
+    let bank: any = null;
+    let bankErr: any = null;
+    try { [bank] = await sql`SELECT * FROM banks WHERE id = ${bank_id}` } catch (e) { bankErr = e; }
 
     if (bankErr || !bank) {
       return c.json({ error: `Bank not found: ${bankErr?.message}` }, 404);
     }
 
     // Load wallet
-    const { data: wallet } = await supabase
-      .from("wallets")
-      .select("*")
-      .eq("bank_id", bank_id)
-      .eq("is_default", true)
-      .maybeSingle();
+    const [wallet] = await sql`SELECT * FROM wallets WHERE bank_id = ${bank_id} AND is_default = ${true}`;
 
     // Load other banks for context
-    const { data: otherBanks } = await supabase
-      .from("banks")
-      .select("id, name, short_code, status, token_symbol, jurisdiction")
-      .neq("id", bank_id)
-      .eq("status", "active");
+    const otherBanks = await sql`SELECT id, name, short_code, status, token_symbol, jurisdiction FROM banks WHERE id != ${bank_id} AND status = ${"active"}`;
 
     // Load recent conversations for context
-    const { data: recentConvos } = await supabase
-      .from("agent_conversations")
-      .select("role, content")
-      .eq("bank_id", bank_id)
-      .order("created_at", { ascending: false })
-      .limit(10);
+    const recentConvos = await sql`SELECT role, content FROM agent_conversations WHERE bank_id = ${bank_id} ORDER BY created_at DESC LIMIT 10`;
 
     const history = (recentConvos || []).reverse();
 
@@ -1347,11 +1269,7 @@ app.post("/make-server-49d15288/agent-think", async (c) => {
     // Build user prompt with context
     let userPrompt = input;
     if (context_type === "incoming_message" && transaction_id) {
-      const { data: tx } = await supabase
-        .from("transactions")
-        .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(name, short_code), receiver_bank:banks!transactions_receiver_bank_id_fkey(name, short_code)")
-        .eq("id", transaction_id)
-        .single();
+      const [tx] = await sql`SELECT *, sender_bank:banks!transactions_sender_bank_id_fkey(name, short_code), receiver_bank:banks!transactions_receiver_bank_id_fkey(name, short_code) FROM transactions WHERE id = ${transaction_id}`;
 
       if (tx) {
         userPrompt = `INCOMING MESSAGE regarding transaction ${transaction_id}:\n${input}\n\nTransaction details: ${JSON.stringify({
@@ -1432,24 +1350,38 @@ app.post("/make-server-49d15288/agent-think", async (c) => {
     const now = new Date().toISOString();
 
     // Save user input
-    await supabase.from("agent_conversations").insert({
+    await sql`INSERT INTO agent_conversations ${sql({
       id: crypto.randomUUID(),
       bank_id,
       transaction_id: transaction_id || null,
       role: "user",
       content: input,
       created_at: now,
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(),
+      bank_id,
+      transaction_id: transaction_id || null,
+      role: "user",
+      content: input,
+      created_at: now,
+    }))}`
 
     // Save agent response
-    await supabase.from("agent_conversations").insert({
+    await sql`INSERT INTO agent_conversations ${sql({
       id: crypto.randomUUID(),
       bank_id,
       transaction_id: transaction_id || null,
       role: "model",
       content: geminiResponse.message_to_user || geminiResponse.reasoning,
       created_at: new Date(Date.now() + 100).toISOString(),
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(),
+      bank_id,
+      transaction_id: transaction_id || null,
+      role: "model",
+      content: geminiResponse.message_to_user || geminiResponse.reasoning,
+      created_at: new Date(Date.now() + 100).toISOString(),
+    }))}`
 
     // Execute action
     let resultTxId = transaction_id || null;
@@ -1457,7 +1389,7 @@ app.post("/make-server-49d15288/agent-think", async (c) => {
     // ── Treasury cycle: handle NO_ACTION early return ──
     if (context_type === 'treasury_cycle' &&
         (geminiResponse.action === 'no_action' || geminiResponse.action === 'NO_ACTION')) {
-      await supabase.from("agent_messages").insert({
+      await sql`INSERT INTO agent_messages ${sql({
         id: crypto.randomUUID(),
         transaction_id: null,
         from_bank_id: bank_id,
@@ -1472,7 +1404,22 @@ app.post("/make-server-49d15288/agent-think", async (c) => {
         natural_language: `Maestro — Treasury cycle evaluation: no action taken. ${geminiResponse.reasoning?.slice(0, 200) || ''}`,
         processed: true,
         created_at: new Date().toISOString(),
-      });
+      }, ...Object.keys({
+        id: crypto.randomUUID(),
+        transaction_id: null,
+        from_bank_id: bank_id,
+        to_bank_id: bank_id,
+        message_type: "status_update",
+        content: {
+          agent_id: aid,
+          action: "NO_ACTION",
+          context: "treasury_cycle",
+          reasoning: geminiResponse.reasoning,
+        },
+        natural_language: `Maestro — Treasury cycle evaluation: no action taken. ${geminiResponse.reasoning?.slice(0, 200) || ''}`,
+        processed: true,
+        created_at: new Date().toISOString(),
+      }))}`
       console.log(`[${aid}] Treasury cycle: NO_ACTION — ${geminiResponse.reasoning?.slice(0, 100)}`);
       return c.json({
         reasoning: geminiResponse.reasoning,
@@ -1486,7 +1433,6 @@ app.post("/make-server-49d15288/agent-think", async (c) => {
 
     if (geminiResponse.action === "initiate_payment") {
       resultTxId = await handleInitiatePayment(
-        supabase,
         bank,
         wallet,
         otherBanks || [],
@@ -1494,10 +1440,9 @@ app.post("/make-server-49d15288/agent-think", async (c) => {
         geminiResponse.message_to_counterparty
       );
     } else if (geminiResponse.action === "accept_payment" && transaction_id) {
-      await handleAcceptPayment(supabase, bank, transaction_id, geminiResponse.message_to_counterparty);
+      await handleAcceptPayment(bank, transaction_id, geminiResponse.message_to_counterparty);
     } else if (geminiResponse.action === "reject_payment" && transaction_id) {
       await handleRejectPayment(
-        supabase,
         bank,
         transaction_id,
         geminiResponse.params.rejection_reason as string || "Rejected by agent",
@@ -1530,50 +1475,28 @@ app.post("/make-server-49d15288/agent-chat", async (c) => {
     if (!bank_id || !message) {
       return c.json({ error: "Missing required fields: bank_id, message" }, 400);
     }
-
-    const supabase = getAdminClient();
     const aid = agentId(bank_id);
 
     // Load bank
-    const { data: bank, error: bankErr } = await supabase
-      .from("banks")
-      .select("*")
-      .eq("id", bank_id)
-      .single();
+    let bank: any = null;
+    let bankErr: any = null;
+    try { [bank] = await sql`SELECT * FROM banks WHERE id = ${bank_id}` } catch (e) { bankErr = e; }
 
     if (bankErr || !bank) {
       return c.json({ error: `Bank not found: ${bankErr?.message}` }, 404);
     }
 
     // Load wallet
-    const { data: wallet } = await supabase
-      .from("wallets")
-      .select("*")
-      .eq("bank_id", bank_id)
-      .eq("is_default", true)
-      .maybeSingle();
+    const [wallet] = await sql`SELECT * FROM wallets WHERE bank_id = ${bank_id} AND is_default = ${true}`;
 
     // Load other banks
-    const { data: otherBanks } = await supabase
-      .from("banks")
-      .select("id, name, short_code, status, token_symbol, jurisdiction")
-      .neq("id", bank_id);
+    const otherBanks = await sql`SELECT id, name, short_code, status, token_symbol, jurisdiction FROM banks WHERE id != ${bank_id}`;
 
     // Load recent transactions (last 20)
-    const { data: recentTxs } = await supabase
-      .from("transactions")
-      .select("id, sender_bank_id, receiver_bank_id, amount_display, status, purpose_code, memo, risk_level, risk_score, solana_tx_signature, created_at, settled_at, sender_bank:banks!transactions_sender_bank_id_fkey(short_code, name), receiver_bank:banks!transactions_receiver_bank_id_fkey(short_code, name)")
-      .or(`sender_bank_id.eq.${bank_id},receiver_bank_id.eq.${bank_id}`)
-      .order("created_at", { ascending: false })
-      .limit(20);
+    const recentTxs = await sql`SELECT t.id, t.sender_bank_id, t.receiver_bank_id, t.amount_display, t.status, t.purpose_code, t.memo, t.risk_level, t.risk_score, t.solana_tx_signature, t.created_at, t.settled_at, json_build_object('short_code', sb.short_code, 'name', sb.name) AS sender_bank, json_build_object('short_code', rb.short_code, 'name', rb.name) AS receiver_bank FROM transactions t LEFT JOIN banks sb ON sb.id = t.sender_bank_id LEFT JOIN banks rb ON rb.id = t.receiver_bank_id WHERE (t.sender_bank_id = ${bank_id} OR t.receiver_bank_id = ${bank_id}) ORDER BY t.created_at DESC LIMIT 20`;
 
     // Load recent conversation history
-    const { data: recentConvos } = await supabase
-      .from("agent_conversations")
-      .select("role, content")
-      .eq("bank_id", bank_id)
-      .order("created_at", { ascending: false })
-      .limit(10);
+    const recentConvos = await sql`SELECT role, content FROM agent_conversations WHERE bank_id = ${bank_id} ORDER BY created_at DESC LIMIT 10`;
 
     const history = (recentConvos || []).reverse();
 
@@ -1636,22 +1559,36 @@ app.post("/make-server-49d15288/agent-chat", async (c) => {
 
     // Save conversation
     const now = new Date().toISOString();
-    await supabase.from("agent_conversations").insert({
+    await sql`INSERT INTO agent_conversations ${sql({
       id: crypto.randomUUID(),
       bank_id,
       transaction_id: null,
       role: "user",
       content: message,
       created_at: now,
-    });
-    await supabase.from("agent_conversations").insert({
+    }, ...Object.keys({
+      id: crypto.randomUUID(),
+      bank_id,
+      transaction_id: null,
+      role: "user",
+      content: message,
+      created_at: now,
+    }))}`
+    await sql`INSERT INTO agent_conversations ${sql({
       id: crypto.randomUUID(),
       bank_id,
       transaction_id: null,
       role: "model",
       content: response,
       created_at: new Date(Date.now() + 100).toISOString(),
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(),
+      bank_id,
+      transaction_id: null,
+      role: "model",
+      content: response,
+      created_at: new Date(Date.now() + 100).toISOString(),
+    }))}`
 
     return c.json({
       response,
@@ -1674,13 +1611,10 @@ app.post("/make-server-49d15288/agent-chat", async (c) => {
 // 3a. Core compliance-check logic (reusable from route + proving-ground)
 // ============================================================
 async function coreComplianceCheck(transactionId: string): Promise<any> {
-  const supabase = getAdminClient();
 
-  const { data: tx, error: txErr } = await supabase
-    .from("transactions")
-    .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*)")
-    .eq("id", transactionId)
-    .single();
+  let tx: any = null;
+  let txErr: any = null;
+  try { [tx] = await sql`SELECT *, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*) FROM transactions WHERE id = ${transactionId}` } catch (e) { txErr = e; }
 
   if (txErr || !tx) {
     throw new Error(`Transaction not found: ${txErr?.message}`);
@@ -1705,7 +1639,7 @@ async function coreComplianceCheck(transactionId: string): Promise<any> {
   // Task 127: Query simulated OFAC watchlist
   const senderBicComp = resolveBic((tx as any).sender_bank || { short_code: '' });
   const receiverBicComp = resolveBic((tx as any).receiver_bank || { short_code: '' });
-  const watchlistResult = await checkWatchlist(supabase, senderBicComp, receiverBicComp);
+  const watchlistResult = await checkWatchlist(senderBicComp, receiverBicComp);
   const sanctionsPassed = !watchlistResult.hit;
   const sanctionsDetail = sanctionsPassed
     ? `Neither ${(tx as any).sender_bank?.short_code} (${senderBicComp}) nor ${(tx as any).receiver_bank?.short_code} (${receiverBicComp}) appear on OFAC, EU, or UN sanctions lists`
@@ -1755,7 +1689,7 @@ async function coreComplianceCheck(transactionId: string): Promise<any> {
 
   const now = new Date().toISOString();
   for (const check of checks) {
-    const { error: logErr } = await supabase.from("compliance_logs").insert({
+    const _ins_compliance_logs_78215 = {
       id: crypto.randomUUID(),
       transaction_id: transactionId,
       bank_id: tx.receiver_bank_id,
@@ -1764,19 +1698,16 @@ async function coreComplianceCheck(transactionId: string): Promise<any> {
       details: { detail: check.detail, agent_id: aid },
       solana_log_signature: null,
       created_at: now,
-    });
+    };
+    let logErr: any = null;
+    try { await sql`INSERT INTO compliance_logs ${sql(_ins_compliance_logs_78215, ...Object.keys(_ins_compliance_logs_78215))}` } catch (e) { logErr = e; }
     if (logErr) console.log(`[${aid}] │  WARNING: compliance_log insert error for ${check.type}: ${logErr.message}`);
   }
 
-  const { error: txUpdateErr } = await supabase
-    .from("transactions")
-    .update({
-      status: "compliance_check",
-      compliance_passed: allPassed,
-      compliance_checks: checks,
-      compliance_completed_at: now,
-    })
-    .eq("id", transactionId);
+  let txUpdateErr: any = null;
+  try {
+    await sql`UPDATE transactions SET compliance_passed = ${allPassed}, compliance_checks = ${JSON.stringify(checks)}, compliance_completed_at = ${now} WHERE id = ${transactionId}`;
+  } catch (e) { txUpdateErr = e; }
 
   if (txUpdateErr) console.log(`[${aid}] │  WARNING: tx status update error: ${txUpdateErr.message}`);
   console.log(`[${aid}] └─ COMPLIANCE RESULT: ${allPassed ? "PASSED ✓" : "FAILED ✗"} (${checks.filter(c => c.passed).length}/${checks.length} checks)`);
@@ -1837,13 +1768,10 @@ app.post("/make-server-49d15288/compliance-check", async (c) => {
 // 4a. Core risk-score logic (reusable from route + proving-ground)
 // ============================================================
 async function coreRiskScore(transactionId: string): Promise<any> {
-  const supabase = getAdminClient();
 
-  const { data: tx, error: txErr } = await supabase
-    .from("transactions")
-    .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*)")
-    .eq("id", transactionId)
-    .single();
+  let tx: any = null;
+  let txErr: any = null;
+  try { [tx] = await sql`SELECT *, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*) FROM transactions WHERE id = ${transactionId}` } catch (e) { txErr = e; }
 
   if (txErr || !tx) {
     throw new Error(`Transaction not found: ${txErr?.message}`);
@@ -1856,21 +1784,9 @@ async function coreRiskScore(transactionId: string): Promise<any> {
   const senderBankId = tx.sender_bank_id;
   const receiverBankId = tx.receiver_bank_id;
 
-  const { data: corridorHistory } = await supabase
-    .from('transactions')
-    .select('id, amount_display, purpose_code, risk_level, risk_score, status, created_at, sender_bank_id, receiver_bank_id')
-    .or(`and(sender_bank_id.eq.${senderBankId},receiver_bank_id.eq.${receiverBankId}),and(sender_bank_id.eq.${receiverBankId},receiver_bank_id.eq.${senderBankId})`)
-    .neq('id', transactionId)
-    .order('created_at', { ascending: false })
-    .limit(10);
+  const corridorHistory = await sql`SELECT id, amount_display, purpose_code, risk_level, risk_score, status, created_at, sender_bank_id, receiver_bank_id FROM transactions WHERE ((sender_bank_id = ${senderBankId} AND receiver_bank_id = ${receiverBankId}) OR (sender_bank_id = ${receiverBankId} AND receiver_bank_id = ${senderBankId})) AND id != ${transactionId} ORDER BY created_at DESC LIMIT 10`;
 
-  const { data: senderRecentTxns } = await supabase
-    .from('transactions')
-    .select('id, amount_display, receiver_bank_id, purpose_code, status, created_at')
-    .eq('sender_bank_id', senderBankId)
-    .neq('id', transactionId)
-    .order('created_at', { ascending: false })
-    .limit(10);
+  const senderRecentTxns = await sql`SELECT id, amount_display, receiver_bank_id, purpose_code, status, created_at FROM transactions WHERE sender_bank_id = ${senderBankId} AND id != ${transactionId} ORDER BY created_at DESC LIMIT 10`;
 
   const sBankCode = (tx as any).sender_bank?.short_code || '?';
   const rBankCode = (tx as any).receiver_bank?.short_code || '?';
@@ -1973,7 +1889,8 @@ async function coreRiskScore(transactionId: string): Promise<any> {
 
   console.log(`[${aid}] │  Config-adjusted: composite=${composite} (gemini raw: ${riskResult.composite_score}), finality=${finality} (gemini: ${riskResult.finality_recommendation})`);
 
-  const { error: rsErr } = await supabase.from("risk_scores").insert(riskScore);
+  let rsErr: any = null;
+  try { await sql`INSERT INTO risk_scores ${sql(riskScore, ...Object.keys(riskScore))}` } catch (e) { rsErr = e; }
   if (rsErr) {
     console.log(`[${aid}] │  ERROR saving risk score: ${rsErr.message}`);
   }
@@ -1987,17 +1904,7 @@ async function coreRiskScore(transactionId: string): Promise<any> {
     lockupUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   }
 
-  await supabase
-    .from("transactions")
-    .update({
-      status: "risk_scored",
-      risk_level: riskScore.risk_level,
-      risk_score: riskScore.composite_score,
-      risk_reasoning: riskScore.reasoning,
-      risk_scored_at: new Date().toISOString(),
-      lockup_until: lockupUntil,
-    })
-    .eq("id", transactionId);
+  await sql`UPDATE transactions SET risk_level = ${riskScore.risk_level}, risk_score = ${riskScore.composite_score}, risk_reasoning = ${riskScore.reasoning}, risk_scored_at = ${new Date().toISOString()}, lockup_until = ${lockupUntil} WHERE id = ${transactionId}`;
 
   console.log(`[${aid}] └─ RISK RESULT: ${(riskScore.risk_level as string).toUpperCase()} (${riskScore.composite_score}/100) — finality: ${riskResult.finality_recommendation}`);
 
@@ -2039,13 +1946,9 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
       return c.json({ error: "Missing required field: transaction_id" }, 400);
     }
 
-    const supabase = getAdminClient();
-
-    const { data: tx, error: txErr } = await supabase
-      .from("transactions")
-      .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*)")
-      .eq("id", transaction_id)
-      .single();
+    let tx: any = null;
+    let txErr: any = null;
+    try { [tx] = await sql`SELECT *, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*) FROM transactions WHERE id = ${transaction_id}` } catch (e) { txErr = e; }
 
     if (txErr || !tx) {
       return c.json({ error: `Transaction not found: ${txErr?.message}` }, 404);
@@ -2112,10 +2015,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
     console.log(`[${aid}] │  Receiver: ${receiverBank?.short_code} wallet=${receiverBank?.solana_wallet_pubkey?.slice(0, 16)}..., mint=${receiverBank?.token_mint_address?.slice(0, 16)}...`);
 
     // Update status to executing
-    await supabase
-      .from("transactions")
-      .update({ status: "executing" })
-      .eq("id", transaction_id);
+    await sql`UPDATE transactions SET status = ${"executing"} WHERE id = ${transaction_id}`;
 
     const settlementAmt = tx.amount_display != null
       ? Number(tx.amount_display).toFixed(2)
@@ -2150,10 +2050,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
         const errMsg = solanaErr instanceof Error ? solanaErr.message : String(solanaErr);
         console.log(`[${aid}] │  Transfer FAILED: ${errMsg}`);
         console.log(`[${aid}] └─ EXECUTION FAILED — reverting to risk_scored`);
-        await supabase
-          .from("transactions")
-          .update({ status: "risk_scored" })
-          .eq("id", transaction_id);
+        await sql`UPDATE transactions SET status = ${"risk_scored"} WHERE id = ${transaction_id}`;
         return c.json({ error: `On-chain settlement failed: ${errMsg}`, step: "solana_transfer" }, 500);
       }
 
@@ -2164,18 +2061,10 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
       // Update wallet balances from real on-chain state
       try {
         const senderBalance = await getTokenBalance(senderBank.solana_wallet_pubkey, senderBank.token_mint_address);
-        await supabase
-          .from("wallets")
-          .update({ balance_tokens: Number(senderBalance) })
-          .eq("bank_id", tx.sender_bank_id)
-          .eq("is_default", true);
+        await sql`UPDATE wallets SET balance_tokens = ${Number(senderBalance)} WHERE bank_id = ${tx.sender_bank_id} AND is_default = ${true}`;
 
         const receiverBalance = await getTokenBalance(receiverBank.solana_wallet_pubkey, receiverBank.token_mint_address);
-        await supabase
-          .from("wallets")
-          .update({ balance_tokens: Number(receiverBalance) })
-          .eq("bank_id", tx.receiver_bank_id)
-          .eq("is_default", true);
+        await sql`UPDATE wallets SET balance_tokens = ${Number(receiverBalance)} WHERE bank_id = ${tx.receiver_bank_id} AND is_default = ${true}`;
 
         console.log(`[${aid}] Balances updated — sender: ${Number(senderBalance)} (${senderBank.short_code} mint), receiver: ${Number(receiverBalance)} (${receiverBank.short_code} mint)`);
       } catch (balErr) {
@@ -2183,18 +2072,10 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
       }
 
       console.log(`[${aid}] |  Updating tx ${transaction_id.slice(0, 8)} status -> ${finalStatus} (HTTP route)`);
-      const { error: txUpdateErr } = await supabase
-        .from("transactions")
-        .update({
-          status: finalStatus,
-          settlement_type: "PvP",
-          solana_tx_signature: transferResult.signature,
-          solana_slot: transferResult.slot,
-          solana_block_time: transferResult.blockTime ? new Date(transferResult.blockTime * 1000).toISOString() : now,
-          settled_at: shouldLock ? null : now,
-          is_reversible: shouldLock ? true : false,
-        })
-        .eq("id", transaction_id);
+      let txUpdateErr: any = null;
+      try {
+        await sql`UPDATE transactions SET settlement_type = ${"PvP"}, solana_tx_signature = ${transferResult.signature}, solana_slot = ${transferResult.slot}, solana_block_time = ${transferResult.blockTime ? new Date(transferResult.blockTime * 1000).toISOString() : now}, settled_at = ${shouldLock ? null : now}, is_reversible = ${shouldLock ? true : false} WHERE id = ${transaction_id}`;
+      } catch (e) { txUpdateErr = e; }
       if (txUpdateErr) {
         console.log(`[${aid}] |  FAILED to update tx status: ${JSON.stringify(txUpdateErr)}`);
       } else {
@@ -2221,7 +2102,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
         console.log(`[${aid}] │  Network fee: ${feeResult.feeSol} SOL — sig: ${feeResult.feeSig.slice(0, 20)}...`);
       }
 
-      await supabase.from("agent_messages").insert({
+      await sql`INSERT INTO agent_messages ${sql({
         id: crypto.randomUUID(),
         transaction_id,
         from_bank_id: tx.receiver_bank_id,
@@ -2241,7 +2122,27 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
           : `Maestro \u2014 Settlement confirmed on ${networkLabel}. Tx: ${transferResult.signature.slice(0, 16)}... Amount: $${tx.amount_display?.toLocaleString()} transferred successfully. Fee: ${feeResult.feeSol} SOL`,
         processed: false,
         created_at: now,
-      });
+      }, ...Object.keys({
+        id: crypto.randomUUID(),
+        transaction_id,
+        from_bank_id: tx.receiver_bank_id,
+        to_bank_id: tx.sender_bank_id,
+        message_type: "settlement_confirm",
+        content: {
+          agent_id: aid,
+          action: finalStatus,
+          tx_signature: transferResult.signature,
+          amount: tx.amount,
+          amount_display: tx.amount_display,
+          locked_until: shouldLock ? tx.lockup_until : null,
+          network_fee_sol: feeResult.feeSol,
+        },
+        natural_language: shouldLock
+          ? `Maestro \u2014 Settlement executed with deferred finality. Tx: ${transferResult.signature.slice(0, 16)}... locked until ${tx.lockup_until}. Amount: $${tx.amount_display?.toLocaleString()}. Fee: ${feeResult.feeSol} SOL`
+          : `Maestro \u2014 Settlement confirmed on ${networkLabel}. Tx: ${transferResult.signature.slice(0, 16)}... Amount: $${tx.amount_display?.toLocaleString()} transferred successfully. Fee: ${feeResult.feeSol} SOL`,
+        processed: false,
+        created_at: now,
+      }))}`
 
       console.log(`[${aid}] └─ EXECUTION COMPLETE: ${finalStatus} — sig=${transferResult.signature.slice(0, 20)}... (slot ${transferResult.slot}), fee=${feeResult.feeSol} SOL`);
 
@@ -2268,7 +2169,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
     const rawCustodian = await kv.get("infra:custodian:BNY");
     if (!rawCustodian) {
       console.log(`[${aid}] └─ LOCKUP FAILED — BNY custodian not set up`);
-      await supabase.from("transactions").update({ status: "risk_scored" }).eq("id", transaction_id);
+      await sql`UPDATE transactions SET status = ${"risk_scored"} WHERE id = ${transaction_id}`;
       return c.json({ error: "BNY custodian not configured. Run /setup-custodian first." }, 400);
     }
     const custodianData = JSON.parse(rawCustodian as string);
@@ -2276,7 +2177,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
     // If BNY is linked to a bank, get the bank's keypair
     let custodianKeypairEncrypted: string;
     if (custodianData.linked_bank_id) {
-      const { data: bnyBank } = await supabase.from("banks").select("solana_wallet_keypair_encrypted").eq("id", custodianData.linked_bank_id).maybeSingle();
+      const [bnyBank] = await sql`SELECT solana_wallet_keypair_encrypted FROM banks WHERE id = ${custodianData.linked_bank_id}`;
       custodianKeypairEncrypted = bnyBank?.solana_wallet_keypair_encrypted || custodianData.keypair_encrypted;
     } else {
       custodianKeypairEncrypted = custodianData.keypair_encrypted;
@@ -2284,7 +2185,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
 
     if (!custodianKeypairEncrypted) {
       console.log(`[${aid}] └─ LOCKUP FAILED — BNY custodian keypair not found`);
-      await supabase.from("transactions").update({ status: "risk_scored" }).eq("id", transaction_id);
+      await sql`UPDATE transactions SET status = ${"risk_scored"} WHERE id = ${transaction_id}`;
       return c.json({ error: "BNY custodian keypair not found." }, 500);
     }
 
@@ -2308,7 +2209,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
       const errMsg = burnErr instanceof Error ? burnErr.message : String(burnErr);
       console.log(`[${aid}] │  Step 1 ✗ Sender deposit burn FAILED: ${errMsg}`);
       console.log(`[${aid}] └─ LOCKUP FAILED — reverting to risk_scored`);
-      await supabase.from("transactions").update({ status: "risk_scored" }).eq("id", transaction_id);
+      await sql`UPDATE transactions SET status = ${"risk_scored"} WHERE id = ${transaction_id}`;
       return c.json({ error: `Lockup step 1 (sender burn) failed: ${errMsg}`, step: "sender_burn" }, 500);
     }
 
@@ -2334,7 +2235,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
     } catch (escrowErr) {
       const errMsg = escrowErr instanceof Error ? escrowErr.message : String(escrowErr);
       console.log(`[${aid}] \u2502  Step 2 \u2717 Escrow mint FAILED: ${errMsg}`);
-      await supabase.from("transactions").update({ status: "risk_scored", lockup_status: null }).eq("id", transaction_id);
+      await sql`UPDATE transactions SET status = ${"risk_scored"}, lockup_status = ${null} WHERE id = ${transaction_id}`;
       return c.json({ error: `Lockup step 2 (escrow mint) failed after sender burn: ${errMsg}. SENDER TOKENS ALREADY BURNED \u2014 manual recovery needed.`, step: "escrow_mint" }, 500);
     }
 
@@ -2344,7 +2245,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
 
     // Step 3: Insert lockup_tokens record (shared LOCKUP-USTB mint, no TB token)
     const lockupId = crypto.randomUUID();
-    const { error: lockupInsertErr } = await supabase.from("lockup_tokens").insert({
+    const _ins_lockup_tokens_105359 = {
       id: lockupId,
       transaction_id,
       sender_bank_id: tx.sender_bank_id,
@@ -2364,7 +2265,9 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
       lockup_end: lockupEnd,
       status: "active",
       created_at: lockupStart,
-    });
+    };
+    let lockupInsertErr: any = null;
+    try { await sql`INSERT INTO lockup_tokens ${sql(_ins_lockup_tokens_105359, ...Object.keys(_ins_lockup_tokens_105359))}` } catch (e) { lockupInsertErr = e; }
     if (lockupInsertErr) {
       console.log(`[${aid}] \u2502  Step 3 \u26a0 lockup_tokens insert failed: ${lockupInsertErr.message}`);
     } else {
@@ -2376,27 +2279,15 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
     // Also update sender wallet balance (tokens were burned)
     try {
       const senderBalance = await getTokenBalance(senderBank.solana_wallet_pubkey, senderBank.token_mint_address);
-      await supabase.from("wallets").update({ balance_tokens: Number(senderBalance) }).eq("bank_id", tx.sender_bank_id).eq("is_default", true);
+      await sql`UPDATE wallets SET balance_tokens = ${Number(senderBalance)} WHERE bank_id = ${tx.sender_bank_id} AND is_default = ${true}`;
     } catch (balErr) {
       console.log(`[${aid}] Warning: failed to update sender balance: ${(balErr as Error).message}`);
     }
 
-    const { error: txLockupUpdateErr } = await supabase
-      .from("transactions")
-      .update({
-        status: "locked",
-        settlement_type: "lockup",
-        settlement_method: userForcedLockup ? "lockup_user_requested" : "lockup_three_token",
-        lockup_status: "active",
-        lockup_until: lockupEnd,
-        lockup_duration_minutes: effectiveLockupMinutes, // Normalize negative convention → positive actual minutes
-        solana_tx_signature: burnResult.signature,
-        solana_slot: burnResult.slot,
-        solana_block_time: now,
-        settled_at: null,
-        is_reversible: true,
-      })
-      .eq("id", transaction_id);
+    let txLockupUpdateErr: any = null;
+    try {
+      await sql`UPDATE transactions SET settlement_type = ${"lockup"}, settlement_method = ${userForcedLockup ? "lockup_user_requested" : "lockup_three_token"}, lockup_status = ${"active"}, lockup_until = ${lockupEnd}, lockup_duration_minutes = ${effectiveLockupMinutes}, solana_tx_signature = ${burnResult.signature}, solana_slot = ${burnResult.slot}, solana_block_time = ${now}, settled_at = ${null}, is_reversible = ${true} WHERE id = ${transaction_id}`;
+    } catch (e) { txLockupUpdateErr = e; }
     if (txLockupUpdateErr) {
       console.log(`[${aid}] \u2502  Steps 4-5 \u26a0 tx update failed: ${txLockupUpdateErr.message}`);
     } else {
@@ -2404,7 +2295,7 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
     }
 
     // Step 7: Insert agent_message
-    await supabase.from("agent_messages").insert({
+    await sql`INSERT INTO agent_messages ${sql({
       id: crypto.randomUUID(),
       transaction_id,
       from_bank_id: tx.receiver_bank_id,
@@ -2428,7 +2319,31 @@ app.post("/make-server-49d15288/agent-execute", async (c) => {
       natural_language: `Maestro \u2014 Phase 1 complete. ${LOCKUP_TOKEN_SYMBOL} minted to BNY escrow. Receiver has NO tokens yet. Lockup: ${lockupDuration}. Cadenza monitoring initiated.`,
       processed: false,
       created_at: now,
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(),
+      transaction_id,
+      from_bank_id: tx.receiver_bank_id,
+      to_bank_id: tx.sender_bank_id,
+      message_type: "settlement_confirm",
+      content: {
+        agent_id: aid,
+        action: "lockup",
+        flow: "three_token_escrow",
+        phase: 1,
+        burn_signature: burnResult.signature,
+        escrow_mint_signature: lockupMintResult.signature,
+        lockup_mint: lockupMintAddr,
+        lockup_symbol: LOCKUP_TOKEN_SYMBOL,
+        lockup_id: lockupId,
+        lockup_seconds: lockupSeconds,
+        lockup_end: lockupEnd,
+        amount: tx.amount,
+        amount_display: tx.amount_display,
+      },
+      natural_language: `Maestro \u2014 Phase 1 complete. ${LOCKUP_TOKEN_SYMBOL} minted to BNY escrow. Receiver has NO tokens yet. Lockup: ${lockupDuration}. Cadenza monitoring initiated.`,
+      processed: false,
+      created_at: now,
+    }))}`
 
     // ── Collect network fee (SOL gas-layer) ──
     const lockupMemoText = [
@@ -2486,9 +2401,8 @@ app.post("/make-server-49d15288/agent-orchestrator", async (c) => {
     if (!bank_id || !message_id) {
       return c.json({ error: "Missing required fields: bank_id, message_id" }, 400);
     }
-    const supabase = getAdminClient();
     console.log(`[orchestrator] Received: bank_id=${bank_id?.slice(0, 8)}, message_id=${message_id?.slice(0, 8)}`);
-    const result = await coreOrchestrate(supabase, bank_id, message_id);
+    const result = await coreOrchestrate(bank_id, message_id);
     return c.json(result);
   } catch (err) {
     console.log(`[orchestrator] Error: ${(err as Error).message}`);
@@ -2606,7 +2520,6 @@ function parseLockupMinutes(input: string): number | null {
 // Helper: Initiate payment
 // ============================================================
 async function handleInitiatePayment(
-  supabase: any,
   senderBank: any,
   senderWallet: any,
   otherBanks: any[],
@@ -2696,9 +2609,10 @@ async function handleInitiatePayment(
     created_at: now,
   };
 
-  const { error: txErr } = await supabase.from("transactions").insert(txRecord);
-  if (txErr) {
-    throw new Error(`Failed to create transaction: ${txErr.message}`);
+  try {
+    await sql`INSERT INTO transactions ${sql(txRecord, ...Object.keys(txRecord))}`;
+  } catch (txErr) {
+    throw new Error(`Failed to create transaction: ${(txErr as Error).message}`);
   }
 
   // ── Travel Rule Payload (IVMS 101) ──
@@ -2724,19 +2638,16 @@ async function handleInitiatePayment(
         reason: 'Below FinCEN $3,000 threshold',
       };
 
-  const { error: travelRuleErr } = await supabase
-    .from("transactions")
-    .update({ travel_rule_payload: travelRulePayload })
-    .eq("id", txId);
-  if (travelRuleErr) {
-    console.log(`[${aid}] Warning: Failed to write travel_rule_payload: ${travelRuleErr.message}`);
-  } else {
+  try {
+    await sql`UPDATE transactions SET travel_rule_payload = ${JSON.stringify(travelRulePayload)} WHERE id = ${txId}`;
     console.log(`[${aid}] Travel Rule: ${travelRulePayload.status} (amount=$${amount.toLocaleString()}, threshold=$3,000)`);
+  } catch (travelRuleErr) {
+    console.log(`[${aid}] Warning: Failed to write travel_rule_payload: ${(travelRuleErr as Error).message}`);
   }
 
   // Send payment_request message to receiver
   const paymentRequestMsgId = crypto.randomUUID();
-  await supabase.from("agent_messages").insert({
+  await sql`INSERT INTO agent_messages ${sql({
     id: paymentRequestMsgId,
     transaction_id: txId,
     from_bank_id: senderBank.id,
@@ -2757,7 +2668,28 @@ async function handleInitiatePayment(
         : `Maestro \u2014 ${senderBank.short_code} requests settlement of $${amount.toLocaleString()} to ${receiver.short_code} for ${purposeCode}. Memo: ${memo}`,
     processed: false,
     created_at: now,
-  });
+  }, ...Object.keys({
+    id: paymentRequestMsgId,
+    transaction_id: txId,
+    from_bank_id: senderBank.id,
+    to_bank_id: receiver.id,
+    message_type: "payment_request",
+    content: {
+      agent_id: aid,
+      action: "payment_request",
+      amount,
+      amount_tokens: amountTokens,
+      memo,
+      purpose_code: purposeCode,
+      sender_token_mint: senderBank.token_mint_address,
+    },
+    natural_language:
+      messageToCounterparty
+        ? `Maestro \u2014 ${messageToCounterparty}`
+        : `Maestro \u2014 ${senderBank.short_code} requests settlement of $${amount.toLocaleString()} to ${receiver.short_code} for ${purposeCode}. Memo: ${memo}`,
+    processed: false,
+    created_at: now,
+  }))}`
 
   console.log(`[${aid}] ┌─ PAYMENT INITIATED: $${amount.toLocaleString()} PvP settlement to ${receiver.short_code}`);
   console.log(`[${aid}] │  txId=${txId.slice(0, 8)}, msgId=${paymentRequestMsgId.slice(0, 8)}, purposeCode=${purposeCode}, memo=${memo}`);
@@ -2768,8 +2700,7 @@ async function handleInitiatePayment(
   // Direct function call (no HTTP self-call — fixes 401 auth issue)
   console.log(`[${aid}] └─ Triggering A2A receiver orchestration for ${receiver.short_code} (msg ${paymentRequestMsgId.slice(0, 8)})`);
 
-  const orchestrationSupabase = getAdminClient();
-  coreOrchestrate(orchestrationSupabase, receiver.id, paymentRequestMsgId)
+    coreOrchestrate( receiver.id, paymentRequestMsgId)
     .then((result) => {
       console.log(`[${aid}] A2A orchestration result: action=${result.action}, settled=${result.settlement?.status || 'N/A'}, tx=${txId.slice(0, 8)}`);
       if (result.error) console.log(`[${aid}] A2A orchestration ERROR: ${result.error}`);
@@ -2785,23 +2716,18 @@ async function handleInitiatePayment(
 // Helper: Accept payment
 // ============================================================
 async function handleAcceptPayment(
-  supabase: any,
   bank: any,
   transactionId: string,
   messageToCounterparty: string | null
 ): Promise<void> {
-  const { data: tx } = await supabase
-    .from("transactions")
-    .select("*")
-    .eq("id", transactionId)
-    .single();
+  const [tx] = await sql`SELECT * FROM transactions WHERE id = ${transactionId}`;
 
   if (!tx) return;
 
   const aid = agentId(bank.id);
 
   // Send accept message
-  await supabase.from("agent_messages").insert({
+  await sql`INSERT INTO agent_messages ${sql({
     id: crypto.randomUUID(),
     transaction_id: transactionId,
     from_bank_id: bank.id,
@@ -2814,7 +2740,20 @@ async function handleAcceptPayment(
         : `Maestro \u2014 ${bank.short_code} accepts the settlement of $${(tx.amount_display || tx.amount / 1e6).toLocaleString()}.`,
     processed: false,
     created_at: new Date().toISOString(),
-  });
+  }, ...Object.keys({
+    id: crypto.randomUUID(),
+    transaction_id: transactionId,
+    from_bank_id: bank.id,
+    to_bank_id: tx.sender_bank_id,
+    message_type: "payment_accept",
+    content: { agent_id: aid, action: "accept", transaction_id: transactionId },
+    natural_language:
+      messageToCounterparty
+        ? `Maestro \u2014 ${messageToCounterparty}`
+        : `Maestro \u2014 ${bank.short_code} accepts the settlement of $${(tx.amount_display || tx.amount / 1e6).toLocaleString()}.`,
+    processed: false,
+    created_at: new Date().toISOString(),
+  }))}`
 
   console.log(`[${aid}] Accepted settlement for tx ${transactionId.slice(0, 8)}`);
 }
@@ -2823,30 +2762,22 @@ async function handleAcceptPayment(
 // Helper: Reject payment
 // ============================================================
 async function handleRejectPayment(
-  supabase: any,
   bank: any,
   transactionId: string,
   reason: string,
   messageToCounterparty: string | null
 ): Promise<void> {
-  const { data: tx } = await supabase
-    .from("transactions")
-    .select("*")
-    .eq("id", transactionId)
-    .single();
+  const [tx] = await sql`SELECT * FROM transactions WHERE id = ${transactionId}`;
 
   if (!tx) return;
 
   const aid = agentId(bank.id);
 
   // Update transaction status
-  await supabase
-    .from("transactions")
-    .update({ status: "rejected" })
-    .eq("id", transactionId);
+  await sql`UPDATE transactions SET status = ${"rejected"} WHERE id = ${transactionId}`;
 
   // Send reject message
-  await supabase.from("agent_messages").insert({
+  await sql`INSERT INTO agent_messages ${sql({
     id: crypto.randomUUID(),
     transaction_id: transactionId,
     from_bank_id: bank.id,
@@ -2864,7 +2795,25 @@ async function handleRejectPayment(
         : `Maestro \u2014 ${bank.short_code} has rejected the settlement. Reason: ${reason}`,
     processed: false,
     created_at: new Date().toISOString(),
-  });
+  }, ...Object.keys({
+    id: crypto.randomUUID(),
+    transaction_id: transactionId,
+    from_bank_id: bank.id,
+    to_bank_id: tx.sender_bank_id,
+    message_type: "payment_reject",
+    content: {
+      agent_id: aid,
+      action: "reject",
+      transaction_id: transactionId,
+      reason,
+    },
+    natural_language:
+      messageToCounterparty
+        ? `Maestro \u2014 ${messageToCounterparty}`
+        : `Maestro \u2014 ${bank.short_code} has rejected the settlement. Reason: ${reason}`,
+    processed: false,
+    created_at: new Date().toISOString(),
+  }))}`
 
   console.log(`[${aid}] Rejected settlement for tx ${transactionId.slice(0, 8)}: ${reason}`);
 }
@@ -2873,15 +2822,15 @@ async function handleRejectPayment(
 // Core: Run agent-think logic directly (no HTTP self-call)
 // ============================================================
 async function coreAgentThink(
-  supabase: any, bankId: string, input: string,
+  bankId: string, input: string,
   transactionId: string | null, contextType: string
 ): Promise<any> {
   const aid = agentId(bankId);
-  const { data: bank, error: bankErr } = await supabase.from("banks").select("*").eq("id", bankId).single();
-  if (bankErr || !bank) throw new Error(`Bank not found: ${bankErr?.message}`);
-  const { data: wallet } = await supabase.from("wallets").select("*").eq("bank_id", bankId).eq("is_default", true).maybeSingle();
-  const { data: otherBanks } = await supabase.from("banks").select("id, name, short_code, status, token_symbol, jurisdiction").neq("id", bankId).eq("status", "active");
-  const { data: recentConvos } = await supabase.from("agent_conversations").select("role, content").eq("bank_id", bankId).order("created_at", { ascending: false }).limit(10);
+  const [bank] = await sql`SELECT * FROM banks WHERE id = ${bankId}`;
+  if (!bank) throw new Error(`Bank not found`);
+  const [wallet] = await sql`SELECT * FROM wallets WHERE bank_id = ${bankId} AND is_default = ${true} LIMIT 1`;
+  const otherBanks = await sql`SELECT id, name, short_code, status, token_symbol, jurisdiction FROM banks WHERE id != ${bankId} AND status = 'active'`;
+  const recentConvos = await sql`SELECT role, content FROM agent_conversations WHERE bank_id = ${bankId} ORDER BY created_at DESC LIMIT 10`;
   let effectiveSysPrompt = buildAgentSystemPrompt(bank, wallet, otherBanks || [], aid);
 
   // ── Network mode context (Devnet preamble for AI) ──
@@ -2904,9 +2853,14 @@ async function coreAgentThink(
 
   let userPrompt = input;
   if (contextType === "incoming_message" && transactionId) {
-    const { data: tx } = await supabase.from("transactions")
-      .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(name, short_code), receiver_bank:banks!transactions_receiver_bank_id_fkey(name, short_code)")
-      .eq("id", transactionId).single();
+    const [txRaw] = await sql`SELECT * FROM transactions WHERE id = ${transactionId}`;
+    const tx = txRaw ? { ...txRaw } as any : null;
+    if (tx) {
+      const [sb] = await sql`SELECT name, short_code FROM banks WHERE id = ${tx.sender_bank_id}`;
+      const [rb] = await sql`SELECT name, short_code FROM banks WHERE id = ${tx.receiver_bank_id}`;
+      tx.sender_bank = sb || null;
+      tx.receiver_bank = rb || null;
+    }
     if (tx) {
       userPrompt = `INCOMING MESSAGE regarding transaction ${transactionId}:\n${input}\n\nTransaction details: ${JSON.stringify({
         sender: (tx as any).sender_bank?.short_code, receiver: (tx as any).receiver_bank?.short_code,
@@ -2922,20 +2876,27 @@ async function coreAgentThink(
   // Save pipeline/treasury-generated inputs as "system" (not "user") so the frontend
   // doesn't render auto-generated prompts with the "You" label
   const inputRole = (contextType === 'user_instruction' || contextType === 'user_chat') ? 'user' : 'system';
-  await supabase.from("agent_conversations").insert({ id: crypto.randomUUID(), bank_id: bankId, transaction_id: transactionId || null, role: inputRole, content: input, created_at: now });
-  await supabase.from("agent_conversations").insert({ id: crypto.randomUUID(), bank_id: bankId, transaction_id: transactionId || null, role: "model", content: geminiResponse.message_to_user || geminiResponse.reasoning, created_at: new Date(Date.now() + 100).toISOString() });
+  await sql`INSERT INTO agent_conversations (id, bank_id, transaction_id, role, content, created_at) VALUES (${crypto.randomUUID()}, ${bankId}, ${transactionId || null}, ${inputRole}, ${input}, ${now})`;
+  await sql`INSERT INTO agent_conversations (id, bank_id, transaction_id, role, content, created_at) VALUES (${crypto.randomUUID()}, ${bankId}, ${transactionId || null}, ${"model"}, ${geminiResponse.message_to_user || geminiResponse.reasoning}, ${new Date(Date.now() + 100).toISOString()})`;
 
   // ── Treasury cycle: handle NO_ACTION early return ──
   if (contextType === 'treasury_cycle' &&
       (geminiResponse.action === 'no_action' || geminiResponse.action === 'NO_ACTION')) {
-    await supabase.from("agent_messages").insert({
+    await sql`INSERT INTO agent_messages ${sql({
       id: crypto.randomUUID(), transaction_id: null,
       from_bank_id: bankId, to_bank_id: bankId,
       message_type: "status_update",
       content: { agent_id: aid, action: "NO_ACTION", context: "treasury_cycle", reasoning: geminiResponse.reasoning },
       natural_language: `Maestro — Treasury cycle evaluation: no action taken. ${geminiResponse.reasoning?.slice(0, 200) || ''}`,
       processed: true, created_at: now,
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(), transaction_id: null,
+      from_bank_id: bankId, to_bank_id: bankId,
+      message_type: "status_update",
+      content: { agent_id: aid, action: "NO_ACTION", context: "treasury_cycle", reasoning: geminiResponse.reasoning },
+      natural_language: `Maestro — Treasury cycle evaluation: no action taken. ${geminiResponse.reasoning?.slice(0, 200) || ''}`,
+      processed: true, created_at: now,
+    }))}`
     console.log(`[${aid}] Treasury cycle (core): NO_ACTION — ${geminiResponse.reasoning?.slice(0, 100)}`);
     return { reasoning: geminiResponse.reasoning, action: 'NO_ACTION', params: geminiResponse.params, message_to_counterparty: null, message_to_user: geminiResponse.message_to_user || geminiResponse.reasoning, transaction_id: null };
   }
@@ -2944,12 +2905,12 @@ async function coreAgentThink(
   let resultTxId = transactionId;
   if (geminiResponse.action === "initiate_payment") {
     console.log(`[${aid}] coreAgentThink: executing handleInitiatePayment (context=${contextType})`);
-    resultTxId = await handleInitiatePayment(supabase, bank, wallet, otherBanks || [], geminiResponse.params, geminiResponse.message_to_counterparty);
+    resultTxId = await handleInitiatePayment(bank, wallet, otherBanks || [], geminiResponse.params, geminiResponse.message_to_counterparty);
     console.log(`[${aid}] coreAgentThink: transaction created txId=${resultTxId?.slice(0, 8)}`);
   } else if (geminiResponse.action === "accept_payment" && transactionId) {
-    await handleAcceptPayment(supabase, bank, transactionId, geminiResponse.message_to_counterparty);
+    await handleAcceptPayment(bank, transactionId, geminiResponse.message_to_counterparty);
   } else if (geminiResponse.action === "reject_payment" && transactionId) {
-    await handleRejectPayment(supabase, bank, transactionId, geminiResponse.params.rejection_reason as string || "Rejected by agent", geminiResponse.message_to_counterparty);
+    await handleRejectPayment(bank, transactionId, geminiResponse.params.rejection_reason as string || "Rejected by agent", geminiResponse.message_to_counterparty);
   }
   return { reasoning: geminiResponse.reasoning, action: geminiResponse.action, params: geminiResponse.params, message_to_counterparty: geminiResponse.message_to_counterparty, message_to_user: geminiResponse.message_to_user, transaction_id: resultTxId };
 }
@@ -2957,28 +2918,28 @@ async function coreAgentThink(
 // ============================================================
 // Core: Full orchestration (no HTTP self-calls — fixes 401)
 // ============================================================
-async function coreOrchestrate(supabase: any, bankId: string, messageId: string): Promise<any> {
+async function coreOrchestrate(bankId: string, messageId: string): Promise<any> {
   const aid = agentId(bankId);
-  const { data: msg, error: msgErr } = await supabase.from("agent_messages").select("*").eq("id", messageId).single();
-  if (msgErr || !msg) throw new Error(`Message not found: ${msgErr?.message}`);
-  await supabase.from("agent_messages").update({ processed: true, processed_at: new Date().toISOString() }).eq("id", messageId);
+  const [msg] = await sql`SELECT * FROM agent_messages WHERE id = ${messageId}`;
+  if (!msg) throw new Error(`Message not found`);
+  await sql`UPDATE agent_messages SET processed = ${true}, processed_at = ${new Date().toISOString()} WHERE id = ${messageId}`;
   if (msg.transaction_id) {
-    const { data: tx } = await supabase.from("transactions").select("status").eq("id", msg.transaction_id).single();
+    const [tx] = await sql`SELECT status FROM transactions WHERE id = ${msg.transaction_id}`;
     if (tx && ["settled", "rejected", "reversed", "executing"].includes(tx.status)) {
       console.log(`[${aid}] Skipping: tx ${msg.transaction_id.slice(0, 8)} already ${tx.status}`);
       return { reasoning: `Transaction already ${tx.status}.`, action: "no_action", params: {}, message_to_counterparty: null, message_to_user: `Transaction already ${tx.status}.`, transaction_id: msg.transaction_id };
     }
   }
   console.log(`[${aid}] Processing ${msg.message_type} (id=${msg.id?.slice(0, 8)}, tx=${msg.transaction_id?.slice(0, 8) || 'none'})`);
-  if (msg.message_type === "payment_request" && msg.transaction_id) return await runSettlementPipeline(supabase, bankId, msg);
+  if (msg.message_type === "payment_request" && msg.transaction_id) return await runSettlementPipeline(bankId, msg);
   if (msg.message_type === "settlement_confirm") return { reasoning: "Settlement confirmation received.", action: "no_action", params: {}, message_to_counterparty: null, message_to_user: `Settlement confirmed. ${msg.natural_language || ""}`, transaction_id: msg.transaction_id };
-  return await coreAgentThink(supabase, bankId, msg.natural_language || JSON.stringify(msg.content), msg.transaction_id, "incoming_message");
+  return await coreAgentThink(bankId, msg.natural_language || JSON.stringify(msg.content), msg.transaction_id, "incoming_message");
 }
 
 // ============================================================
 // Core: Settlement pipeline (inline, no HTTP self-calls)
 // ============================================================
-async function runSettlementPipeline(supabase: any, bankId: string, msg: any): Promise<any> {
+async function runSettlementPipeline(bankId: string, msg: any): Promise<any> {
   const txId = msg.transaction_id;
   const aid = agentId(bankId);
 
@@ -2992,10 +2953,13 @@ async function runSettlementPipeline(supabase: any, bankId: string, msg: any): P
     console.log(`[${aid}] TX: ${txId.slice(0, 8)}  Bank: ${bankId.slice(0, 8)}`);
     console.log(`[${aid}] ======================================================`);
     console.log(`[${aid}] Step 1/4: Compliance check`);
-    const { data: txComp, error: txCompErr } = await supabase.from("transactions")
-      .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*)")
-      .eq("id", txId).single();
-    if (txCompErr || !txComp) throw new Error(`TX not found for compliance: ${txCompErr?.message}`);
+    const [txCompRaw] = await sql`SELECT * FROM transactions WHERE id = ${txId}`;
+    if (!txCompRaw) throw new Error(`TX not found for compliance`);
+    const txComp = txCompRaw as any;
+    const [txCompSender] = await sql`SELECT * FROM banks WHERE id = ${txComp.sender_bank_id}`;
+    const [txCompReceiver] = await sql`SELECT * FROM banks WHERE id = ${txComp.receiver_bank_id}`;
+    txComp.sender_bank = txCompSender || null;
+    txComp.receiver_bank = txCompReceiver || null;
     console.log(`[${aid}] |  TX: status=${txComp.status}, amount=$${txComp.amount_display}, purpose=${JSON.stringify(txComp.purpose_code)}`);
     console.log(`[${aid}] |  ${(txComp as any).sender_bank?.short_code} -> ${(txComp as any).receiver_bank?.short_code}`);
     const purposeCodeRaw = txComp.purpose_code;
@@ -3012,7 +2976,7 @@ async function runSettlementPipeline(supabase: any, bankId: string, msg: any): P
     // Task 127: Query simulated OFAC watchlist for inline pipeline
     const senderBicPipe = resolveBic((txComp as any).sender_bank || { short_code: '' });
     const receiverBicPipe = resolveBic((txComp as any).receiver_bank || { short_code: '' });
-    const watchlistPipe = await checkWatchlist(supabase, senderBicPipe, receiverBicPipe);
+    const watchlistPipe = await checkWatchlist(senderBicPipe, receiverBicPipe);
     const sanctionsPassedPipe = !watchlistPipe.hit;
     const sanctionsDetailPipe = sanctionsPassedPipe
       ? `Neither ${(txComp as any).sender_bank?.short_code} (${senderBicPipe}) nor ${(txComp as any).receiver_bank?.short_code} (${receiverBicPipe}) on sanctions lists`
@@ -3029,9 +2993,9 @@ async function runSettlementPipeline(supabase: any, bankId: string, msg: any): P
     const allPassed = checks.every((ch) => ch.passed);
     const compNow = new Date().toISOString();
     for (const check of checks) {
-      await supabase.from("compliance_logs").insert({ id: crypto.randomUUID(), transaction_id: txId, bank_id: txComp.receiver_bank_id, check_type: check.type, check_result: check.passed, details: { detail: check.detail, agent_id: aid }, solana_log_signature: null, created_at: compNow });
+      await sql`INSERT INTO compliance_logs ${sql({ id: crypto.randomUUID(), transaction_id: txId, bank_id: txComp.receiver_bank_id, check_type: check.type, check_result: check.passed, details: { detail: check.detail, agent_id: aid }, solana_log_signature: null, created_at: compNow }, ...Object.keys({ id: crypto.randomUUID(), transaction_id: txId, bank_id: txComp.receiver_bank_id, check_type: check.type, check_result: check.passed, details: { detail: check.detail, agent_id: aid }, solana_log_signature: null, created_at: compNow }))}`
     }
-    await supabase.from("transactions").update({ status: "compliance_check", compliance_passed: allPassed, compliance_checks: checks, compliance_completed_at: compNow }).eq("id", txId);
+    await sql`UPDATE transactions SET status = ${"compliance_check"}, compliance_passed = ${allPassed}, compliance_checks = ${checks}, compliance_completed_at = ${compNow} WHERE id = ${txId}`;
     console.log(`[${aid}] Step 1 result: ${allPassed ? "PASSED" : "FAILED"} (${checks.filter(c => c.passed).length}/${checks.length})`);
 
     // ── NEW: Concord narrative reasoning (Gemini LLM pass) ──
@@ -3065,22 +3029,29 @@ async function runSettlementPipeline(supabase: any, bankId: string, msg: any): P
     const sCodeComp = (txComp as any).sender_bank?.short_code || "?";
     const rCodeComp = (txComp as any).receiver_bank?.short_code || "?";
     const checksDetail = checks.map((c: any) => `${c.passed ? "✓" : "✗"} ${c.type.replace(/_/g, " ")}: ${c.detail}`).join("; ");
-    await supabase.from("agent_messages").insert({
+    await sql`INSERT INTO agent_messages ${sql({
       id: crypto.randomUUID(), transaction_id: txId,
       from_bank_id: txComp.receiver_bank_id, to_bank_id: txComp.sender_bank_id,
       message_type: "compliance_response",
       content: { agent_id: aid, result: allPassed ? "PASSED" : "FAILED", checks_passed: checks.filter((c: any) => c.passed).length, checks_total: checks.length, checks, amount_display: txComp.amount_display, concord_narrative: concordNarrative },
       natural_language: `Concord — Compliance ${allPassed ? "PASSED" : "FAILED"} (${checks.filter((c: any) => c.passed).length}/${checks.length}) for ${sCodeComp}→${rCodeComp} $${txComp.amount_display?.toLocaleString()}: ${checksDetail}`,
       processed: true, created_at: compNow,
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(), transaction_id: txId,
+      from_bank_id: txComp.receiver_bank_id, to_bank_id: txComp.sender_bank_id,
+      message_type: "compliance_response",
+      content: { agent_id: aid, result: allPassed ? "PASSED" : "FAILED", checks_passed: checks.filter((c: any) => c.passed).length, checks_total: checks.length, checks, amount_display: txComp.amount_display, concord_narrative: concordNarrative },
+      natural_language: `Concord — Compliance ${allPassed ? "PASSED" : "FAILED"} (${checks.filter((c: any) => c.passed).length}/${checks.length}) for ${sCodeComp}→${rCodeComp} $${txComp.amount_display?.toLocaleString()}: ${checksDetail}`,
+      processed: true, created_at: compNow,
+    }))}`
 
     if (!allPassed) {
       const failedChecks = checks.filter((ch) => !ch.passed);
       const failedSummary = failedChecks.map((ch) => `${ch.type.replace(/_/g, ' ')}: ${ch.detail}`).join('; ');
       const passedCount = checks.filter((ch) => ch.passed).length;
-      const { data: bank } = await supabase.from("banks").select("*").eq("id", bankId).single();
+      const [bank] = await sql`SELECT * FROM banks WHERE id = ${bankId}`;
       const rejectionReason = `Compliance failed (${passedCount}/${checks.length} passed): ${failedSummary}`;
-      if (bank) await handleRejectPayment(supabase, bank, txId, rejectionReason, `${bank.short_code} agent rejected: ${failedSummary}`);
+      if (bank) await handleRejectPayment(bank, txId, rejectionReason, `${bank.short_code} agent rejected: ${failedSummary}`);
       return { reasoning: `Compliance failed. ${failedSummary}`, action: "reject_payment",
         params: { rejection_reason: rejectionReason, failed_checks: failedChecks },
         message_to_counterparty: `Maestro: Settlement rejected. ${failedSummary}`,
@@ -3089,30 +3060,21 @@ async function runSettlementPipeline(supabase: any, bankId: string, msg: any): P
 
     // Step 2: Risk Scoring (INLINE)
     console.log(`[${aid}] Step 2/4: Risk scoring`);
-    const { data: txRisk } = await supabase.from("transactions")
-      .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*)")
-      .eq("id", txId).single();
-    if (!txRisk) throw new Error("TX not found for risk scoring");
+    const [txRiskRaw] = await sql`SELECT * FROM transactions WHERE id = ${txId}`;
+    if (!txRiskRaw) throw new Error("TX not found for risk scoring");
+    const txRisk = txRiskRaw as any;
+    const [txRiskSender] = await sql`SELECT * FROM banks WHERE id = ${txRisk.sender_bank_id}`;
+    const [txRiskReceiver] = await sql`SELECT * FROM banks WHERE id = ${txRisk.receiver_bank_id}`;
+    txRisk.sender_bank = txRiskSender || null;
+    txRisk.receiver_bank = txRiskReceiver || null;
 
     // ── NEW: Corridor history + sender velocity for behavioral analysis ──
     const senderBankIdRisk = txRisk.sender_bank_id;
     const receiverBankIdRisk = txRisk.receiver_bank_id;
 
-    const { data: corridorHistory } = await supabase
-      .from('transactions')
-      .select('id, amount_display, purpose_code, risk_level, risk_score, status, created_at, sender_bank_id, receiver_bank_id')
-      .or(`and(sender_bank_id.eq.${senderBankIdRisk},receiver_bank_id.eq.${receiverBankIdRisk}),and(sender_bank_id.eq.${receiverBankIdRisk},receiver_bank_id.eq.${senderBankIdRisk})`)
-      .neq('id', txId)
-      .order('created_at', { ascending: false })
-      .limit(10);
+    const corridorHistory = await sql`SELECT id, amount_display, purpose_code, risk_level, risk_score, status, created_at, sender_bank_id, receiver_bank_id FROM transactions WHERE ((sender_bank_id = ${senderBankIdRisk} AND receiver_bank_id = ${receiverBankIdRisk}) OR (sender_bank_id = ${receiverBankIdRisk} AND receiver_bank_id = ${senderBankIdRisk})) AND id != ${txId} ORDER BY created_at DESC LIMIT 10`;
 
-    const { data: senderRecentTxns } = await supabase
-      .from('transactions')
-      .select('id, amount_display, receiver_bank_id, purpose_code, status, created_at')
-      .eq('sender_bank_id', senderBankIdRisk)
-      .neq('id', txId)
-      .order('created_at', { ascending: false })
-      .limit(10);
+    const senderRecentTxns = await sql`SELECT id, amount_display, receiver_bank_id, purpose_code, status, created_at FROM transactions WHERE sender_bank_id = ${senderBankIdRisk} AND id != ${txId} ORDER BY created_at DESC LIMIT 10`;
 
     const senderBankCodeR = (txRisk as any).sender_bank?.short_code || '?';
     const receiverBankCodeR = (txRisk as any).receiver_bank?.short_code || '?';
@@ -3184,26 +3146,34 @@ async function runSettlementPipeline(supabase: any, bankId: string, msg: any): P
 
     const riskScore = { id: crypto.randomUUID(), transaction_id: txId, counterparty_score: clamp(riskResult.counterparty_score), jurisdiction_score: clamp(riskResult.jurisdiction_score), asset_type_score: clamp(riskResult.asset_type_score), behavioral_score: clamp(riskResult.behavioral_score), composite_score: configComposite, risk_level: configRiskLevel, finality_recommendation: configFinality, reasoning: riskResult.reasoning || "", created_at: new Date().toISOString() };
     console.log(`[${aid}] |  Risk: ${riskScore.risk_level} (${riskScore.composite_score}/100), finality=${riskScore.finality_recommendation} (gemini raw: ${riskResult.composite_score}, ${riskResult.finality_recommendation})`);
-    await supabase.from("risk_scores").insert(riskScore);
+    await sql`INSERT INTO risk_scores ${sql(riskScore, ...Object.keys(riskScore))}`;
+
     let lockupUntil: string | null = null;
     if (configFinality === "deferred_24h") lockupUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     else if (configFinality === "deferred_72h") lockupUntil = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
     else if (configFinality === "manual_review") lockupUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    await supabase.from("transactions").update({ status: "risk_scored", risk_level: riskScore.risk_level, risk_score: riskScore.composite_score, risk_reasoning: riskScore.reasoning, risk_scored_at: new Date().toISOString(), lockup_until: lockupUntil }).eq("id", txId);
+    await sql`UPDATE transactions SET status = ${"risk_scored"}, risk_level = ${riskScore.risk_level}, risk_score = ${riskScore.composite_score}, risk_reasoning = ${riskScore.reasoning}, risk_scored_at = ${new Date().toISOString()}, lockup_until = ${lockupUntil} WHERE id = ${txId}`;
     console.log(`[${aid}] Step 2 result: ${(riskScore.risk_level as string).toUpperCase()} (${riskScore.composite_score}/100)`);
 
     // ── Risk assessment agent_message (detailed feed event) ──
     const riskSCodeR = senderBankCodeR;
     const riskRCodeR = receiverBankCodeR;
     const riskFinalityText = riskScore.finality_recommendation === "immediate" ? "Immediate finality approved." : `Finality deferred: ${riskScore.finality_recommendation}.`;
-    await supabase.from("agent_messages").insert({
+    await sql`INSERT INTO agent_messages ${sql({
       id: crypto.randomUUID(), transaction_id: txId,
       from_bank_id: bankId, to_bank_id: (txRisk as any).sender_bank_id || bankId,
       message_type: "risk_alert",
       content: { agent_id: aid, risk_level: riskScore.risk_level, composite_score: riskScore.composite_score, counterparty_score: riskScore.counterparty_score, jurisdiction_score: riskScore.jurisdiction_score, asset_type_score: riskScore.asset_type_score, behavioral_score: riskScore.behavioral_score, finality: riskScore.finality_recommendation, reasoning: riskScore.reasoning, amount_display: txRisk.amount_display, corridor_depth: corridorHistory?.length || 0, sender_velocity_60min: senderTxnsLast60Min.length, sender_volume_60min: senderVolumeLast60Min },
       natural_language: `Fermata — Risk ${(riskScore.risk_level as string).toUpperCase()} (${riskScore.composite_score}/100) for ${riskSCodeR}→${riskRCodeR} $${txRisk.amount_display?.toLocaleString()}. Counterparty: ${riskScore.counterparty_score}/100, Jurisdiction: ${riskScore.jurisdiction_score}/100, Asset: ${riskScore.asset_type_score}/100, Behavioral: ${riskScore.behavioral_score}/100. ${riskFinalityText} ${(riskScore.reasoning || "").slice(0, 150)}`,
       processed: true, created_at: new Date().toISOString(),
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(), transaction_id: txId,
+      from_bank_id: bankId, to_bank_id: (txRisk as any).sender_bank_id || bankId,
+      message_type: "risk_alert",
+      content: { agent_id: aid, risk_level: riskScore.risk_level, composite_score: riskScore.composite_score, counterparty_score: riskScore.counterparty_score, jurisdiction_score: riskScore.jurisdiction_score, asset_type_score: riskScore.asset_type_score, behavioral_score: riskScore.behavioral_score, finality: riskScore.finality_recommendation, reasoning: riskScore.reasoning, amount_display: txRisk.amount_display, corridor_depth: corridorHistory?.length || 0, sender_velocity_60min: senderTxnsLast60Min.length, sender_volume_60min: senderVolumeLast60Min },
+      natural_language: `Fermata — Risk ${(riskScore.risk_level as string).toUpperCase()} (${riskScore.composite_score}/100) for ${riskSCodeR}→${riskRCodeR} $${txRisk.amount_display?.toLocaleString()}. Counterparty: ${riskScore.counterparty_score}/100, Jurisdiction: ${riskScore.jurisdiction_score}/100, Asset: ${riskScore.asset_type_score}/100, Behavioral: ${riskScore.behavioral_score}/100. ${riskFinalityText} ${(riskScore.reasoning || "").slice(0, 150)}`,
+      processed: true, created_at: new Date().toISOString(),
+    }))}`
 
     // Step 3: Agent Decision (INLINE via coreAgentThink)
     console.log(`[${aid}] Step 3/4: Agent decision`);
@@ -3215,7 +3185,7 @@ Original request: ${msg.natural_language || JSON.stringify(msg.content)}
 Risk reasoning: ${riskScore.reasoning || "N/A"}
 
 Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
-    const thinkResult = await coreAgentThink(supabase, bankId, agentInput, txId, "risk_result");
+    const thinkResult = await coreAgentThink(bankId, agentInput, txId, "risk_result");
     console.log(`[${aid}] Step 3 result: action=${thinkResult.action}`);
 
     // Attach structured evaluation text so the frontend can render a PaymentEvaluationCard
@@ -3229,22 +3199,32 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
     const decisionVerb = thinkResult.action === "accept_payment" ? "ACCEPT" : thinkResult.action === "reject_payment" ? "REJECT" : String(thinkResult.action).toUpperCase();
     const decisionSCode = (txRisk as any).sender_bank?.short_code || "?";
     const decisionRCode = (txRisk as any).receiver_bank?.short_code || "?";
-    await supabase.from("agent_messages").insert({
+    await sql`INSERT INTO agent_messages ${sql({
       id: crypto.randomUUID(), transaction_id: txId,
       from_bank_id: bankId, to_bank_id: (txRisk as any).sender_bank_id || bankId,
       message_type: "status_update",
       content: { agent_id: aid, action: "agent_decision", decision: thinkResult.action, context: "pipeline_decision", reasoning: thinkResult.reasoning, risk_context: { level: riskScore.risk_level, score: riskScore.composite_score, finality: riskScore.finality_recommendation }, amount_display: txRisk.amount_display },
       natural_language: `Maestro — ${decisionRCode} agent reasoning: ${decisionVerb} payment from ${decisionSCode} ($${txRisk.amount_display?.toLocaleString()}). Risk: ${(riskScore.risk_level as string).toUpperCase()} (${riskScore.composite_score}/100). ${(thinkResult.reasoning || "").slice(0, 200)}`,
       processed: true, created_at: new Date().toISOString(),
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(), transaction_id: txId,
+      from_bank_id: bankId, to_bank_id: (txRisk as any).sender_bank_id || bankId,
+      message_type: "status_update",
+      content: { agent_id: aid, action: "agent_decision", decision: thinkResult.action, context: "pipeline_decision", reasoning: thinkResult.reasoning, risk_context: { level: riskScore.risk_level, score: riskScore.composite_score, finality: riskScore.finality_recommendation }, amount_display: txRisk.amount_display },
+      natural_language: `Maestro — ${decisionRCode} agent reasoning: ${decisionVerb} payment from ${decisionSCode} ($${txRisk.amount_display?.toLocaleString()}). Risk: ${(riskScore.risk_level as string).toUpperCase()} (${riskScore.composite_score}/100). ${(thinkResult.reasoning || "").slice(0, 200)}`,
+      processed: true, created_at: new Date().toISOString(),
+    }))}`
 
     // Step 4: Execute if accepted (INLINE)
     if (thinkResult.action === "accept_payment") {
       console.log(`[${aid}] Step 4/4: On-chain settlement`);
-      const { data: txExec } = await supabase.from("transactions")
-        .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*)")
-        .eq("id", txId).single();
-      if (!txExec) throw new Error("TX not found for execution");
+      const [txExecRaw] = await sql`SELECT * FROM transactions WHERE id = ${txId}`;
+      if (!txExecRaw) throw new Error("TX not found for execution");
+      const txExec = txExecRaw as any;
+      const [txExecSender] = await sql`SELECT * FROM banks WHERE id = ${txExec.sender_bank_id}`;
+      const [txExecReceiver] = await sql`SELECT * FROM banks WHERE id = ${txExec.receiver_bank_id}`;
+      txExec.sender_bank = txExecSender || null;
+      txExec.receiver_bank = txExecReceiver || null;
       const senderBank = (txExec as any).sender_bank;
       const receiverBank = (txExec as any).receiver_bank;
 
@@ -3254,17 +3234,24 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
         console.log(`[${aid}] |  High risk -- manual review required`);
       } else {
         console.log(`[${aid}] |  ${senderBank?.short_code}->${receiverBank?.short_code}, amount=${txExec.amount}`);
-        await supabase.from("transactions").update({ status: "executing" }).eq("id", txId);
+        await sql`UPDATE transactions SET status = ${"executing"} WHERE id = ${txId}`;
 
         // ── Settlement initiation agent_message ──
-        await supabase.from("agent_messages").insert({
+        await sql`INSERT INTO agent_messages ${sql({
           id: crypto.randomUUID(), transaction_id: txId,
           from_bank_id: txExec.receiver_bank_id, to_bank_id: txExec.sender_bank_id,
           message_type: "status_update",
           content: { agent_id: aid, action: "settlement_started", context: "settlement", sender: senderBank?.short_code, receiver: receiverBank?.short_code, amount_display: txExec.amount_display },
           natural_language: `Canto — Executing on-chain settlement: ${senderBank?.short_code}→${receiverBank?.short_code} $${txExec.amount_display?.toLocaleString()}...`,
           processed: true, created_at: new Date().toISOString(),
-        });
+        }, ...Object.keys({
+          id: crypto.randomUUID(), transaction_id: txId,
+          from_bank_id: txExec.receiver_bank_id, to_bank_id: txExec.sender_bank_id,
+          message_type: "status_update",
+          content: { agent_id: aid, action: "settlement_started", context: "settlement", sender: senderBank?.short_code, receiver: receiverBank?.short_code, amount_display: txExec.amount_display },
+          natural_language: `Canto — Executing on-chain settlement: ${senderBank?.short_code}→${receiverBank?.short_code} $${txExec.amount_display?.toLocaleString()}...`,
+          processed: true, created_at: new Date().toISOString(),
+        }))}`
 
         // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
         // Task 118: True Three-Token Lockup Settlement
@@ -3339,7 +3326,7 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
           } catch (burnErr) {
             const errMsg = (burnErr as Error).message;
             console.log(`[${aid}] |  Phase 1a \u2717 Sender burn FAILED: ${errMsg}`);
-            await supabase.from("transactions").update({ status: "risk_scored" }).eq("id", txId);
+            await sql`UPDATE transactions SET status = ${"risk_scored"} WHERE id = ${txId}`;
             console.log(`[${aid}] === PIPELINE FAILED at Phase 1a ===`);
             return { ...thinkResult, settlement: { error: errMsg } };
           }
@@ -3367,7 +3354,7 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
 
             // Insert lockup_tokens record
             const lockupId = crypto.randomUUID();
-            await supabase.from("lockup_tokens").insert({
+            await sql`INSERT INTO lockup_tokens ${sql({
               id: lockupId,
               transaction_id: txId,
               sender_bank_id: txExec.sender_bank_id,
@@ -3387,12 +3374,32 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
               lockup_end: lockupUntilOrch,
               status: "active",
               created_at: execNow,
-            });
+            }, ...Object.keys({
+              id: lockupId,
+              transaction_id: txId,
+              sender_bank_id: txExec.sender_bank_id,
+              receiver_bank_id: txExec.receiver_bank_id,
+              yb_token_mint: lockupMintAddr,
+              yb_token_symbol: LOCKUP_TOKEN_SYMBOL,
+              yb_token_amount: rawAmount.toString(),
+              yb_holder: custodianWallet,
+              tb_token_mint: null,
+              tb_token_symbol: null,
+              tb_token_amount: null,
+              tb_holder: null,
+              yield_rate_bps: 525,
+              yield_accrued: "0",
+              yield_last_calculated: execNow,
+              lockup_start: execNow,
+              lockup_end: lockupUntilOrch,
+              status: "active",
+              created_at: execNow,
+            }))}`
             console.log(`[${aid}] |  Phase 1c \u2713 lockup_tokens record: ${lockupId.slice(0, 8)}... (${effectiveLockupOrch}min)`);
           } catch (escrowErr) {
             const errMsg = (escrowErr as Error).message;
             console.log(`[${aid}] |  Phase 1b \u2717 Escrow mint FAILED: ${errMsg}. SENDER TOKENS BURNED \u2014 manual recovery needed.`);
-            await supabase.from("transactions").update({ status: "risk_scored", lockup_status: null }).eq("id", txId);
+            await sql`UPDATE transactions SET status = ${"risk_scored"}, lockup_status = ${null} WHERE id = ${txId}`;
             return { ...thinkResult, settlement: { error: `Escrow mint failed after sender burn: ${errMsg}` } };
           }
 
@@ -3402,7 +3409,7 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
           // Update sender wallet balance (tokens were burned)
           try {
             const senderBal = await getTokenBalance(senderBank.solana_wallet_pubkey, senderBank.token_mint_address);
-            await supabase.from("wallets").update({ balance_tokens: Number(senderBal) }).eq("bank_id", txExec.sender_bank_id).eq("is_default", true);
+            await sql`UPDATE wallets SET balance_tokens = ${Number(senderBal)} WHERE bank_id = ${txExec.sender_bank_id} AND is_default = ${true}`;
             console.log(`[${aid}] |  Sender balance: ${Number(senderBal)} (${senderBank.short_code})`);
           } catch (balErr) { console.log(`[${aid}] |  Balance read warning: ${(balErr as Error).message}`); }
 
@@ -3420,15 +3427,20 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
             solana_block_time: execNow,
             settled_at: null,
           };
-          const { error: txUpdateErr } = await supabase.from("transactions").update(txUpdatePayload).eq("id", txId);
+          await sql`UPDATE transactions SET ${sql(txUpdatePayload, ...Object.keys(txUpdatePayload))} WHERE id = ${txId}`;
           if (txUpdateErr) {
             console.log(`[${aid}] |  TX status update failed: ${JSON.stringify(txUpdateErr)} \u2014 retrying`);
-            await supabase.from("transactions").update({
+            await sql`UPDATE transactions SET ${sql({
               status: "locked", settlement_type: "lockup", lockup_status: "active",
               is_reversible: true, lockup_until: lockupUntilOrch,
               lockup_duration_minutes: effectiveLockupOrch,
               solana_tx_signature: burnResult.signature,
-            }).eq("id", txId);
+            }, ...Object.keys({
+              status: "locked", settlement_type: "lockup", lockup_status: "active",
+              is_reversible: true, lockup_until: lockupUntilOrch,
+              lockup_duration_minutes: effectiveLockupOrch,
+              solana_tx_signature: burnResult.signature,
+            }))} WHERE id = ${txId}`;
           }
           console.log(`[${aid}] |  TX status \u2192 locked (Phase 1 complete)`);
 
@@ -3479,7 +3491,7 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
           } catch (solanaErr) {
             const errMsg = solanaErr instanceof Error ? solanaErr.message : String(solanaErr);
             console.log(`[${aid}] |  PvP Transfer FAILED: ${errMsg}`);
-            await supabase.from("transactions").update({ status: "risk_scored" }).eq("id", txId);
+            await sql`UPDATE transactions SET status = ${"risk_scored"} WHERE id = ${txId}`;
             console.log(`[${aid}] === PIPELINE FAILED at Step 4 ===`);
             return { ...thinkResult, settlement: { error: errMsg } };
           }
@@ -3487,9 +3499,9 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
           // Update wallet balances
           try {
             const senderBal = await getTokenBalance(senderBank.solana_wallet_pubkey, senderBank.token_mint_address);
-            await supabase.from("wallets").update({ balance_tokens: Number(senderBal) }).eq("bank_id", txExec.sender_bank_id).eq("is_default", true);
+            await sql`UPDATE wallets SET balance_tokens = ${Number(senderBal)} WHERE bank_id = ${txExec.sender_bank_id} AND is_default = ${true}`;
             const receiverBal = await getTokenBalance(receiverBank.solana_wallet_pubkey, receiverBank.token_mint_address);
-            await supabase.from("wallets").update({ balance_tokens: Number(receiverBal) }).eq("bank_id", txExec.receiver_bank_id).eq("is_default", true);
+            await sql`UPDATE wallets SET balance_tokens = ${Number(receiverBal)} WHERE bank_id = ${txExec.receiver_bank_id} AND is_default = ${true}`;
           } catch (balErr) { console.log(`[${aid}] |  Balance read warning: ${(balErr as Error).message}`); }
 
           const txUpdatePayload = {
@@ -3503,13 +3515,16 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
             solana_block_time: transferResult.blockTime ? new Date(transferResult.blockTime * 1000).toISOString() : execNow,
             settled_at: execNow,
           };
-          const { error: txUpdateErr } = await supabase.from("transactions").update(txUpdatePayload).eq("id", txId);
+          await sql`UPDATE transactions SET ${sql(txUpdatePayload, ...Object.keys(txUpdatePayload))} WHERE id = ${txId}`;
           if (txUpdateErr) {
             console.log(`[${aid}] |  TX update failed: ${JSON.stringify(txUpdateErr)} \u2014 retrying`);
-            await supabase.from("transactions").update({
+            await sql`UPDATE transactions SET ${sql({
               status: "settled", settlement_type: "PvP", settled_at: execNow,
               solana_tx_signature: transferResult.signature,
-            }).eq("id", txId);
+            }, ...Object.keys({
+              status: "settled", settlement_type: "PvP", settled_at: execNow,
+              solana_tx_signature: transferResult.signature,
+            }))} WHERE id = ${txId}`;
           }
 
           // PvP network fee
@@ -3526,7 +3541,7 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
           } catch (feeErr) { console.log(`[${aid}] |  Network fee warning: ${(feeErr as Error).message}`); }
         }
 
-        await supabase.from("agent_messages").insert({
+        await sql`INSERT INTO agent_messages ${sql({
           id: crypto.randomUUID(), transaction_id: txId,
           from_bank_id: txExec.receiver_bank_id, to_bank_id: txExec.sender_bank_id,
           message_type: "settlement_confirm",
@@ -3535,17 +3550,31 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
             ? `Maestro \u2014 Phase 1 escrow complete. $${txExec.amount_display?.toLocaleString()} LOCKUP-USTB minted to BNY escrow. Receiver has NO tokens. Lockup: ${effectiveLockupOrch}min until ${lockupUntilOrch}. Phase 2 (finality) triggers at expiry.`
             : `Maestro \u2014 Settlement confirmed on ${networkLabel}. Tx: ${primarySignature.slice(0, 16)}... Amount: $${txExec.amount_display?.toLocaleString()} transferred.`,
           processed: false, created_at: execNow,
-        });
+        }, ...Object.keys({
+          id: crypto.randomUUID(), transaction_id: txId,
+          from_bank_id: txExec.receiver_bank_id, to_bank_id: txExec.sender_bank_id,
+          message_type: "settlement_confirm",
+          content: { agent_id: aid, action: finalStatus, tx_signature: primarySignature, amount: txExec.amount, amount_display: txExec.amount_display, locked_until: lockupUntilOrch, settlement_type: isLockupFlowOrch ? "lockup_escrow" : "PvP", phase: isLockupFlowOrch ? 1 : undefined },
+          natural_language: isLockupFlowOrch
+            ? `Maestro \u2014 Phase 1 escrow complete. $${txExec.amount_display?.toLocaleString()} LOCKUP-USTB minted to BNY escrow. Receiver has NO tokens. Lockup: ${effectiveLockupOrch}min until ${lockupUntilOrch}. Phase 2 (finality) triggers at expiry.`
+            : `Maestro \u2014 Settlement confirmed on ${networkLabel}. Tx: ${primarySignature.slice(0, 16)}... Amount: $${txExec.amount_display?.toLocaleString()} transferred.`,
+          processed: false, created_at: execNow,
+        }))}`
 
         const settlementConfirmMsg = isLockupFlowOrch
           ? `Phase 1 escrow complete. ${senderBank?.short_code} \u2192 ${receiverBank?.short_code} $${txExec.amount_display?.toLocaleString()}.\\n\\nSender burn sig: ${primarySignature}\\nLockup: ${effectiveLockupOrch}min\\nPhase 2 at: ${lockupUntilOrch}\\nReceiver gets tokens at Phase 2.`
           : `Settlement confirmed. ${senderBank?.short_code} \u2192 ${receiverBank?.short_code} $${txExec.amount_display?.toLocaleString()} settled on ${networkLabel}.\\n\\nSignature: ${primarySignature}\\nSlot: ${primarySlot}`;
-        await supabase.from("agent_conversations").insert({
+        await sql`INSERT INTO agent_conversations ${sql({
           id: crypto.randomUUID(), bank_id: bankId,
           transaction_id: txId, role: "model",
           content: settlementConfirmMsg,
           created_at: new Date(Date.now() + 200).toISOString(),
-        });
+        }, ...Object.keys({
+          id: crypto.randomUUID(), bank_id: bankId,
+          transaction_id: txId, role: "model",
+          content: settlementConfirmMsg,
+          created_at: new Date(Date.now() + 200).toISOString(),
+        }))}`
 
         console.log(`[${aid}] Step 4 result: ${finalStatus} sig=${primarySignature.slice(0, 20)}...`);
         console.log(`[${aid}] === PIPELINE COMPLETE: ${finalStatus.toUpperCase()} ===`);
@@ -3678,13 +3707,10 @@ function generateMarketEvent(cycleNumber: number, banks: any[]): {
 // ============================================================
 // Treasury Heartbeat — Helper: Capture network snapshot
 // ============================================================
-async function captureNetworkSnapshot(supabase: any): Promise<void> {
+async function captureNetworkSnapshot(): Promise<void> {
   try {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data: recentTxns } = await supabase
-      .from("transactions")
-      .select("amount_display, amount, status, risk_score")
-      .gte("created_at", fiveMinAgo);
+    const recentTxns = await sql`SELECT amount_display, amount, status, risk_score FROM transactions WHERE created_at >= ${fiveMinAgo}`;
 
     const txns = recentTxns || [];
     const count = txns.length;
@@ -3693,7 +3719,7 @@ async function captureNetworkSnapshot(supabase: any): Promise<void> {
     const riskScores = txns.filter((t: any) => t.risk_score != null).map((t: any) => t.risk_score as number);
     const avgRisk = riskScores.length > 0 ? riskScores.reduce((a: number, b: number) => a + b, 0) / riskScores.length : 0;
 
-    await supabase.from("network_snapshots").insert({
+    await sql`INSERT INTO network_snapshots ${sql({
       id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
       metrics: {
@@ -3703,7 +3729,17 @@ async function captureNetworkSnapshot(supabase: any): Promise<void> {
         settled_5min: settled.length,
         avg_risk: Math.round(avgRisk * 10) / 10,
       },
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      metrics: {
+        tps: count / 300,
+        volume_5min: settledVolume,
+        count_5min: count,
+        settled_5min: settled.length,
+        avg_risk: Math.round(avgRisk * 10) / 10,
+      },
+    }))}`
     console.log(`[snapshot] Captured: ${count} txns, ${settled.length} settled, $${settledVolume.toLocaleString()} volume`);
   } catch (err) {
     console.log(`[snapshot] Non-critical error: ${(err as Error).message}`);
@@ -3804,13 +3840,15 @@ function fallbackMandates(bank: any): any[] {
 // ============================================================
 app.post("/make-server-49d15288/seed-mandates", async (c) => {
   try {
-    const supabase = getAdminClient();
     console.log("[seed-mandates] Starting mandate seeding (full regeneration)...");
 
     // Load all active banks
-    const { data: banks, error: banksErr } = await supabase
-      .from("banks").select("*").eq("status", "active");
-    if (banksErr) return c.json({ error: `Failed to load banks: ${banksErr.message}` }, 500);
+    let banks: any[];
+    try {
+      banks = await sql`SELECT * FROM banks WHERE status = ${"active"}`;
+    } catch (banksErr: any) {
+      return c.json({ error: `Failed to load banks: ${banksErr.message}` }, 500);
+    }
     if (!banks || banks.length === 0) return c.json({ error: "No active banks found" }, 400);
 
     console.log(`[seed-mandates] Found ${banks.length} active banks: ${banks.map((b: any) => b.short_code).join(', ')}`);
@@ -3824,8 +3862,8 @@ app.post("/make-server-49d15288/seed-mandates", async (c) => {
 
       try {
         // Delete existing mandates for this bank (makes re-seeding idempotent)
-        const { error: delErr } = await supabase
-          .from("treasury_mandates").delete().eq("bank_id", bank.id);
+        let delErr: any = null;
+        try { await sql`DELETE FROM treasury_mandates WHERE bank_id = ${bank.id}` } catch (e) { delErr = e; }
         if (delErr) {
           console.log(`[seed-mandates] ${code}: failed to delete existing mandates — ${delErr.message}`);
         }
@@ -3846,14 +3884,16 @@ app.post("/make-server-49d15288/seed-mandates", async (c) => {
           created_at: new Date().toISOString(),
         }));
 
-        const { error: insertErr } = await supabase.from("treasury_mandates").insert(rows);
-        if (insertErr) {
-          console.log(`[seed-mandates] ${code}: insert error — ${insertErr.message}`);
-          results.push({ bank: code, status: `error: ${insertErr.message}`, mandates_seeded: 0 });
-        } else {
+        try {
+          for (const row of rows) {
+            await sql`INSERT INTO treasury_mandates ${sql(row, ...Object.keys(row))}`;
+          }
           console.log(`[seed-mandates] ${code}: seeded ${rows.length} mandates`);
           totalMandates += rows.length;
           results.push({ bank: code, status: 'seeded', mandates_seeded: rows.length });
+        } catch (insertErr) {
+          console.log(`[seed-mandates] ${code}: insert failed — ${(insertErr as Error).message}`);
+          results.push({ bank: code, status: `insert_error: ${(insertErr as Error).message}`, mandates_seeded: 0 });
         }
       } catch (bankErr) {
         console.log(`[seed-mandates] ${code}: generation failed — ${(bankErr as Error).message}`);
@@ -3880,17 +3920,20 @@ app.post("/make-server-49d15288/seed-mandates", async (c) => {
 // Extracted as standalone function so network-heartbeat can call
 // directly (no HTTP self-call — matches coreOrchestrate pattern)
 async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
-  const supabase = getAdminClient();
   console.log(`[treasury-cycle] CYCLE ${cycleNumber} START`);
 
   // Load banks first so we can generate market event before inserting cycle record
-  const { data: banks, error: banksErr } = await supabase
-    .from("banks")
-    .select("*, wallets!inner(balance_tokens, balance_lamports, token_account_address, solana_pubkey)")
-    .eq("status", "active");
-
-  if (banksErr || !banks || banks.length === 0) {
-    throw new Error(`No active banks: ${banksErr?.message || "none found"}`);
+  const banksRaw = await sql`SELECT * FROM banks WHERE status = 'active'`;
+  if (!banksRaw || banksRaw.length === 0) {
+    throw new Error(`No active banks: none found`);
+  }
+  const banks = [] as any[];
+  for (const b of banksRaw) {
+    const walletRows = await sql`SELECT balance_tokens, balance_lamports, token_account_address, solana_pubkey FROM wallets WHERE bank_id = ${b.id}`;
+    if (walletRows.length > 0) banks.push({ ...b, wallets: walletRows });
+  }
+  if (banks.length === 0) {
+    throw new Error(`No active banks with wallets found`);
   }
 
   // Generate market event BEFORE inserting cycle (market_event column is NOT NULL)
@@ -3898,17 +3941,10 @@ async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
   console.log(`[treasury-cycle] ${banks.length} banks, event: ${marketEvent.event_type}`);
 
   const cycleId = crypto.randomUUID();
-  const { error: cycleErr } = await supabase.from("heartbeat_cycles").insert({
-    id: cycleId,
-    cycle_number: cycleNumber,
-    status: "running",
-    banks_evaluated: 0,
-    transactions_initiated: 0,
-    market_event: marketEvent,
-    started_at: new Date().toISOString(),
-  });
-  if (cycleErr) {
-    throw new Error(`Failed to create cycle: ${cycleErr.message}`);
+  try {
+    await sql`INSERT INTO heartbeat_cycles (id, cycle_number, status, banks_evaluated, transactions_initiated, market_event, started_at) VALUES (${cycleId}, ${cycleNumber}, ${'running'}, ${0}, ${0}, ${JSON.stringify(marketEvent)}, ${new Date().toISOString()})`;
+  } catch (cycleErr) {
+    throw new Error(`Failed to create cycle: ${(cycleErr as Error).message}`);
   }
 
   let totalBanksEvaluated = 0;
@@ -3939,12 +3975,7 @@ async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
         continue;
       }
 
-      const { data: mandates } = await supabase
-        .from("treasury_mandates")
-        .select("*")
-        .eq("bank_id", bank.id)
-        .eq("is_active", true)
-        .order("priority", { ascending: true });
+      const mandates = await sql`SELECT * FROM treasury_mandates WHERE bank_id = ${bank.id} AND is_active = ${true} ORDER BY priority ASC`;
 
       if (!mandates || mandates.length === 0) {
         bankResults.push({ bank: code, action: "no_mandates" });
@@ -3956,18 +3987,14 @@ async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
       const initialSupply: number = bank.initial_deposit_supply || 10_000_000;
       const deployedPct = initialSupply > 0 ? Math.max(0, ((initialSupply - currentBalance) / initialSupply) * 100) : 0;
 
-      const { data: recentTxns } = await supabase
-        .from("transactions")
-        .select("*")
-        .or(`sender_bank_id.eq.${bank.id},receiver_bank_id.eq.${bank.id}`)
-        .order("created_at", { ascending: false })
-        .limit(10);
+      const recentTxns = await sql`SELECT * FROM transactions WHERE (sender_bank_id = ${bank.id} OR receiver_bank_id = ${bank.id}) ORDER BY created_at DESC LIMIT 10`;
 
-      const { data: otherBanks } = await supabase
-        .from("banks")
-        .select("*, wallets(balance_tokens, balance_lamports)")
-        .neq("id", bank.id)
-        .eq("status", "active");
+      const otherBanksRaw = await sql`SELECT * FROM banks WHERE id != ${bank.id} AND status = 'active'`;
+      const otherBanks = [] as any[];
+      for (const ob of otherBanksRaw) {
+        const obWallets = await sql`SELECT balance_tokens, balance_lamports FROM wallets WHERE bank_id = ${ob.id}`;
+        otherBanks.push({ ...ob, wallets: obWallets });
+      }
 
       const enrichedBankEvent = { ...bankEvent, lockup_duration_minutes: bankCfg.default_lockup_duration_minutes };
       const treasuryPrompt = buildTreasuryCyclePrompt(
@@ -3977,7 +4004,7 @@ async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
         marketEvent.cycle_narrative
       );
 
-      const result = await coreAgentThink(supabase, bank.id, treasuryPrompt, null, "treasury_cycle");
+      const result = await coreAgentThink(bank.id, treasuryPrompt, null, "treasury_cycle");
       console.log(`[treasury-cycle] ${code}: action=${result.action}`);
 
       if (result.action === "initiate_payment" || result.action === "INITIATE_PAYMENT") {
@@ -4000,15 +4027,9 @@ async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
   }
 
   const completedAt = new Date().toISOString();
-  await supabase.from("heartbeat_cycles").update({
-    status: "completed",
-    banks_evaluated: totalBanksEvaluated,
-    transactions_initiated: totalTransactions,
-    market_event: marketEvent,
-    completed_at: completedAt,
-  }).eq("id", cycleId);
+  await sql`UPDATE heartbeat_cycles SET status = 'completed', banks_evaluated = ${totalBanksEvaluated}, transactions_initiated = ${totalTransactions}, market_event = ${JSON.stringify(marketEvent)}, completed_at = ${completedAt} WHERE id = ${cycleId}`;
 
-  await captureNetworkSnapshot(supabase);
+  await captureNetworkSnapshot();
 
   // ── Trailing step: yield accrual on active lockups ──
   let yieldAccrualResult = null;
@@ -4065,21 +4086,13 @@ app.post("/make-server-49d15288/network-heartbeat", async (c) => {
   try {
     const body = await c.req.json();
     const { action } = body;
-    const supabase = getAdminClient();
 
     if (action === "status") {
-      const { data: lastCycle } = await supabase
-        .from("heartbeat_cycles")
-        .select("*")
-        .order("cycle_number", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const [lastCycle] = await sql`SELECT * FROM heartbeat_cycles ORDER BY cycle_number DESC LIMIT 1`;
 
-      const { count: bankCount } = await supabase
-        .from("banks").select("id", { count: "exact", head: true }).eq("status", "active");
+      const [{ count: bankCount }] = await sql`SELECT count(*)::int AS count FROM banks WHERE status = 'active'`;
 
-      const { count: mandateCount } = await supabase
-        .from("treasury_mandates").select("id", { count: "exact", head: true }).eq("is_active", true);
+      const [{ count: mandateCount }] = await sql`SELECT count(*)::int AS count FROM treasury_mandates WHERE is_active = ${true}`;
 
       return c.json({
         last_cycle: lastCycle || null,
@@ -4090,12 +4103,7 @@ app.post("/make-server-49d15288/network-heartbeat", async (c) => {
     }
 
     if (action === "next_cycle") {
-      const { data: lastCycle } = await supabase
-        .from("heartbeat_cycles")
-        .select("cycle_number")
-        .order("cycle_number", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const [lastCycle] = await sql`SELECT cycle_number FROM heartbeat_cycles ORDER BY cycle_number DESC LIMIT 1`;
 
       const nextCycleNumber = (lastCycle?.cycle_number || 0) + 1;
       console.log(`[network-heartbeat] Triggering cycle ${nextCycleNumber}`);
@@ -4107,8 +4115,8 @@ app.post("/make-server-49d15288/network-heartbeat", async (c) => {
 
     if (action === "reset_cycles") {
       console.log("[network-heartbeat] Resetting cycles and snapshots...");
-      await supabase.from("network_snapshots").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-      await supabase.from("heartbeat_cycles").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      await sql`DELETE FROM network_snapshots WHERE id != '00000000-0000-0000-0000-000000000000'`;
+      await sql`DELETE FROM heartbeat_cycles WHERE id != '00000000-0000-0000-0000-000000000000'`;
       console.log("[network-heartbeat] Reset complete");
       return c.json({ status: "reset_complete", timestamp: new Date().toISOString() });
     }
@@ -4125,21 +4133,16 @@ app.post("/make-server-49d15288/network-heartbeat", async (c) => {
 // ============================================================
 app.post("/make-server-49d15288/network-metrics", async (c) => {
   try {
-    const supabase = getAdminClient();
     const now = new Date();
     const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
     const twentyFourHAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
 
     // TPS: transactions in last 5 min / 300
-    const { data: recentTxns5m } = await supabase
-      .from("transactions").select("id").gte("created_at", fiveMinAgo);
+    const recentTxns5m = await sql`SELECT id FROM transactions WHERE created_at >= ${fiveMinAgo}`;
     const tps = (recentTxns5m?.length || 0) / 300;
 
     // 24h transaction aggregates
-    const { data: txns24h } = await supabase
-      .from("transactions")
-      .select("amount_display, amount, status, risk_score, risk_level, sender_bank_id, receiver_bank_id, purpose_code")
-      .gte("created_at", twentyFourHAgo);
+    const txns24h = await sql`SELECT amount_display, amount, status, risk_score, risk_level, sender_bank_id, receiver_bank_id, purpose_code FROM transactions WHERE created_at >= ${twentyFourHAgo}`;
     const allTxns = txns24h || [];
     const settled = allTxns.filter((t: any) => t.status === 'settled');
     const rejected = allTxns.filter((t: any) => t.status === 'rejected');
@@ -4151,7 +4154,12 @@ app.post("/make-server-49d15288/network-metrics", async (c) => {
     const avgRiskScore = riskScores24h.length > 0 ? riskScores24h.reduce((a: number, b: number) => a + b, 0) / riskScores24h.length : 0;
 
     // Corridor breakdown — build from banks
-    const { data: allBanks } = await supabase.from("banks").select("id, short_code, name, status, wallets(balance_tokens, balance_lamports)");
+    const allBanksRaw = await sql`SELECT id, short_code, name, status FROM banks`;
+    const allBanks = [] as any[];
+    for (const ab of allBanksRaw) {
+      const abWallets = await sql`SELECT balance_tokens, balance_lamports FROM wallets WHERE bank_id = ${ab.id}`;
+      allBanks.push({ ...ab, wallets: abWallets });
+    }
     const bankMap: Record<string, string> = {};
     for (const b of (allBanks || [])) bankMap[b.id] = b.short_code;
 
@@ -4188,19 +4196,10 @@ app.post("/make-server-49d15288/network-metrics", async (c) => {
     });
 
     // Recent cycles
-    const { data: recentCycles } = await supabase
-      .from("heartbeat_cycles")
-      .select("*")
-      .order("cycle_number", { ascending: false })
-      .limit(5);
+    const recentCycles = await sql`SELECT * FROM heartbeat_cycles ORDER BY cycle_number DESC LIMIT 5`;
 
     // Anomalies: locked txns or risk_score > 60
-    const { data: anomalies } = await supabase
-      .from("transactions")
-      .select("id, amount_display, amount, status, risk_score, risk_level, purpose_code, sender_bank_id, receiver_bank_id, created_at")
-      .or("status.eq.locked,risk_score.gt.60")
-      .order("created_at", { ascending: false })
-      .limit(20);
+    const anomalies = await sql`SELECT id, amount_display, amount, status, risk_score, risk_level, purpose_code, sender_bank_id, receiver_bank_id, created_at FROM transactions WHERE status = 'locked' OR risk_score > 60 ORDER BY created_at DESC LIMIT 20`;
 
     return c.json({
       tps: Math.round(tps * 1000) / 1000,
@@ -4238,18 +4237,16 @@ app.post("/make-server-49d15288/retry-transaction", async (c) => {
       return c.json({ error: "Missing required field: transaction_id" }, 400);
     }
 
-    const supabase = getAdminClient();
-
     // Load transaction
-    const { data: tx, error: txErr } = await supabase
-      .from("transactions")
-      .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(id, short_code), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, short_code, status)")
-      .eq("id", transaction_id)
-      .single();
-
-    if (txErr || !tx) {
-      return c.json({ error: `Transaction not found: ${txErr?.message}` }, 404);
+    const [txRaw] = await sql`SELECT * FROM transactions WHERE id = ${transaction_id}`;
+    if (!txRaw) {
+      return c.json({ error: `Transaction not found` }, 404);
     }
+    const tx = txRaw as any;
+    const [txSender] = await sql`SELECT id, short_code FROM banks WHERE id = ${tx.sender_bank_id}`;
+    const [txReceiver] = await sql`SELECT id, short_code, status FROM banks WHERE id = ${tx.receiver_bank_id}`;
+    tx.sender_bank = txSender || null;
+    tx.receiver_bank = txReceiver || null;
 
     // Guard: already terminal
     if (["settled", "rejected", "reversed"].includes(tx.status)) {
@@ -4267,13 +4264,7 @@ app.post("/make-server-49d15288/retry-transaction", async (c) => {
     console.log(`[retry-transaction] Retrying tx ${transaction_id.slice(0, 8)} — current status: ${tx.status}`);
 
     // Find the payment_request message for this transaction
-    const { data: msgs } = await supabase
-      .from("agent_messages")
-      .select("*")
-      .eq("transaction_id", transaction_id)
-      .eq("message_type", "payment_request")
-      .order("created_at", { ascending: false })
-      .limit(1);
+    const msgs = await sql`SELECT * FROM agent_messages WHERE transaction_id = ${transaction_id} AND message_type = 'payment_request' ORDER BY created_at DESC LIMIT 1`;
 
     if (!msgs || msgs.length === 0) {
       return c.json({ error: "No payment_request message found for this transaction" }, 404);
@@ -4282,39 +4273,19 @@ app.post("/make-server-49d15288/retry-transaction", async (c) => {
     const msg = msgs[0];
 
     // Reset transaction to initiated so the orchestrator can re-run all steps
-    await supabase
-      .from("transactions")
-      .update({
-        status: "initiated",
-        compliance_passed: null,
-        compliance_checks: null,
-        compliance_completed_at: null,
-        risk_level: null,
-        risk_score: null,
-        risk_reasoning: null,
-        risk_scored_at: null,
-        solana_tx_signature: null,
-        solana_slot: null,
-        solana_block_time: null,
-        settled_at: null,
-        lockup_until: null,
-      })
-      .eq("id", transaction_id);
+    await sql`UPDATE transactions SET status = 'initiated', compliance_passed = ${null}, compliance_checks = ${null}, compliance_completed_at = ${null}, risk_level = ${null}, risk_score = ${null}, risk_reasoning = ${null}, risk_scored_at = ${null}, solana_tx_signature = ${null}, solana_slot = ${null}, solana_block_time = ${null}, settled_at = ${null}, lockup_until = ${null} WHERE id = ${transaction_id}`;
 
     // Reset the message to unprocessed
-    await supabase
-      .from("agent_messages")
-      .update({ processed: false, processed_at: null })
-      .eq("id", msg.id);
+    await sql`UPDATE agent_messages SET processed = ${false}, processed_at = ${null} WHERE id = ${msg.id}`;
 
     // Clean up any existing compliance logs & risk scores from prior partial run
-    await supabase.from("compliance_logs").delete().eq("transaction_id", transaction_id);
-    await supabase.from("risk_scores").delete().eq("transaction_id", transaction_id);
+    await sql`DELETE FROM compliance_logs WHERE transaction_id = ${transaction_id}`;
+    await sql`DELETE FROM risk_scores WHERE transaction_id = ${transaction_id}`;
 
     console.log(`[retry-transaction] Reset tx ${transaction_id.slice(0, 8)} to initiated — calling coreOrchestrate directly`);
 
     // Direct function call (no HTTP self-call — fixes 401)
-    const orchResult = await coreOrchestrate(supabase, receiverBankId, msg.id);
+    const orchResult = await coreOrchestrate(receiverBankId, msg.id);
 
     console.log(`[retry-transaction] Orchestrator result for tx ${transaction_id.slice(0, 8)}: action=${orchResult.action}`);
 
@@ -4341,17 +4312,11 @@ app.post("/make-server-49d15288/expire-transaction", async (c) => {
       return c.json({ error: "Missing required field: transaction_id" }, 400);
     }
 
-    const supabase = getAdminClient();
-
     // Load transaction
-    const { data: tx, error: txErr } = await supabase
-      .from("transactions")
-      .select("status")
-      .eq("id", transaction_id)
-      .single();
+    const [tx] = await sql`SELECT status FROM transactions WHERE id = ${transaction_id}`;
 
-    if (txErr || !tx) {
-      return c.json({ error: `Transaction not found: ${txErr?.message}` }, 404);
+    if (!tx) {
+      return c.json({ error: `Transaction not found` }, 404);
     }
 
     // Guard: already terminal
@@ -4364,20 +4329,10 @@ app.post("/make-server-49d15288/expire-transaction", async (c) => {
     const now = new Date().toISOString();
 
     // Mark as rejected with expiry reason
-    await supabase
-      .from("transactions")
-      .update({
-        status: "rejected",
-        risk_reasoning: `Expired: orphaned transaction was stuck in '${tx.status}' status and manually expired at ${now}`,
-      })
-      .eq("id", transaction_id);
+    await sql`UPDATE transactions SET status = 'rejected', risk_reasoning = ${`Expired: orphaned transaction was stuck in '${tx.status}' status and manually expired at ${now}`} WHERE id = ${transaction_id}`;
 
     // Mark any unprocessed messages for this tx as processed
-    await supabase
-      .from("agent_messages")
-      .update({ processed: true, processed_at: now })
-      .eq("transaction_id", transaction_id)
-      .eq("processed", false);
+    await sql`UPDATE agent_messages SET processed = ${true}, processed_at = ${now} WHERE transaction_id = ${transaction_id} AND processed = ${false}`;
 
     console.log(`[expire-transaction] Tx ${transaction_id.slice(0, 8)} expired (rejected)`);
 
@@ -4399,39 +4354,30 @@ app.post("/make-server-49d15288/expire-transaction", async (c) => {
 // ============================================================
 app.post("/make-server-49d15288/reset-tokens", async (c) => {
   try {
-    const supabase = getAdminClient();
     console.log("[reset-tokens] Starting soft token reset...");
 
     const results: Record<string, { success: boolean; error?: string; detail?: string }> = {};
 
     // Step 0: Clear Cadenza lockup tables (FK order: cadenza_flags → lockup_tokens)
     for (const lockupTable of ["cadenza_flags", "lockup_tokens"]) {
-      const { error } = await supabase
-        .from(lockupTable)
-        .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000");
-
-      if (error) {
-        console.log(`[reset-tokens] Error deleting from ${lockupTable}: ${error.message}`);
-        results[lockupTable] = { success: false, error: error.message };
-      } else {
+      try {
+        await sql`DELETE FROM ${sql(lockupTable)} WHERE id != '00000000-0000-0000-0000-000000000000'`;
         console.log(`[reset-tokens] Cleared ${lockupTable}`);
         results[lockupTable] = { success: true };
+      } catch (err) {
+        console.log(`[reset-tokens] Error deleting from ${lockupTable}: ${(err as Error).message}`);
+        results[lockupTable] = { success: false, error: (err as Error).message };
       }
     }
 
     // Step 0b: Reset lockup_status on all transactions (before deleting transactions)
-    const { error: lockupResetErr } = await supabase
-      .from("transactions")
-      .update({ lockup_status: null })
-      .neq("id", "00000000-0000-0000-0000-000000000000");
-
-    if (lockupResetErr) {
-      console.log(`[reset-tokens] Error resetting lockup_status: ${lockupResetErr.message}`);
-      results["transactions_lockup_status"] = { success: false, error: lockupResetErr.message };
-    } else {
+    try {
+      await sql`UPDATE transactions SET lockup_status = ${null} WHERE id != '00000000-0000-0000-0000-000000000000'`;
       console.log(`[reset-tokens] Reset lockup_status to NULL on all transactions`);
       results["transactions_lockup_status"] = { success: true };
+    } catch (lockupResetErr) {
+      console.log(`[reset-tokens] Error resetting lockup_status: ${(lockupResetErr as Error).message}`);
+      results["transactions_lockup_status"] = { success: false, error: (lockupResetErr as Error).message };
     }
 
     // Step 1: Delete transaction-related rows + treasury tables (FK-safe order)
@@ -4447,92 +4393,38 @@ app.post("/make-server-49d15288/reset-tokens", async (c) => {
     ];
 
     for (const table of tablesToClear) {
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000");
-
-      if (error) {
-        console.log(`[reset-tokens] Error deleting from ${table}: ${error.message}`);
-        results[table] = { success: false, error: error.message };
-      } else {
+      try {
+        await sql`DELETE FROM ${sql(table)} WHERE id != '00000000-0000-0000-0000-000000000000'`;
         console.log(`[reset-tokens] Cleared ${table}`);
         results[table] = { success: true };
+      } catch (err) {
+        console.log(`[reset-tokens] Error deleting from ${table}: ${(err as Error).message}`);
+        results[table] = { success: false, error: (err as Error).message };
       }
     }
 
     // Step 2: Clear token columns in wallets (keep solana_pubkey, balance_lamports)
-    const { error: walletErr } = await supabase
-      .from("wallets")
-      .update({
-        token_account_address: null,
-        balance_tokens: 0,
-      })
-      .neq("id", "00000000-0000-0000-0000-000000000000");
-
-    if (walletErr) {
-      console.log(`[reset-tokens] Error clearing wallet token data: ${walletErr.message}`);
-      results["wallets"] = { success: false, error: walletErr.message };
-    } else {
+    try {
+      await sql`UPDATE wallets SET token_account_address = ${null}, balance_tokens = ${0} WHERE id != '00000000-0000-0000-0000-000000000000'`;
       console.log("[reset-tokens] Cleared token data from wallets (kept keypairs + SOL)");
       results["wallets"] = { success: true, detail: "token_columns_cleared" };
+    } catch (err) {
+      console.log(`[reset-tokens] Error clearing wallets: ${(err as Error).message}`);
+      results["wallets"] = { success: false, error: (err as Error).message };
     }
 
     // Step 3: Reset banks to 'onboarding' status, clear token columns
     // Note: token_decimals kept at TOKEN_DECIMALS (not null) to avoid NOT NULL constraint violations
-    const { data: banksBeforeReset } = await supabase.from("banks").select("id, short_code, solana_wallet_pubkey");
+    const banksBeforeReset = await sql`SELECT id, short_code, solana_wallet_pubkey FROM banks`;
     const bankCount = banksBeforeReset?.length ?? 0;
 
-    const { error: bankErr } = await supabase
-      .from("banks")
-      .update({
-        token_mint_address: null,
-        token_symbol: null,
-        token_decimals: TOKEN_DECIMALS,
-        status: "onboarding",
-        updated_at: new Date().toISOString(),
-      })
-      .neq("id", "00000000-0000-0000-0000-000000000000");
-
-    if (bankErr) {
-      console.log(`[reset-tokens] Bulk bank update failed: ${bankErr.message} (code: ${bankErr.code}, details: ${bankErr.details}, hint: ${bankErr.hint})`);
-      // Fallback: update each bank individually to isolate which field/constraint is failing
-      let perBankSuccesses = 0;
-      const perBankErrors: string[] = [];
-      for (const b of (banksBeforeReset || [])) {
-        // Try status-only update first (most critical)
-        const { error: statusErr } = await supabase
-          .from("banks")
-          .update({ status: "onboarding", updated_at: new Date().toISOString() })
-          .eq("id", b.id);
-        if (statusErr) {
-          console.log(`[reset-tokens] ${b.short_code} status update failed: ${statusErr.message}`);
-          perBankErrors.push(`${b.short_code} status: ${statusErr.message}`);
-        } else {
-          console.log(`[reset-tokens] ${b.short_code} status -> onboarding`);
-        }
-
-        // Try clearing token columns separately
-        const { error: tokenErr } = await supabase
-          .from("banks")
-          .update({ token_mint_address: null, token_symbol: null, token_decimals: TOKEN_DECIMALS })
-          .eq("id", b.id);
-        if (tokenErr) {
-          console.log(`[reset-tokens] ${b.short_code} token column clear failed: ${tokenErr.message}`);
-          perBankErrors.push(`${b.short_code} tokens: ${tokenErr.message}`);
-        } else {
-          perBankSuccesses++;
-          console.log(`[reset-tokens] ${b.short_code} token columns cleared`);
-        }
-      }
-      results["banks"] = {
-        success: perBankErrors.length === 0,
-        error: perBankErrors.length > 0 ? `Bulk failed, per-bank fallback: ${perBankErrors.join('; ')}` : undefined,
-        detail: `${perBankSuccesses}/${bankCount} banks reset via fallback`,
-      };
-    } else {
+    try {
+      await sql`UPDATE banks SET token_mint_address = ${null}, token_symbol = ${null}, token_decimals = ${TOKEN_DECIMALS}, status = 'onboarding', updated_at = ${new Date().toISOString()} WHERE id != '00000000-0000-0000-0000-000000000000'`;
       console.log(`[reset-tokens] Reset ${bankCount} banks to 'onboarding' (kept keypairs)`);
       results["banks"] = { success: true, detail: `${bankCount} banks reset to onboarding` };
+    } catch (err) {
+      console.log(`[reset-tokens] Error resetting banks: ${(err as Error).message}`);
+      results["banks"] = { success: false, error: (err as Error).message };
     }
 
     // Log preserved wallet addresses
@@ -4562,19 +4454,14 @@ app.post("/make-server-49d15288/reset-tokens", async (c) => {
 // ============================================================
 app.post("/make-server-49d15288/reset-network", async (c) => {
   try {
-    const supabase = getAdminClient();
     console.log("[reset-network] Starting full network reset...");
 
     // Reset lockup_status on transactions before deleting them
-    const { error: lockupResetErr } = await supabase
-      .from("transactions")
-      .update({ lockup_status: null })
-      .neq("id", "00000000-0000-0000-0000-000000000000");
-
-    if (lockupResetErr) {
-      console.log(`[reset-network] Error resetting lockup_status (non-blocking): ${lockupResetErr.message}`);
-    } else {
+    try {
+      await sql`UPDATE transactions SET lockup_status = ${null} WHERE id != '00000000-0000-0000-0000-000000000000'`;
       console.log(`[reset-network] Reset lockup_status to NULL on all transactions`);
+    } catch (lockupResetErr) {
+      console.log(`[reset-network] Error resetting lockup_status (non-blocking): ${(lockupResetErr as Error).message}`);
     }
 
     // Delete in FK-safe order (children before parents)
@@ -4599,18 +4486,13 @@ app.post("/make-server-49d15288/reset-network", async (c) => {
     const results: Record<string, { deleted: boolean; error?: string }> = {};
 
     for (const table of tables) {
-      // Use neq on id to match all rows (Supabase requires a filter for delete)
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000");
-
-      if (error) {
-        console.log(`[reset-network] Error deleting from ${table}: ${error.message}`);
-        results[table] = { deleted: false, error: error.message };
-      } else {
+      try {
+        await sql`DELETE FROM ${sql(table)} WHERE id != '00000000-0000-0000-0000-000000000000'`;
         console.log(`[reset-network] Cleared ${table}`);
         results[table] = { deleted: true };
+      } catch (err) {
+        console.log(`[reset-network] Error deleting from ${table}: ${(err as Error).message}`);
+        results[table] = { deleted: false, error: (err as Error).message };
       }
     }
 
@@ -4636,7 +4518,6 @@ app.post("/make-server-49d15288/agent-config", async (c) => {
     const body = await c.req.json();
     const { action, bank_id, config } = body;
     console.log(`[agent-config] action=${action} bank_id=${bank_id?.slice(0, 8) || 'none'} config_keys=${config ? Object.keys(config).join(',') : 'none'}`);
-    const supabase = getAdminClient();
 
     if (action === "get") {
       if (!bank_id) return c.json({ error: "Missing bank_id" }, 400);
@@ -4644,33 +4525,15 @@ app.post("/make-server-49d15288/agent-config", async (c) => {
 
       let bank: any = null;
       try {
-        const bankResult = await supabase
-          .from("banks")
-          .select("agent_system_prompt, name, short_code")
-          .eq("id", bank_id)
-          .single();
-        if (bankResult.error) {
-          console.log(`[agent-config:get] banks query error: ${bankResult.error.message} (code: ${bankResult.error.code})`);
-        } else {
-          bank = bankResult.data;
-        }
+        const [bankRow] = await sql`SELECT agent_system_prompt, name, short_code FROM banks WHERE id = ${bank_id}`;
+        bank = bankRow || null;
       } catch (err) {
         console.log(`[agent-config:get] banks query exception: ${(err as Error).message}`);
       }
 
       let mandates: any[] = [];
       try {
-        const mandatesResult = await supabase
-          .from("treasury_mandates")
-          .select("*")
-          .eq("bank_id", bank_id)
-          .eq("is_active", true)
-          .order("priority", { ascending: true });
-        if (mandatesResult.error) {
-          console.log(`[agent-config:get] treasury_mandates query error: ${mandatesResult.error.message} (code: ${mandatesResult.error.code})`);
-        } else {
-          mandates = mandatesResult.data || [];
-        }
+        mandates = await sql`SELECT * FROM treasury_mandates WHERE bank_id = ${bank_id} AND is_active = ${true} ORDER BY priority ASC`;
       } catch (err) {
         console.log(`[agent-config:get] treasury_mandates query exception: ${(err as Error).message}`);
       }
@@ -4700,81 +4563,52 @@ app.post("/make-server-49d15288/agent-config", async (c) => {
         }
         config.default_lockup_duration_minutes = ldm;
       }
-      const { data, error } = await supabase
-        .from("bank_agent_config")
-        .upsert({
-          bank_id,
-          ...config,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "bank_id" })
-        .select()
-        .single();
-
-      if (error) {
-        console.log(`[agent-config] update error: ${error.message}`);
-        return c.json({ error: error.message }, 500);
+      try {
+        const upsertPayload = { bank_id, ...config, updated_at: new Date().toISOString() };
+        const [data] = await sql`INSERT INTO bank_agent_config ${sql(upsertPayload, ...Object.keys(upsertPayload))} ON CONFLICT (bank_id) DO UPDATE SET ${sql(upsertPayload, ...Object.keys(upsertPayload).filter(k => k !== 'bank_id'))} RETURNING *`;
+        return c.json({ success: true, config: data });
+      } catch (error) {
+        console.log(`[agent-config] update error: ${(error as Error).message}`);
+        return c.json({ error: (error as Error).message }, 500);
       }
-      return c.json({ success: true, config: data });
     }
 
     if (action === "update_personality") {
       if (!bank_id || !config) return c.json({ error: "Missing bank_id or config" }, 400);
-      const { error } = await supabase
-        .from("banks")
-        .update({ agent_system_prompt: config.agent_system_prompt })
-        .eq("id", bank_id);
-
-      if (error) {
-        console.log(`[agent-config] update_personality error: ${error.message}`);
-        return c.json({ error: error.message }, 500);
+      try {
+        await sql`UPDATE banks SET agent_system_prompt = ${config.agent_system_prompt} WHERE id = ${bank_id}`;
+        return c.json({ success: true });
+      } catch (error) {
+        console.log(`[agent-config] update_personality error: ${(error as Error).message}`);
+        return c.json({ error: (error as Error).message }, 500);
       }
-      return c.json({ success: true });
     }
 
     if (action === "toggle_mandate") {
       if (!bank_id || !config) return c.json({ error: "Missing bank_id or config" }, 400);
       const { mandate_id, is_active } = config;
-      const { error } = await supabase
-        .from("treasury_mandates")
-        .update({ is_active })
-        .eq("id", mandate_id)
-        .eq("bank_id", bank_id);
-
-      if (error) {
-        console.log(`[agent-config] toggle_mandate error: ${error.message}`);
-        return c.json({ error: error.message }, 500);
+      try {
+        await sql`UPDATE treasury_mandates SET is_active = ${is_active} WHERE id = ${mandate_id} AND bank_id = ${bank_id}`;
+        return c.json({ success: true });
+      } catch (error) {
+        console.log(`[agent-config] toggle_mandate error: ${(error as Error).message}`);
+        return c.json({ error: (error as Error).message }, 500);
       }
-      return c.json({ success: true });
     }
 
     if (action === "regenerate_mandates") {
       if (!bank_id) return c.json({ error: "Missing bank_id" }, 400);
-      await supabase
-        .from("treasury_mandates")
-        .delete()
-        .eq("bank_id", bank_id);
+      await sql`DELETE FROM treasury_mandates WHERE bank_id = ${bank_id}`;
 
-      const { data: bank } = await supabase
-        .from("banks")
-        .select("*")
-        .eq("id", bank_id)
-        .single();
+      const [bank] = await sql`SELECT * FROM banks WHERE id = ${bank_id}`;
 
-      const { data: allBanks } = await supabase
-        .from("banks")
-        .select("*")
-        .eq("status", "active");
+      const allBanks = await sql`SELECT * FROM banks WHERE status = 'active'`;
 
       if (bank && allBanks) {
         await generateMandatesViaGemini(bank, allBanks);
       }
 
-      const { data: newMandates } = await supabase
-        .from("treasury_mandates")
-        .select("*")
-        .eq("bank_id", bank_id)
-        .eq("is_active", true)
-        .order("priority", { ascending: true });
+      const newMandates = await sql`SELECT * FROM treasury_mandates WHERE bank_id = ${bank_id} AND is_active = ${true} ORDER BY priority ASC`;
 
       return c.json({ success: true, mandates: newMandates || [] });
     }
@@ -4810,19 +4644,16 @@ async function coreYieldAccrue(): Promise<{
   total_yield_this_cycle_raw: string;
   details: Array<{ lockup_id: string; symbol: string; principal: string; yield_delta: string; yield_total: string }>;
 }> {
-  const supabase = getAdminClient();
   const now = new Date().toISOString();
 
   console.log(`[yield-accrue] ▶ Starting batch yield accrual at ${now}`);
 
-  const { data: lockups, error: fetchErr } = await supabase
-    .from("lockup_tokens")
-    .select("id, yb_token_symbol, yb_token_amount, yield_rate_bps, yield_accrued, yield_last_calculated, lockup_start, status")
-    .in("status", ["active", "escalated"]);
-
-  if (fetchErr) {
-    console.log(`[yield-accrue] ✗ Failed to fetch lockups: ${fetchErr.message}`);
-    throw new Error(`Failed to fetch active lockups: ${fetchErr.message}`);
+  let lockups: any[];
+  try {
+    lockups = await sql`SELECT id, yb_token_symbol, yb_token_amount, yield_rate_bps, yield_accrued, yield_last_calculated, lockup_start, status FROM lockup_tokens WHERE status = ANY(${["active", "escalated"]})`;
+  } catch (fetchErr) {
+    console.log(`[yield-accrue] ✗ Failed to fetch lockups: ${(fetchErr as Error).message}`);
+    throw new Error(`Failed to fetch active lockups: ${(fetchErr as Error).message}`);
   }
 
   if (!lockups || lockups.length === 0) {
@@ -4850,16 +4681,10 @@ async function coreYieldAccrue(): Promise<{
 
     const newTotalYield = existingYield + yieldDelta;
 
-    const { error: updateErr } = await supabase
-      .from("lockup_tokens")
-      .update({
-        yield_accrued: newTotalYield.toString(),
-        yield_last_calculated: now,
-      })
-      .eq("id", lockup.id);
-
-    if (updateErr) {
-      console.log(`[yield-accrue] ⚠ Failed to update lockup ${lockup.id}: ${updateErr.message}`);
+    try {
+      await sql`UPDATE lockup_tokens SET yield_accrued = ${newTotalYield.toString()}, yield_last_calculated = ${now} WHERE id = ${lockup.id}`;
+    } catch (updateErr) {
+      console.log(`[yield-accrue] ⚠ Failed to update lockup ${lockup.id}: ${(updateErr as Error).message}`);
       continue;
     }
 
@@ -4905,20 +4730,14 @@ app.post("/make-server-49d15288/yield-sweep", async (c) => {
   try {
     const { lockup_id } = await c.req.json();
     if (!lockup_id) return c.json({ error: "Missing required field: lockup_id" }, 400);
-
-    const supabase = getAdminClient();
     console.log(`[yield-sweep] ▶ Sweeping yield for lockup ${lockup_id}`);
 
     // 1. Fetch the lockup record
-    const { data: lockup, error: lockupErr } = await supabase
-      .from("lockup_tokens")
-      .select("id, yb_token_symbol, yield_accrued, yield_swept_to, status")
-      .eq("id", lockup_id)
-      .maybeSingle();
+    const [lockup] = await sql`SELECT id, yb_token_symbol, yield_accrued, yield_swept_to, status FROM lockup_tokens WHERE id = ${lockup_id}`;
 
-    if (lockupErr || !lockup) {
-      console.log(`[yield-sweep] ✗ Lockup not found: ${lockupErr?.message || "no record"}`);
-      return c.json({ error: `Lockup not found: ${lockupErr?.message || lockup_id}` }, 404);
+    if (!lockup) {
+      console.log(`[yield-sweep] ✗ Lockup not found`);
+      return c.json({ error: `Lockup not found: ${lockup_id}` }, 404);
     }
 
     if (lockup.yield_swept_to) {
@@ -4933,14 +4752,10 @@ app.post("/make-server-49d15288/yield-sweep", async (c) => {
     }
 
     // 2. Find Solstice fees wallet from network_wallets table
-    const { data: solsticeRow, error: nwErr } = await supabase
-      .from("network_wallets")
-      .select("id, wallet_address, balance")
-      .eq("code", "SOLSTICE_FEES")
-      .maybeSingle();
+    const [solsticeRow] = await sql`SELECT id, wallet_address, balance FROM network_wallets WHERE code = 'SOLSTICE_FEES'`;
 
-    if (nwErr || !solsticeRow) {
-      console.log(`[yield-sweep] ✗ Solstice fees wallet not found: ${nwErr?.message || "no record"}`);
+    if (!solsticeRow) {
+      console.log(`[yield-sweep] ✗ Solstice fees wallet not found`);
       return c.json({ error: `Solstice fees wallet not found. Run /setup-custodian first.` }, 400);
     }
 
@@ -4949,25 +4764,19 @@ app.post("/make-server-49d15288/yield-sweep", async (c) => {
     const newBalance = currentBalance + yieldAmount;
     const newBalanceNumeric = Number(newBalance) / 1_000_000;
 
-    const { error: balErr } = await supabase
-      .from("network_wallets")
-      .update({ balance: newBalanceNumeric })
-      .eq("id", solsticeRow.id);
-
-    if (balErr) {
-      console.log(`[yield-sweep] ⚠ Failed to update Solstice balance: ${balErr.message}`);
-      return c.json({ error: `Failed to update Solstice balance: ${balErr.message}` }, 500);
+    try {
+      await sql`UPDATE network_wallets SET balance = ${newBalanceNumeric} WHERE id = ${solsticeRow.id}`;
+    } catch (balErr) {
+      console.log(`[yield-sweep] ⚠ Failed to update Solstice balance: ${(balErr as Error).message}`);
+      return c.json({ error: `Failed to update Solstice balance: ${(balErr as Error).message}` }, 500);
     }
 
     // 4. Mark lockup as swept
-    const { error: sweepErr } = await supabase
-      .from("lockup_tokens")
-      .update({ yield_swept_to: solsticeRow.wallet_address })
-      .eq("id", lockup_id);
-
-    if (sweepErr) {
-      console.log(`[yield-sweep] ⚠ Failed to mark lockup as swept: ${sweepErr.message}`);
-      return c.json({ error: `Failed to mark lockup as swept: ${sweepErr.message}` }, 500);
+    try {
+      await sql`UPDATE lockup_tokens SET yield_swept_to = ${solsticeRow.wallet_address} WHERE id = ${lockup_id}`;
+    } catch (sweepErr) {
+      console.log(`[yield-sweep] ⚠ Failed to mark lockup as swept: ${(sweepErr as Error).message}`);
+      return c.json({ error: `Failed to mark lockup as swept: ${(sweepErr as Error).message}` }, 500);
     }
 
     console.log(`[yield-sweep] ✓ Swept ${formatYieldUsd(yieldAmount)} from ${lockup.yb_token_symbol} → Solstice (${solsticeRow.wallet_address})`);
@@ -5007,16 +4816,12 @@ interface CoreLockupSettleParams {
 async function coreLockupSettle(params: CoreLockupSettleParams): Promise<any> {
   const { lockup_id, caller_resolution, caller_resolved_by } = params;
   if (!lockup_id) return { error: "Missing required field: lockup_id" };
-
-  const supabase = getAdminClient();
   console.log(`[lockup-settle] \u25b6 Phase 2: Hard finality for lockup ${lockup_id}`);
 
   // 1. Fetch lockup record with status guard
-  const { data: lockup, error: lockupErr } = await supabase
-    .from("lockup_tokens")
-    .select("*")
-    .eq("id", lockup_id)
-    .maybeSingle();
+  let lockup: any = null;
+  let lockupErr: any = null;
+  try { [lockup] = await sql`SELECT * FROM lockup_tokens WHERE id = ${lockup_id}` } catch (e) { lockupErr = e; }
 
   if (lockupErr || !lockup) {
     return { error: `Lockup not found: ${lockupErr?.message || lockup_id}` };
@@ -5028,11 +4833,7 @@ async function coreLockupSettle(params: CoreLockupSettleParams): Promise<any> {
   }
 
   // 2. Fetch transaction + banks
-  const { data: tx } = await supabase
-    .from("transactions")
-    .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*)")
-    .eq("id", lockup.transaction_id)
-    .single();
+  const [tx] = await sql`SELECT *, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*) FROM transactions WHERE id = ${lockup.transaction_id}`;
 
   if (!tx) return { error: `Transaction not found for lockup ${lockup_id}` };
 
@@ -5105,13 +4906,13 @@ async function coreLockupSettle(params: CoreLockupSettleParams): Promise<any> {
     );
     const totalYield = BigInt(lockup.yield_accrued || 0) + yieldDelta;
     if (totalYield > 0n) {
-      await supabase.from("lockup_tokens").update({ yield_accrued: totalYield.toString(), yield_last_calculated: now }).eq("id", lockup_id);
-      const { data: solsticeRow } = await supabase.from("network_wallets").select("id, wallet_address, balance").eq("code", "SOLSTICE_FEES").maybeSingle();
+      await sql`UPDATE lockup_tokens SET yield_accrued = ${totalYield.toString()}, yield_last_calculated = ${now} WHERE id = ${lockup_id}`;
+      const [solsticeRow] = await sql`SELECT id, wallet_address, balance FROM network_wallets WHERE code = ${"SOLSTICE_FEES"}`;
       if (solsticeRow) {
         const currentBalance = BigInt(Math.round((solsticeRow.balance || 0) * 1_000_000));
         const newBalance = currentBalance + totalYield;
-        await supabase.from("network_wallets").update({ balance: Number(newBalance) / 1_000_000 }).eq("id", solsticeRow.id);
-        await supabase.from("lockup_tokens").update({ yield_swept_to: solsticeRow.wallet_address }).eq("id", lockup_id);
+        await sql`UPDATE network_wallets SET balance = ${Number(newBalance) / 1_000_000} WHERE id = ${solsticeRow.id}`;
+        await sql`UPDATE lockup_tokens SET yield_swept_to = ${solsticeRow.wallet_address} WHERE id = ${lockup_id}`;
         yieldSweptDisplay = formatYieldUsd(totalYield);
         console.log(`[lockup-settle] \u2502 Step 3 \u2713 Yield swept: ${yieldSweptDisplay} \u2192 Solstice`);
       }
@@ -5123,7 +4924,7 @@ async function coreLockupSettle(params: CoreLockupSettleParams): Promise<any> {
   }
 
   // 7. Update lockup_tokens status + populate T-Bill (receiver deposit) token columns
-  await supabase.from("lockup_tokens").update({
+  await sql`UPDATE lockup_tokens SET ${sql({
     status: "settled",
     resolution: caller_resolution || "cadenza_all_clear",
     resolved_at: now,
@@ -5133,15 +4934,26 @@ async function coreLockupSettle(params: CoreLockupSettleParams): Promise<any> {
     tb_token_symbol: tokenSymbol(receiverBank.short_code),
     tb_token_amount: rawAmount.toString(),
     tb_holder: receiverBank.solana_wallet_pubkey,
-  }).eq("id", lockup_id);
+  }, ...Object.keys({
+    status: "settled",
+    resolution: caller_resolution || "cadenza_all_clear",
+    resolved_at: now,
+    resolved_by: caller_resolved_by || "cadenza",
+    // Phase 2: receiver deposit token info (the "T-Bill" column in the Three-Token Lockup Flow widget)
+    tb_token_mint: receiverBank.token_mint_address,
+    tb_token_symbol: tokenSymbol(receiverBank.short_code),
+    tb_token_amount: rawAmount.toString(),
+    tb_holder: receiverBank.solana_wallet_pubkey,
+  }))} WHERE id = ${lockup_id}`;
 
   // 8. Update transactions
-  const { error: txUpdateErr } = await supabase.from("transactions").update({
+  const _upd_transactions_234363 = {
     lockup_status: "hard_finality",
     status: "settled",
     settled_at: now,
     is_reversible: false,
-  }).eq("id", lockup.transaction_id);
+  };
+  const { error: txUpdateErr } = await (async () => { try { await sql`UPDATE transactions SET ${sql(_upd_transactions_234363, ...Object.keys(_upd_transactions_234363))} WHERE id = ${lockup.transaction_id}`; return {}; } catch (e) { return { error: e }; } })();
   if (txUpdateErr) {
     console.log(`[lockup-settle] \u2502 Step 5 \u2717 Critical tx update failed: ${txUpdateErr.message}`);
     return { error: `Transaction status update failed: ${txUpdateErr.message}` };
@@ -5149,11 +4961,12 @@ async function coreLockupSettle(params: CoreLockupSettleParams): Promise<any> {
 
   // 8a. Store Phase 2 finality signature + slot
   try {
-    const { error: finColErr } = await supabase.from("transactions").update({
+    const _upd_transactions_234857 = {
       finality_tx_signature: mintResult.signature,
       finality_solana_slot: mintResult.slot,
       finality_block_time: now,
-    }).eq("id", lockup.transaction_id);
+    };
+    const { error: finColErr } = await (async () => { try { await sql`UPDATE transactions SET ${sql(_upd_transactions_234857, ...Object.keys(_upd_transactions_234857))} WHERE id = ${lockup.transaction_id}`; return {}; } catch (e) { return { error: e }; } })();
     if (finColErr) {
       console.log(`[lockup-settle] \u2502 Step 5a \u26a0 Finality columns not available: ${finColErr.message}`);
     } else {
@@ -5187,22 +5000,25 @@ async function coreLockupSettle(params: CoreLockupSettleParams): Promise<any> {
   }
 
   const phase1Fee = tx.network_fee_sol || NETWORK_DEFAULTS.network_fee_sol;
-  await supabase.from("transactions").update({
+  await sql`UPDATE transactions SET ${sql({
     network_fee_sol: phase1Fee + feeResult.feeSol,
     settlement_method: "lockup_hard_finality",
-  }).eq("id", lockup.transaction_id);
+  }, ...Object.keys({
+    network_fee_sol: phase1Fee + feeResult.feeSol,
+    settlement_method: "lockup_hard_finality",
+  }))} WHERE id = ${lockup.transaction_id}`;
 
   // 9. Update wallet balances
   try {
     const receiverBalance = await getTokenBalance(receiverBank.solana_wallet_pubkey, receiverBank.token_mint_address);
-    await supabase.from("wallets").update({ balance_tokens: Number(receiverBalance) }).eq("bank_id", tx.receiver_bank_id).eq("is_default", true);
+    await sql`UPDATE wallets SET balance_tokens = ${Number(receiverBalance)} WHERE bank_id = ${tx.receiver_bank_id} AND is_default = ${true}`;
   } catch (balErr) {
     console.log(`[lockup-settle] \u26a0 Balance update failed: ${(balErr as Error).message}`);
   }
 
   // 10. Insert agent_message
   const amountDisplay = tx.amount_display || (Number(rawAmount) / 1_000_000);
-  await supabase.from("agent_messages").insert({
+  await sql`INSERT INTO agent_messages ${sql({
     id: crypto.randomUUID(),
     transaction_id: lockup.transaction_id,
     from_bank_id: tx.receiver_bank_id,
@@ -5225,7 +5041,30 @@ async function coreLockupSettle(params: CoreLockupSettleParams): Promise<any> {
     natural_language: `Maestro \u2014 Phase 2 hard finality achieved. $${Number(amountDisplay).toLocaleString()} ${tokenSymbol(receiverBank.short_code)} minted to ${receiverBank.short_code} for the first time. Yield of ${yieldSweptDisplay} swept to network fees. Lockup resolved. Total fees: ${(phase1Fee + feeResult.feeSol).toFixed(3)} SOL.`,
     processed: false,
     created_at: now,
-  });
+  }, ...Object.keys({
+    id: crypto.randomUUID(),
+    transaction_id: lockup.transaction_id,
+    from_bank_id: tx.receiver_bank_id,
+    to_bank_id: tx.sender_bank_id,
+    message_type: "settlement_confirm",
+    content: {
+      agent_id: aid,
+      action: "hard_finality",
+      flow: "lockup_settle",
+      phase: 2,
+      lockup_id,
+      escrow_burn: burnResult.signature,
+      deposit_mint: mintResult.signature,
+      finality_signature: mintResult.signature,
+      finality_slot: mintResult.slot,
+      yield_swept: yieldSweptDisplay,
+      network_fee_sol: feeResult.feeSol,
+      total_fee_sol: phase1Fee + feeResult.feeSol,
+    },
+    natural_language: `Maestro \u2014 Phase 2 hard finality achieved. $${Number(amountDisplay).toLocaleString()} ${tokenSymbol(receiverBank.short_code)} minted to ${receiverBank.short_code} for the first time. Yield of ${yieldSweptDisplay} swept to network fees. Lockup resolved. Total fees: ${(phase1Fee + feeResult.feeSol).toFixed(3)} SOL.`,
+    processed: false,
+    created_at: now,
+  }))}`
 
   console.log(`[lockup-settle] \u2514\u2500 HARD FINALITY \u2014 lockup ${lockup_id.slice(0, 8)} settled, ${tokenSymbol(receiverBank.short_code)} minted to ${receiverBank.short_code}`);
 
@@ -5254,17 +5093,13 @@ interface CoreLockupReverseParams {
 async function coreLockupReverse(params: CoreLockupReverseParams): Promise<any> {
   const { lockup_id, reason, caller_resolution, caller_resolved_by } = params;
   if (!lockup_id) return { error: "Missing required field: lockup_id" };
-
-  const supabase = getAdminClient();
   const reversalReason = reason || "cadenza_auto_reverse";
   console.log(`[lockup-reverse] \u25b6 Reversal for lockup ${lockup_id} \u2014 reason: ${reversalReason}`);
 
   // 1. Fetch lockup record with status guard
-  const { data: lockup, error: lockupErr } = await supabase
-    .from("lockup_tokens")
-    .select("*")
-    .eq("id", lockup_id)
-    .maybeSingle();
+  let lockup: any = null;
+  let lockupErr: any = null;
+  try { [lockup] = await sql`SELECT * FROM lockup_tokens WHERE id = ${lockup_id}` } catch (e) { lockupErr = e; }
 
   if (lockupErr || !lockup) {
     return { error: `Lockup not found: ${lockupErr?.message || lockup_id}` };
@@ -5276,11 +5111,7 @@ async function coreLockupReverse(params: CoreLockupReverseParams): Promise<any> 
   }
 
   // 2. Fetch transaction + banks
-  const { data: tx } = await supabase
-    .from("transactions")
-    .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*)")
-    .eq("id", lockup.transaction_id)
-    .single();
+  const [tx] = await sql`SELECT *, sender_bank:banks!transactions_sender_bank_id_fkey(*), receiver_bank:banks!transactions_receiver_bank_id_fkey(*) FROM transactions WHERE id = ${lockup.transaction_id}`;
 
   if (!tx) return { error: `Transaction not found for lockup ${lockup_id}` };
 
@@ -5352,13 +5183,13 @@ async function coreLockupReverse(params: CoreLockupReverseParams): Promise<any> 
     );
     const totalYield = BigInt(lockup.yield_accrued || 0) + yieldDelta;
     if (totalYield > 0n) {
-      await supabase.from("lockup_tokens").update({ yield_accrued: totalYield.toString(), yield_last_calculated: now }).eq("id", lockup_id);
-      const { data: solsticeRow } = await supabase.from("network_wallets").select("id, wallet_address, balance").eq("code", "SOLSTICE_FEES").maybeSingle();
+      await sql`UPDATE lockup_tokens SET yield_accrued = ${totalYield.toString()}, yield_last_calculated = ${now} WHERE id = ${lockup_id}`;
+      const [solsticeRow] = await sql`SELECT id, wallet_address, balance FROM network_wallets WHERE code = ${"SOLSTICE_FEES"}`;
       if (solsticeRow) {
         const currentBalance = BigInt(Math.round((solsticeRow.balance || 0) * 1_000_000));
         const newBalance = currentBalance + totalYield;
-        await supabase.from("network_wallets").update({ balance: Number(newBalance) / 1_000_000 }).eq("id", solsticeRow.id);
-        await supabase.from("lockup_tokens").update({ yield_swept_to: solsticeRow.wallet_address }).eq("id", lockup_id);
+        await sql`UPDATE network_wallets SET balance = ${Number(newBalance) / 1_000_000} WHERE id = ${solsticeRow.id}`;
+        await sql`UPDATE lockup_tokens SET yield_swept_to = ${solsticeRow.wallet_address} WHERE id = ${lockup_id}`;
         yieldSweptDisplay = formatYieldUsd(totalYield);
         console.log(`[lockup-reverse] \u2502 Step 3 \u2713 Yield swept: ${yieldSweptDisplay} \u2192 Solstice`);
       }
@@ -5368,21 +5199,27 @@ async function coreLockupReverse(params: CoreLockupReverseParams): Promise<any> 
   }
 
   // 7. Update lockup_tokens status
-  await supabase.from("lockup_tokens").update({
+  await sql`UPDATE lockup_tokens SET ${sql({
     status: "reversed",
     resolution: caller_resolution || reversalReason,
     resolved_at: now,
     resolved_by: caller_resolved_by || "cadenza",
-  }).eq("id", lockup_id);
+  }, ...Object.keys({
+    status: "reversed",
+    resolution: caller_resolution || reversalReason,
+    resolved_at: now,
+    resolved_by: caller_resolved_by || "cadenza",
+  }))} WHERE id = ${lockup_id}`;
 
   // 8. Update transactions
-  const { error: revTxErr } = await supabase.from("transactions").update({
+  const _upd_transactions_244745 = {
     lockup_status: "reversed",
     status: "reversed",
     is_reversible: false,
     reversed_at: now,
     reversal_reason: reversalReason,
-  }).eq("id", lockup.transaction_id);
+  };
+  const { error: revTxErr } = await (async () => { try { await sql`UPDATE transactions SET ${sql(_upd_transactions_244745, ...Object.keys(_upd_transactions_244745))} WHERE id = ${lockup.transaction_id}`; return {}; } catch (e) { return { error: e }; } })();
   if (revTxErr) {
     console.log(`[lockup-reverse] \u2502 Step 4 \u2717 Critical tx update failed: ${revTxErr.message}`);
     return { error: `Transaction status update failed: ${revTxErr.message}` };
@@ -5390,11 +5227,12 @@ async function coreLockupReverse(params: CoreLockupReverseParams): Promise<any> 
 
   // 8a. Store reversal finality signature
   try {
-    const { error: finColErr } = await supabase.from("transactions").update({
+    const _upd_transactions_245259 = {
       finality_tx_signature: mintResult.signature,
       finality_solana_slot: mintResult.slot,
       finality_block_time: now,
-    }).eq("id", lockup.transaction_id);
+    };
+    const { error: finColErr } = await (async () => { try { await sql`UPDATE transactions SET ${sql(_upd_transactions_245259, ...Object.keys(_upd_transactions_245259))} WHERE id = ${lockup.transaction_id}`; return {}; } catch (e) { return { error: e }; } })();
     if (finColErr) {
       console.log(`[lockup-reverse] \u2502 Step 4a \u26a0 Finality columns not available: ${finColErr.message}`);
     }
@@ -5430,14 +5268,14 @@ async function coreLockupReverse(params: CoreLockupReverseParams): Promise<any> 
   // 9. Update wallet balances
   try {
     const senderBalance = await getTokenBalance(senderBank.solana_wallet_pubkey, senderBank.token_mint_address);
-    await supabase.from("wallets").update({ balance_tokens: Number(senderBalance) }).eq("bank_id", tx.sender_bank_id).eq("is_default", true);
+    await sql`UPDATE wallets SET balance_tokens = ${Number(senderBalance)} WHERE bank_id = ${tx.sender_bank_id} AND is_default = ${true}`;
   } catch (balErr) {
     console.log(`[lockup-reverse] \u26a0 Balance update failed: ${(balErr as Error).message}`);
   }
 
   // 10. Insert agent_message
   const amountDisplay = tx.amount_display || (Number(rawAmount) / 1_000_000);
-  await supabase.from("agent_messages").insert({
+  await sql`INSERT INTO agent_messages ${sql({
     id: crypto.randomUUID(),
     transaction_id: lockup.transaction_id,
     from_bank_id: tx.receiver_bank_id,
@@ -5457,7 +5295,27 @@ async function coreLockupReverse(params: CoreLockupReverseParams): Promise<any> 
     natural_language: `Maestro \u2014 Lockup reversed (clean reversal \u2014 receiver never had tokens). $${Number(amountDisplay).toLocaleString()} ${tokenSymbol(senderBank.short_code)} re-minted to ${senderBank.short_code}. Reason: ${reversalReason}. Yield of ${yieldSweptDisplay} swept to network fees.`,
     processed: false,
     created_at: now,
-  });
+  }, ...Object.keys({
+    id: crypto.randomUUID(),
+    transaction_id: lockup.transaction_id,
+    from_bank_id: tx.receiver_bank_id,
+    to_bank_id: tx.sender_bank_id,
+    message_type: "settlement_confirm",
+    content: {
+      agent_id: aid,
+      action: "reversed",
+      flow: "lockup_reverse",
+      lockup_id,
+      reason: reversalReason,
+      escrow_burn: burnResult.signature,
+      sender_remint: mintResult.signature,
+      yield_swept: yieldSweptDisplay,
+      network_fee_sol: feeResult.feeSol,
+    },
+    natural_language: `Maestro \u2014 Lockup reversed (clean reversal \u2014 receiver never had tokens). $${Number(amountDisplay).toLocaleString()} ${tokenSymbol(senderBank.short_code)} re-minted to ${senderBank.short_code}. Reason: ${reversalReason}. Yield of ${yieldSweptDisplay} swept to network fees.`,
+    processed: false,
+    created_at: now,
+  }))}`
 
   console.log(`[lockup-reverse] \u2514\u2500 REVERSED \u2014 lockup ${lockup_id.slice(0, 8)}, ${tokenSymbol(senderBank.short_code)} re-minted to sender`);
 
@@ -5550,18 +5408,13 @@ interface CadenzaScanResult {
 
 async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResult> {
   console.log(`[cadenza] ████ coreCadenzaScanLockup ENTERED ████ lockupId=${lockupId}`);
-  const supabase = getAdminClient();
   console.log(`[cadenza] ▶ scan_lockup ${lockupId.slice(0, 8)}`);
 
   // 1. Load lockup token
-  const { data: lockup, error: lockupErr } = await supabase
-    .from("lockup_tokens")
-    .select("*")
-    .eq("id", lockupId)
-    .single();
+  const [lockup] = await sql`SELECT * FROM lockup_tokens WHERE id = ${lockupId}`;
 
-  if (lockupErr || !lockup) {
-    throw new Error(`Lockup not found: ${lockupErr?.message || 'missing'}`);
+  if (!lockup) {
+    throw new Error(`Lockup not found`);
   }
 
   if (!["active", "escalated"].includes(lockup.status)) {
@@ -5569,15 +5422,16 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
   }
 
   // 2. Load transaction
-  const { data: tx, error: txErr } = await supabase
-    .from("transactions")
-    .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(id, name, short_code, jurisdiction, tier, status, swift_bic, solana_wallet_pubkey, token_mint_address, solana_wallet_keypair_encrypted), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, name, short_code, jurisdiction, tier, status, swift_bic, solana_wallet_pubkey, token_mint_address, solana_wallet_keypair_encrypted)")
-    .eq("id", lockup.transaction_id)
-    .single();
+  const [txRaw] = await sql`SELECT * FROM transactions WHERE id = ${lockup.transaction_id}`;
 
-  if (txErr || !tx) {
-    throw new Error(`Transaction not found: ${txErr?.message || 'missing'}`);
+  if (!txRaw) {
+    throw new Error(`Transaction not found`);
   }
+  const tx = txRaw as any;
+  const [senderBankRow] = await sql`SELECT * FROM banks WHERE id = ${tx.sender_bank_id}`;
+  const [receiverBankRow] = await sql`SELECT * FROM banks WHERE id = ${tx.receiver_bank_id}`;
+  tx.sender_bank = senderBankRow || null;
+  tx.receiver_bank = receiverBankRow || null;
 
   const senderBank = tx.sender_bank as any;
   const receiverBank = tx.receiver_bank as any;
@@ -5585,13 +5439,7 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
   console.log(`[cadenza] │ Lockup status: ${lockup.status}, end: ${lockup.lockup_end || '∞'}`);
 
   // 3. Corridor history (last 10 bidirectional txns)
-  const { data: corridorRaw } = await supabase
-    .from('transactions')
-    .select('id, amount_display, purpose_code, risk_level, risk_score, status, created_at, sender_bank_id, receiver_bank_id')
-    .or(`and(sender_bank_id.eq.${tx.sender_bank_id},receiver_bank_id.eq.${tx.receiver_bank_id}),and(sender_bank_id.eq.${tx.receiver_bank_id},receiver_bank_id.eq.${tx.sender_bank_id})`)
-    .neq('id', tx.id)
-    .order('created_at', { ascending: false })
-    .limit(10);
+  const corridorRaw = await sql`SELECT id, amount_display, purpose_code, risk_level, risk_score, status, created_at, sender_bank_id, receiver_bank_id FROM transactions WHERE ((sender_bank_id = ${tx.sender_bank_id} AND receiver_bank_id = ${tx.receiver_bank_id}) OR (sender_bank_id = ${tx.receiver_bank_id} AND receiver_bank_id = ${tx.sender_bank_id})) AND id != ${tx.id} ORDER BY created_at DESC LIMIT 10`;
 
   const corridorHistory: CorridorTx[] = (corridorRaw || []).map((t: any) => ({
     id: t.id,
@@ -5609,12 +5457,7 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
   const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
   const sixtyMinAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-  const { data: senderTxns60 } = await supabase
-    .from('transactions')
-    .select('id, amount_display, receiver_bank_id, created_at')
-    .eq('sender_bank_id', tx.sender_bank_id)
-    .gte('created_at', sixtyMinAgo)
-    .neq('id', tx.id);
+  const senderTxns60 = await sql`SELECT id, amount_display, receiver_bank_id, created_at FROM transactions WHERE sender_bank_id = ${tx.sender_bank_id} AND created_at >= ${sixtyMinAgo} AND id != ${tx.id}`;
 
   const allTxns = senderTxns60 || [];
   const txns10 = allTxns.filter(t => t.created_at >= tenMinAgo);
@@ -5629,11 +5472,7 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
   };
 
   // 5. Existing cadenza_flags on this lockup
-  const { data: flagsRaw } = await supabase
-    .from('cadenza_flags')
-    .select('*')
-    .eq('lockup_token_id', lockupId)
-    .order('detected_at', { ascending: true });
+  const flagsRaw = await sql`SELECT * FROM cadenza_flags WHERE lockup_token_id = ${lockupId} ORDER BY detected_at ASC`;
 
   const existingFlags: CadenzaFlag[] = (flagsRaw || []).map((f: any) => ({
     id: f.id,
@@ -5753,11 +5592,7 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
   console.log(`[cadenza] │ Reasoning: ${decision.reasoning?.slice(0, 200)}...`);
 
   // ── Re-verify lockup status (prevent race condition) ──
-  const { data: lockupCheck } = await supabase
-    .from("lockup_tokens")
-    .select("status")
-    .eq("id", lockupId)
-    .single();
+  const [lockupCheck] = await sql`SELECT status FROM lockup_tokens WHERE id = ${lockupId}`;
 
   if (!lockupCheck || !["active", "escalated"].includes(lockupCheck.status)) {
     console.log(`[cadenza] │ Lockup status changed during Gemini call — aborting action`);
@@ -5782,20 +5617,24 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
     console.log(`[cadenza] │ ALL_CLEAR — updating lockup and triggering settlement`);
 
     // Update lockup + transaction status before calling lockup-settle
-    await supabase.from("lockup_tokens").update({
+    await sql`UPDATE lockup_tokens SET ${sql({
       resolution: "cadenza_all_clear",
-    }).eq("id", lockupId);
+    }, ...Object.keys({
+      resolution: "cadenza_all_clear",
+    }))} WHERE id = ${lockupId}`;
 
-    await supabase.from("transactions").update({
+    await sql`UPDATE transactions SET ${sql({
       lockup_status: "cadenza_cleared",
-    }).eq("id", tx.id);
+    }, ...Object.keys({
+      lockup_status: "cadenza_cleared",
+    }))} WHERE id = ${tx.id}`;
 
     // Task 118.2: Direct call to coreLockupSettle (bypasses HTTP, avoids 401)
     actionResult = await coreLockupSettle({ lockup_id: lockupId });
     if (actionResult?.error) {
       console.log(`[cadenza] │ /lockup-settle error: ${actionResult.error} — rolling back`);
-      await supabase.from("lockup_tokens").update({ resolution: null }).eq("id", lockupId);
-      await supabase.from("transactions").update({ lockup_status: "active" }).eq("id", tx.id);
+      await sql`UPDATE lockup_tokens SET resolution = ${null} WHERE id = ${lockupId}`;
+      await sql`UPDATE transactions SET lockup_status = ${"active"} WHERE id = ${tx.id}`;
       actionTaken = "settle_failed";
     } else {
       actionTaken = "settled";
@@ -5806,7 +5645,7 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
     console.log(`[cadenza] │ AUTO_REVERSE — inserting flag and triggering reversal`);
 
     // Insert cadenza_flags record
-    await supabase.from("cadenza_flags").insert({
+    await sql`INSERT INTO cadenza_flags ${sql({
       id: crypto.randomUUID(),
       transaction_id: tx.id,
       lockup_token_id: lockupId,
@@ -5816,7 +5655,17 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
       detected_at: now,
       action_taken: "reversed",
       action_at: now,
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(),
+      transaction_id: tx.id,
+      lockup_token_id: lockupId,
+      flag_type: decision.flag_type || "anomaly_detected",
+      severity: "auto_reverse",
+      reasoning: decision.reasoning,
+      detected_at: now,
+      action_taken: "reversed",
+      action_at: now,
+    }))}`
 
     // Task 118.2: Direct call to coreLockupReverse (bypasses HTTP, avoids 401)
     actionResult = await coreLockupReverse({
@@ -5835,7 +5684,7 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
     console.log(`[cadenza] │ ESCALATE — inserting flag, setting infinite lockup`);
 
     // Insert cadenza_flags record
-    await supabase.from("cadenza_flags").insert({
+    await sql`INSERT INTO cadenza_flags ${sql({
       id: crypto.randomUUID(),
       transaction_id: tx.id,
       lockup_token_id: lockupId,
@@ -5845,18 +5694,33 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
       detected_at: now,
       action_taken: "escalated",
       action_at: now,
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(),
+      transaction_id: tx.id,
+      lockup_token_id: lockupId,
+      flag_type: decision.flag_type || "anomaly_detected",
+      severity: "escalate",
+      reasoning: decision.reasoning,
+      detected_at: now,
+      action_taken: "escalated",
+      action_at: now,
+    }))}`
 
     // Set lockup_end = NULL (infinite), status = escalated
-    await supabase.from("lockup_tokens").update({
+    await sql`UPDATE lockup_tokens SET ${sql({
       lockup_end: null,
       status: "escalated",
-    }).eq("id", lockupId);
+    }, ...Object.keys({
+      lockup_end: null,
+      status: "escalated",
+    }))} WHERE id = ${lockupId}`;
 
     // Update transaction lockup_status
-    await supabase.from("transactions").update({
+    await sql`UPDATE transactions SET ${sql({
       lockup_status: "cadenza_escalated",
-    }).eq("id", tx.id);
+    }, ...Object.keys({
+      lockup_status: "cadenza_escalated",
+    }))} WHERE id = ${tx.id}`;
 
     actionTaken = "escalated";
     actionResult = { message: "Lockup escalated to human review — infinite hold" };
@@ -5872,7 +5736,7 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
   // 11. Insert agent_message with Cadenza's reasoning (non-blocking — don't crash scan on insert failure)
   const amountDisplay = tx.amount_display || (Number(tx.amount) / 1_000_000);
   try {
-    await supabase.from("agent_messages").insert({
+    await sql`INSERT INTO agent_messages ${sql({
       id: crypto.randomUUID(),
       transaction_id: tx.id,
       from_bank_id: tx.receiver_bank_id,
@@ -5890,7 +5754,25 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
       natural_language: `Cadenza \u2014 ${decision.decision} (${(decision.confidence * 100).toFixed(0)}% confidence) for $${Number(amountDisplay).toLocaleString()} ${senderBank.short_code} \u2192 ${receiverBank.short_code}. ${decision.reasoning?.slice(0, 300)}`,
       processed: false,
       created_at: now,
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(),
+      transaction_id: tx.id,
+      from_bank_id: tx.receiver_bank_id,
+      to_bank_id: tx.sender_bank_id,
+      message_type: "cadenza_decision",
+      content: {
+        agent_id: "solstice_ai_cadenza",
+        action: decision.decision.toLowerCase(),
+        lockup_id: lockupId,
+        confidence: decision.confidence,
+        flag_type: decision.flag_type,
+        risk_factors: decision.risk_factors,
+        action_taken: actionTaken,
+      },
+      natural_language: `Cadenza \u2014 ${decision.decision} (${(decision.confidence * 100).toFixed(0)}% confidence) for $${Number(amountDisplay).toLocaleString()} ${senderBank.short_code} \u2192 ${receiverBank.short_code}. ${decision.reasoning?.slice(0, 300)}`,
+      processed: false,
+      created_at: now,
+    }))}`
   } catch (msgErr) {
     console.log(`[cadenza] ⚠ agent_message insert failed (non-blocking): ${(msgErr as Error).message}`);
   }
@@ -5912,18 +5794,13 @@ async function coreCadenzaScanLockup(lockupId: string): Promise<CadenzaScanResul
 // ── Core user_reversal function (reusable from route + proving-ground) ──
 
 async function coreCadenzaUserReversal(lockupId: string, reason: string): Promise<any> {
-  const supabase = getAdminClient();
   const now = new Date().toISOString();
 
   // Validate lockup is still active
-  const { data: lockup, error: lockupErr } = await supabase
-    .from("lockup_tokens")
-    .select("id, transaction_id, status, sender_bank_id, receiver_bank_id")
-    .eq("id", lockupId)
-    .single();
+  const [lockup] = await sql`SELECT id, transaction_id, status, sender_bank_id, receiver_bank_id FROM lockup_tokens WHERE id = ${lockupId}`;
 
-  if (lockupErr || !lockup) {
-    throw new Error(`Lockup not found: ${lockupErr?.message || 'missing'}`);
+  if (!lockup) {
+    throw new Error(`Lockup not found`);
   }
 
   if (!["active", "escalated"].includes(lockup.status)) {
@@ -5933,7 +5810,7 @@ async function coreCadenzaUserReversal(lockupId: string, reason: string): Promis
   console.log(`[cadenza] ▶ user_reversal for lockup ${lockupId.slice(0, 8)}`);
 
   // Insert cadenza_flags record
-  await supabase.from("cadenza_flags").insert({
+  await sql`INSERT INTO cadenza_flags ${sql({
     id: crypto.randomUUID(),
     transaction_id: lockup.transaction_id,
     lockup_token_id: lockupId,
@@ -5943,7 +5820,17 @@ async function coreCadenzaUserReversal(lockupId: string, reason: string): Promis
     detected_at: now,
     action_taken: "reversed",
     action_at: now,
-  });
+  }, ...Object.keys({
+    id: crypto.randomUUID(),
+    transaction_id: lockup.transaction_id,
+    lockup_token_id: lockupId,
+    flag_type: "user_reversal_request",
+    severity: "auto_reverse",
+    reasoning: reason || "User-initiated reversal request",
+    detected_at: now,
+    action_taken: "reversed",
+    action_at: now,
+  }))}`
 
   // Task 118.2: Direct call to coreLockupReverse (no Gemini needed — user authority)
   const reversalReason = `user_requested_reversal: ${reason || 'operator-initiated'}`;
@@ -5956,7 +5843,7 @@ async function coreCadenzaUserReversal(lockupId: string, reason: string): Promis
 
   // Insert agent_message (non-blocking — don't crash user_reversal on insert failure)
   try {
-    await supabase.from("agent_messages").insert({
+    await sql`INSERT INTO agent_messages ${sql({
       id: crypto.randomUUID(),
       transaction_id: lockup.transaction_id,
       from_bank_id: lockup.receiver_bank_id,
@@ -5971,7 +5858,22 @@ async function coreCadenzaUserReversal(lockupId: string, reason: string): Promis
       natural_language: `Cadenza \u2014 User-initiated reversal for lockup ${lockupId.slice(0, 8)}. Reason: ${reason || 'operator-initiated'}. No Gemini evaluation required.`,
       processed: false,
       created_at: now,
-    });
+    }, ...Object.keys({
+      id: crypto.randomUUID(),
+      transaction_id: lockup.transaction_id,
+      from_bank_id: lockup.receiver_bank_id,
+      to_bank_id: lockup.sender_bank_id,
+      message_type: "cadenza_decision",
+      content: {
+        agent_id: "solstice_ai_cadenza",
+        action: "user_reversal",
+        lockup_id: lockupId,
+        reason: reversalReason,
+      },
+      natural_language: `Cadenza \u2014 User-initiated reversal for lockup ${lockupId.slice(0, 8)}. Reason: ${reason || 'operator-initiated'}. No Gemini evaluation required.`,
+      processed: false,
+      created_at: now,
+    }))}`
   } catch (msgErr) {
     console.log(`[cadenza] \u26a0 user_reversal agent_message insert failed (non-blocking): ${(msgErr as Error).message}`);
   }
@@ -5997,8 +5899,7 @@ setAgentDirectHandlers(
   coreComplianceCheck,
   coreRiskScore,
   async (bankId: string, input: string, transactionId: string | null, contextType: string) => {
-    const supabase = getAdminClient();
-    return coreAgentThink(supabase, bankId, input, transactionId, contextType);
+    return coreAgentThink(bankId, input, transactionId, contextType);
   },
 );
 
@@ -6013,7 +5914,6 @@ interface CadenzaPeriodicScanResult {
 async function coreCadenzaPeriodicScan(options?: {
   heartbeatMode?: boolean; // Only scan lockups near expiry
 }): Promise<CadenzaPeriodicScanResult> {
-  const supabase = getAdminClient();
   const now = Date.now();
   const thirtySecondsAgo = new Date(now - 30_000).toISOString();
 
@@ -6029,31 +5929,22 @@ async function coreCadenzaPeriodicScan(options?: {
   // ────────────────────────────────────────────────────────────────
   try {
     const nowIso = new Date().toISOString();
-    const { data: expiredInlineTxs, error: expiredErr } = await supabase
-      .from("transactions")
-      .select("id, lockup_until, lockup_status, amount_display, sender_bank_id, receiver_bank_id")
-      .eq("status", "locked")
-      .not("lockup_until", "is", null)
-      .lte("lockup_until", nowIso);
+    const expiredInlineTxs = await sql`SELECT id, lockup_until, lockup_status, amount_display, sender_bank_id, receiver_bank_id FROM transactions WHERE status = 'locked' AND lockup_until IS NOT NULL AND lockup_until <= ${nowIso}`;
+    const expiredErr = null;
 
     if (!expiredErr && expiredInlineTxs && expiredInlineTxs.length > 0) {
       console.log(`[cadenza] \u2502 Found ${expiredInlineTxs.length} expired locked tx(es) \u2014 checking for auto-settle`);
 
       for (const expTx of expiredInlineTxs) {
         // Check if this tx has a lockup_tokens record
-        const { data: ltRecord } = await supabase
-          .from("lockup_tokens")
-          .select("id, status")
-          .eq("transaction_id", expTx.id)
-          .in("status", ["active", "escalated"])
-          .maybeSingle();
+        const [ltRecord] = await sql`SELECT id, status FROM lockup_tokens WHERE transaction_id = ${expTx.id} AND status = ANY(${["active", "escalated"]}) LIMIT 1`;
 
         if (ltRecord) {
           // Has a real lockup_tokens row \u2014 fast-path settle (skip Gemini)
           console.log(`[cadenza] \u2502 Expired lockup with lockup_tokens: ${expTx.id.slice(0, 8)} \u2014 fast-path settle`);
           try {
-            await supabase.from("lockup_tokens").update({ resolution: "expired_auto_settle" }).eq("id", ltRecord.id);
-            await supabase.from("transactions").update({ lockup_status: "cadenza_cleared" }).eq("id", expTx.id);
+            await sql`UPDATE lockup_tokens SET resolution = ${"expired_auto_settle"} WHERE id = ${ltRecord.id}`;
+            await sql`UPDATE transactions SET lockup_status = ${"cadenza_cleared"} WHERE id = ${expTx.id}`;
             // Task 118.2: Direct call to coreLockupSettle (bypasses HTTP, avoids 401)
             await coreLockupSettle({ lockup_id: ltRecord.id, caller_resolution: "expired_auto_settle", caller_resolved_by: "cadenza_periodic" });
             console.log(`[cadenza] \u2502 \u2192 Settled lockup_tokens ${ltRecord.id.slice(0, 8)} for tx ${expTx.id.slice(0, 8)}`);
@@ -6064,19 +5955,20 @@ async function coreCadenzaPeriodicScan(options?: {
           // No lockup_tokens row \u2014 orchestrator inline lockup. Funds already on-chain.
           // Just update DB status to settled.
           console.log(`[cadenza] \u2502 Expired inline lockup (no lockup_tokens): ${expTx.id.slice(0, 8)} \u2014 auto-settling`);
-          const { error: updateErr } = await supabase.from("transactions").update({
+          const _upd_transactions_272354 = {
             status: "settled",
             lockup_status: "hard_settled",
             settled_at: nowIso,
             is_reversible: false,
-          }).eq("id", expTx.id);
+          };
+          const { error: updateErr } = await (async () => { try { await sql`UPDATE transactions SET ${sql(_upd_transactions_272354, ...Object.keys(_upd_transactions_272354))} WHERE id = ${expTx.id}`; return {}; } catch (e) { return { error: e }; } })();
 
           if (updateErr) {
             console.log(`[cadenza] \u2502 \u2192 Auto-settle update failed: ${updateErr.message}`);
           } else {
             console.log(`[cadenza] \u2502 \u2192 Auto-settled tx ${expTx.id.slice(0, 8)} (inline lockup expired)`);
             // Insert agent_message for audit trail
-            await supabase.from("agent_messages").insert({
+            await sql`INSERT INTO agent_messages ${sql({
               id: crypto.randomUUID(),
               transaction_id: expTx.id,
               from_bank_id: expTx.receiver_bank_id,
@@ -6090,7 +5982,21 @@ async function coreCadenzaPeriodicScan(options?: {
               natural_language: `Cadenza \u2014 Lockup timer expired. Transaction auto-settled to hard finality. Amount: $${Number(expTx.amount_display || 0).toLocaleString()}.`,
               processed: false,
               created_at: nowIso,
-            });
+            }, ...Object.keys({
+              id: crypto.randomUUID(),
+              transaction_id: expTx.id,
+              from_bank_id: expTx.receiver_bank_id,
+              to_bank_id: expTx.sender_bank_id,
+              message_type: "settlement_confirm",
+              content: {
+                agent_id: "solstice_ai_cadenza",
+                action: "auto_settle_expired",
+                lockup_until: expTx.lockup_until,
+              },
+              natural_language: `Cadenza \u2014 Lockup timer expired. Transaction auto-settled to hard finality. Amount: $${Number(expTx.amount_display || 0).toLocaleString()}.`,
+              processed: false,
+              created_at: nowIso,
+            }))}`
           }
         }
       }
@@ -6100,15 +6006,11 @@ async function coreCadenzaPeriodicScan(options?: {
   }
 
   // 1. Query all active lockups (not escalated \u2014 those wait for humans)
-  const { data: activeLockups, error: lockupErr } = await supabase
-    .from("lockup_tokens")
-    .select("id, transaction_id, lockup_start, lockup_end, status, created_at, sender_bank_id, receiver_bank_id")
-    .eq("status", "active")
-    .lte("created_at", thirtySecondsAgo) // Skip lockups < 30s old
-    .order("lockup_end", { ascending: true, nullsFirst: false });
-
-  if (lockupErr) {
-    throw new Error(`Failed to query active lockups: ${lockupErr.message}`);
+  let activeLockups: any[];
+  try {
+    activeLockups = await sql`SELECT id, transaction_id, lockup_start, lockup_end, status, created_at, sender_bank_id, receiver_bank_id FROM lockup_tokens WHERE status = 'active' AND created_at <= ${thirtySecondsAgo} ORDER BY lockup_end ASC NULLS LAST`;
+  } catch (lockupErr) {
+    throw new Error(`Failed to query active lockups: ${(lockupErr as Error).message}`);
   }
 
   if (!activeLockups || activeLockups.length === 0) {
@@ -6150,11 +6052,7 @@ async function coreCadenzaPeriodicScan(options?: {
   for (const lockup of lockupsToScan) {
     try {
       // Re-check status (may have changed during previous iterations)
-      const { data: check } = await supabase
-        .from("lockup_tokens")
-        .select("status")
-        .eq("id", lockup.id)
-        .single();
+      const [check] = await sql`SELECT status FROM lockup_tokens WHERE id = ${lockup.id}`;
 
       if (!check || check.status !== "active") {
         skipped.push({ lockup_id: lockup.id, reason: `status_changed_to_${check?.status || 'unknown'}` });
@@ -6244,19 +6142,26 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
       return c.json({ error: "Missing required field: action (get_escalations | resolve_escalation | get_briefing)" }, 400);
     }
 
-    const supabase = getAdminClient();
-
     // ── Action: get_escalations — list all escalated lockups ──
     if (action === "get_escalations") {
       console.log(`[cadenza-escalate] ▶ get_escalations`);
 
-      const { data: escalated, error: escErr } = await supabase
-        .from("lockup_tokens")
-        .select("*, transaction:transactions(id, amount, amount_display, purpose_code, memo, status, risk_level, risk_score, risk_reasoning, lockup_status, created_at, initiated_at, solana_tx_signature, sender_bank_id, receiver_bank_id, sender_bank:banks!transactions_sender_bank_id_fkey(id, name, short_code, jurisdiction, tier, status, swift_bic), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, name, short_code, jurisdiction, tier, status, swift_bic))")
-        .eq("status", "escalated")
-        .order("created_at", { ascending: false });
-
-      if (escErr) {
+      let escalated: any[];
+      try {
+        const lockupRows = await sql`SELECT * FROM lockup_tokens WHERE status = ${"escalated"} ORDER BY created_at DESC`;
+        // Attach transaction + sender_bank + receiver_bank for each lockup
+        escalated = [];
+        for (const lt of lockupRows) {
+          const [tx] = await sql`SELECT id, amount, amount_display, purpose_code, memo, status, risk_level, risk_score, risk_reasoning, lockup_status, created_at, initiated_at, solana_tx_signature, sender_bank_id, receiver_bank_id FROM transactions WHERE id = ${lt.transaction_id}`;
+          if (tx) {
+            const [senderBank] = await sql`SELECT id, name, short_code, jurisdiction, tier, status, swift_bic FROM banks WHERE id = ${tx.sender_bank_id}`;
+            const [receiverBank] = await sql`SELECT id, name, short_code, jurisdiction, tier, status, swift_bic FROM banks WHERE id = ${tx.receiver_bank_id}`;
+            tx.sender_bank = senderBank || null;
+            tx.receiver_bank = receiverBank || null;
+          }
+          escalated.push({ ...lt, transaction: tx || null });
+        }
+      } catch (escErr: any) {
         return c.json({ error: `Failed to query escalated lockups: ${escErr.message}` }, 500);
       }
 
@@ -6267,11 +6172,7 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
 
       // Fetch flags for all escalated lockups
       const lockupIds = escalated.map(l => l.id);
-      const { data: allFlags } = await supabase
-        .from("cadenza_flags")
-        .select("*")
-        .in("lockup_token_id", lockupIds)
-        .order("detected_at", { ascending: true });
+      const allFlags = await sql`SELECT * FROM cadenza_flags WHERE lockup_token_id = ANY(${lockupIds}) ORDER BY detected_at ASC`;
 
       const flagsByLockup = new Map<string, any[]>();
       for (const f of (allFlags || [])) {
@@ -6357,14 +6258,10 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
       console.log(`[cadenza-escalate] ▶ resolve_escalation: ${decision} by ${operator_name} for lockup ${lockup_id.slice(0, 8)}`);
 
       // Verify lockup is escalated
-      const { data: lockup, error: lockupErr } = await supabase
-        .from("lockup_tokens")
-        .select("id, transaction_id, status, sender_bank_id, receiver_bank_id, yb_token_amount, yield_accrued, yield_rate_bps, yield_last_calculated, lockup_start")
-        .eq("id", lockup_id)
-        .single();
+      const [lockup] = await sql`SELECT id, transaction_id, status, sender_bank_id, receiver_bank_id, yb_token_amount, yield_accrued, yield_rate_bps, yield_last_calculated, lockup_start FROM lockup_tokens WHERE id = ${lockup_id}`;
 
-      if (lockupErr || !lockup) {
-        return c.json({ error: `Lockup not found: ${lockupErr?.message || 'missing'}` }, 404);
+      if (!lockup) {
+        return c.json({ error: `Lockup not found` }, 404);
       }
 
       if (lockup.status !== "escalated") {
@@ -6373,14 +6270,18 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
       }
 
       // Load transaction for agent_message
-      const { data: tx } = await supabase
-        .from("transactions")
-        .select("id, amount_display, sender_bank_id, receiver_bank_id, sender_bank:banks!transactions_sender_bank_id_fkey(short_code, name), receiver_bank:banks!transactions_receiver_bank_id_fkey(short_code, name)")
-        .eq("id", lockup.transaction_id)
-        .single();
-
-      const senderCode = (tx?.sender_bank as any)?.short_code || "?";
-      const receiverCode = (tx?.receiver_bank as any)?.short_code || "?";
+      const [txRow] = await sql`SELECT id, amount_display, sender_bank_id, receiver_bank_id FROM transactions WHERE id = ${lockup.transaction_id}`;
+      const tx = txRow as any;
+      let senderCode = "?";
+      let receiverCode = "?";
+      if (tx) {
+        const [sb] = await sql`SELECT short_code, name FROM banks WHERE id = ${tx.sender_bank_id}`;
+        const [rb] = await sql`SELECT short_code, name FROM banks WHERE id = ${tx.receiver_bank_id}`;
+        tx.sender_bank = sb || null;
+        tx.receiver_bank = rb || null;
+        senderCode = sb?.short_code || "?";
+        receiverCode = rb?.short_code || "?";
+      }
       const amountDisplay = tx?.amount_display || 0;
 
       const now = new Date().toISOString();
@@ -6390,15 +6291,21 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
         console.log(`[cadenza-escalate] │ APPROVE — updating resolution, calling lockup-settle`);
 
         // Update lockup metadata before settlement
-        await supabase.from("lockup_tokens").update({
+        await sql`UPDATE lockup_tokens SET ${sql({
           resolution: "human_approved",
           resolved_by: resolvedBy,
           resolved_at: now,
-        }).eq("id", lockup_id);
+        }, ...Object.keys({
+          resolution: "human_approved",
+          resolved_by: resolvedBy,
+          resolved_at: now,
+        }))} WHERE id = ${lockup_id}`;
 
-        await supabase.from("transactions").update({
+        await sql`UPDATE transactions SET ${sql({
           lockup_status: "cadenza_cleared",
-        }).eq("id", lockup.transaction_id);
+        }, ...Object.keys({
+          lockup_status: "cadenza_cleared",
+        }))} WHERE id = ${lockup.transaction_id}`;
 
         // Task 118.2: Direct call to coreLockupSettle (bypasses HTTP, avoids 401 on internal fetch)
         const settleResult = await coreLockupSettle({
@@ -6410,13 +6317,13 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
         // Check if settlement failed — propagate error
         if (settleResult?.error) {
           console.log(`[cadenza-escalate] │ /lockup-settle failed: ${settleResult.error} — rolling back`);
-          await supabase.from("lockup_tokens").update({ resolution: null, resolved_by: null, resolved_at: null }).eq("id", lockup_id);
-          await supabase.from("transactions").update({ lockup_status: "cadenza_escalated" }).eq("id", lockup.transaction_id);
+          await sql`UPDATE lockup_tokens SET resolution = ${null}, resolved_by = ${null}, resolved_at = ${null} WHERE id = ${lockup_id}`;
+          await sql`UPDATE transactions SET lockup_status = ${"cadenza_escalated"} WHERE id = ${lockup.transaction_id}`;
           return c.json({ error: `Settlement failed: ${settleResult.error}` }, 500);
         }
 
         // Insert agent_message
-        await supabase.from("agent_messages").insert({
+        await sql`INSERT INTO agent_messages ${sql({
           id: crypto.randomUUID(),
           transaction_id: lockup.transaction_id,
           from_bank_id: lockup.receiver_bank_id,
@@ -6433,10 +6340,27 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
           natural_language: `Cadenza \u2014 Human review complete. ${operator_name} approved settlement of $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. Lockup released to hard finality.`,
           processed: false,
           created_at: now,
-        });
+        }, ...Object.keys({
+          id: crypto.randomUUID(),
+          transaction_id: lockup.transaction_id,
+          from_bank_id: lockup.receiver_bank_id,
+          to_bank_id: lockup.sender_bank_id,
+          message_type: "cadenza_decision",
+          content: {
+            agent_id: "solstice_ai_cadenza",
+            action: "human_approved",
+            lockup_id,
+            operator: operator_name,
+            decision: "approve",
+            settle_result: settleResult,
+          },
+          natural_language: `Cadenza \u2014 Human review complete. ${operator_name} approved settlement of $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. Lockup released to hard finality.`,
+          processed: false,
+          created_at: now,
+        }))}`
 
         // Insert cadenza_flag to record the human decision
-        await supabase.from("cadenza_flags").insert({
+        await sql`INSERT INTO cadenza_flags ${sql({
           id: crypto.randomUUID(),
           transaction_id: lockup.transaction_id,
           lockup_token_id: lockup_id,
@@ -6446,7 +6370,17 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
           detected_at: now,
           action_taken: "approved",
           action_at: now,
-        });
+        }, ...Object.keys({
+          id: crypto.randomUUID(),
+          transaction_id: lockup.transaction_id,
+          lockup_token_id: lockup_id,
+          flag_type: "human_resolution",
+          severity: "info",
+          reasoning: `Approved by ${operator_name}`,
+          detected_at: now,
+          action_taken: "approved",
+          action_at: now,
+        }))}`
 
         console.log(`[cadenza-escalate] └─ APPROVED by ${operator_name}`);
 
@@ -6464,11 +6398,15 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
         console.log(`[cadenza-escalate] │ REVERSE — updating resolution, calling lockup-reverse`);
 
         // Update lockup metadata before reversal
-        await supabase.from("lockup_tokens").update({
+        await sql`UPDATE lockup_tokens SET ${sql({
           resolution: "human_reversed",
           resolved_by: resolvedBy,
           resolved_at: now,
-        }).eq("id", lockup_id);
+        }, ...Object.keys({
+          resolution: "human_reversed",
+          resolved_by: resolvedBy,
+          resolved_at: now,
+        }))} WHERE id = ${lockup_id}`;
 
         const reversalReason = `human_reversed by ${operator_name}`;
 
@@ -6483,12 +6421,12 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
         // Check if reversal failed — propagate error
         if (reverseResult?.error) {
           console.log(`[cadenza-escalate] │ /lockup-reverse failed: ${reverseResult.error} — rolling back`);
-          await supabase.from("lockup_tokens").update({ resolution: null, resolved_by: null, resolved_at: null }).eq("id", lockup_id);
+          await sql`UPDATE lockup_tokens SET resolution = ${null}, resolved_by = ${null}, resolved_at = ${null} WHERE id = ${lockup_id}`;
           return c.json({ error: `Reversal failed: ${reverseResult.error}` }, 500);
         }
 
         // Insert agent_message
-        await supabase.from("agent_messages").insert({
+        await sql`INSERT INTO agent_messages ${sql({
           id: crypto.randomUUID(),
           transaction_id: lockup.transaction_id,
           from_bank_id: lockup.receiver_bank_id,
@@ -6505,10 +6443,27 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
           natural_language: `Cadenza \u2014 Human review complete. ${operator_name} reversed $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. Funds clawed back to sender.`,
           processed: false,
           created_at: now,
-        });
+        }, ...Object.keys({
+          id: crypto.randomUUID(),
+          transaction_id: lockup.transaction_id,
+          from_bank_id: lockup.receiver_bank_id,
+          to_bank_id: lockup.sender_bank_id,
+          message_type: "cadenza_decision",
+          content: {
+            agent_id: "solstice_ai_cadenza",
+            action: "human_reversed",
+            lockup_id,
+            operator: operator_name,
+            decision: "reverse",
+            reverse_result: reverseResult,
+          },
+          natural_language: `Cadenza \u2014 Human review complete. ${operator_name} reversed $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. Funds clawed back to sender.`,
+          processed: false,
+          created_at: now,
+        }))}`
 
         // Insert cadenza_flag to record the human decision
-        await supabase.from("cadenza_flags").insert({
+        await sql`INSERT INTO cadenza_flags ${sql({
           id: crypto.randomUUID(),
           transaction_id: lockup.transaction_id,
           lockup_token_id: lockup_id,
@@ -6518,7 +6473,17 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
           detected_at: now,
           action_taken: "reversed",
           action_at: now,
-        });
+        }, ...Object.keys({
+          id: crypto.randomUUID(),
+          transaction_id: lockup.transaction_id,
+          lockup_token_id: lockup_id,
+          flag_type: "human_resolution",
+          severity: "info",
+          reasoning: `Reversed by ${operator_name}`,
+          detected_at: now,
+          action_taken: "reversed",
+          action_at: now,
+        }))}`
 
         console.log(`[cadenza-escalate] └─ REVERSED by ${operator_name}`);
 
@@ -6542,14 +6507,10 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
       console.log(`[cadenza-escalate] ▶ get_briefing for lockup ${lockup_id.slice(0, 8)}`);
 
       // Load lockup
-      const { data: lockup, error: lockupErr } = await supabase
-        .from("lockup_tokens")
-        .select("*")
-        .eq("id", lockup_id)
-        .single();
+      const [lockup] = await sql`SELECT * FROM lockup_tokens WHERE id = ${lockup_id}`;
 
-      if (lockupErr || !lockup) {
-        return c.json({ error: `Lockup not found: ${lockupErr?.message || 'missing'}` }, 404);
+      if (!lockup) {
+        return c.json({ error: `Lockup not found` }, 404);
       }
 
       if (lockup.status !== "escalated") {
@@ -6557,11 +6518,9 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
       }
 
       // Load transaction + banks
-      const { data: tx, error: txErr } = await supabase
-        .from("transactions")
-        .select("*, sender_bank:banks!transactions_sender_bank_id_fkey(id, name, short_code, jurisdiction, tier, status, swift_bic), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, name, short_code, jurisdiction, tier, status, swift_bic)")
-        .eq("id", lockup.transaction_id)
-        .single();
+      let tx: any = null;
+      let txErr: any = null;
+      try { [tx] = await sql`SELECT *, sender_bank:banks!transactions_sender_bank_id_fkey(id, name, short_code, jurisdiction, tier, status, swift_bic), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, name, short_code, jurisdiction, tier, status, swift_bic) FROM transactions WHERE id = ${lockup.transaction_id}` } catch (e) { txErr = e; }
 
       if (txErr || !tx) {
         return c.json({ error: `Transaction not found: ${txErr?.message || 'missing'}` }, 404);
@@ -6571,11 +6530,7 @@ app.post("/make-server-49d15288/cadenza-escalate", async (c) => {
       const receiverBank = tx.receiver_bank as any;
 
       // Load all flags
-      const { data: flagsRaw } = await supabase
-        .from("cadenza_flags")
-        .select("*")
-        .eq("lockup_token_id", lockup_id)
-        .order("detected_at", { ascending: true });
+      const flagsRaw = await sql`SELECT * FROM cadenza_flags WHERE lockup_token_id = ${lockup_id} ORDER BY detected_at ASC`;
 
       const flags: CadenzaFlag[] = (flagsRaw || []).map((f: any) => ({
         id: f.id,
@@ -6766,34 +6721,26 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
     }
     if (!transaction_id) return c.json({ error: "Missing required field: transaction_id" }, 400);
     if (!operator_name) return c.json({ error: "Missing required field: operator_name" }, 400);
-
-    const supabase = getAdminClient();
     console.log(`[lockup-action] ▶ ${action} by ${operator_name} for tx ${transaction_id.slice(0, 8)}`);
 
     // Load transaction
-    const { data: tx, error: txErr } = await supabase
-      .from("transactions")
-      .select("id, status, lockup_status, lockup_until, amount_display, sender_bank_id, receiver_bank_id, sender_bank:banks!transactions_sender_bank_id_fkey(short_code, name), receiver_bank:banks!transactions_receiver_bank_id_fkey(short_code, name)")
-      .eq("id", transaction_id)
-      .single();
+    const [txRow] = await sql`SELECT id, status, lockup_status, lockup_until, amount_display, sender_bank_id, receiver_bank_id FROM transactions WHERE id = ${transaction_id}`;
 
-    if (txErr || !tx) {
-      return c.json({ error: `Transaction not found: ${txErr?.message || 'missing'}` }, 404);
+    if (!txRow) {
+      return c.json({ error: `Transaction not found` }, 404);
     }
+    const tx = txRow as any;
+    const [txSb] = await sql`SELECT short_code, name FROM banks WHERE id = ${tx.sender_bank_id}`;
+    const [txRb] = await sql`SELECT short_code, name FROM banks WHERE id = ${tx.receiver_bank_id}`;
+    tx.sender_bank = txSb || null;
+    tx.receiver_bank = txRb || null;
 
     if (tx.status !== "locked") {
       return c.json({ error: `Transaction status is '${tx.status}' — must be 'locked' for lockup management` }, 400);
     }
 
     // Find active lockup_tokens record
-    const { data: lockup, error: lockupErr } = await supabase
-      .from("lockup_tokens")
-      .select("id, status, lockup_start, lockup_end, yb_token_amount, yield_accrued, yield_rate_bps, yield_last_calculated, sender_bank_id, receiver_bank_id")
-      .eq("transaction_id", transaction_id)
-      .in("status", ["active", "escalated"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const [lockup] = await sql`SELECT id, status, lockup_start, lockup_end, yb_token_amount, yield_accrued, yield_rate_bps, yield_last_calculated, sender_bank_id, receiver_bank_id FROM lockup_tokens WHERE transaction_id = ${transaction_id} AND status = ANY(${["active", "escalated"]}) ORDER BY created_at DESC LIMIT 1`;
 
     const senderCode = (tx.sender_bank as any)?.short_code || "?";
     const receiverCode = (tx.receiver_bank as any)?.short_code || "?";
@@ -6806,18 +6753,19 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
     if (!lockup && action === "settle_now") {
       console.log(`[lockup-action] \u2502 SETTLE NOW (inline lockup \u2014 no lockup_tokens, funds already on-chain)`);
 
-      const { error: updateErr } = await supabase.from("transactions").update({
+      const _upd_transactions_302996 = {
         status: "settled",
         lockup_status: "hard_settled",
         settled_at: now,
         is_reversible: false,
-      }).eq("id", transaction_id);
+      };
+      const { error: updateErr } = await (async () => { try { await sql`UPDATE transactions SET ${sql(_upd_transactions_302996, ...Object.keys(_upd_transactions_302996))} WHERE id = ${transaction_id}`; return {}; } catch (e) { return { error: e }; } })();
 
       if (updateErr) {
         return c.json({ error: `Failed to settle inline lockup: ${updateErr.message}` }, 500);
       }
 
-      await supabase.from("agent_messages").insert({
+      await sql`INSERT INTO agent_messages ${sql({
         id: crypto.randomUUID(),
         transaction_id,
         from_bank_id: tx.receiver_bank_id,
@@ -6827,7 +6775,17 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
         natural_language: `Operator ${operator_name} \u2014 Inline lockup settled to hard finality for $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. Funds were already on-chain.`,
         processed: false,
         created_at: now,
-      });
+      }, ...Object.keys({
+        id: crypto.randomUUID(),
+        transaction_id,
+        from_bank_id: tx.receiver_bank_id,
+        to_bank_id: tx.sender_bank_id,
+        message_type: "lockup_action",
+        content: { agent_id: "solstice_operator", action: "settle_now_inline", operator: operator_name },
+        natural_language: `Operator ${operator_name} \u2014 Inline lockup settled to hard finality for $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. Funds were already on-chain.`,
+        processed: false,
+        created_at: now,
+      }))}`
 
       console.log(`[lockup-action] \u2514\u2500 SETTLED (inline) by ${operator_name}`);
       return c.json({
@@ -6847,15 +6805,21 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
     if (action === "settle_now") {
       console.log(`[lockup-action] \u2502 SETTLE NOW \u2014 operator fast-forward to hard finality`);
 
-      await supabase.from("lockup_tokens").update({
+      await sql`UPDATE lockup_tokens SET ${sql({
         resolution: "operator_settled",
         resolved_by: resolvedBy,
         resolved_at: now,
-      }).eq("id", lockup.id);
+      }, ...Object.keys({
+        resolution: "operator_settled",
+        resolved_by: resolvedBy,
+        resolved_at: now,
+      }))} WHERE id = ${lockup.id}`;
 
-      await supabase.from("transactions").update({
+      await sql`UPDATE transactions SET ${sql({
         lockup_status: "operator_cleared",
-      }).eq("id", transaction_id);
+      }, ...Object.keys({
+        lockup_status: "operator_cleared",
+      }))} WHERE id = ${transaction_id}`;
 
       // Task 118.2: Direct call to coreLockupSettle (bypasses HTTP, avoids 401)
       const settleResult = await coreLockupSettle({
@@ -6868,12 +6832,12 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
       if (settleResult?.error) {
         console.log(`[lockup-action] \u2502 /lockup-settle failed: ${settleResult.error}`);
         // Rollback pre-updates so the lockup is still actionable
-        await supabase.from("lockup_tokens").update({ resolution: null, resolved_by: null, resolved_at: null }).eq("id", lockup.id);
-        await supabase.from("transactions").update({ lockup_status: "active" }).eq("id", transaction_id);
+        await sql`UPDATE lockup_tokens SET resolution = ${null}, resolved_by = ${null}, resolved_at = ${null} WHERE id = ${lockup.id}`;
+        await sql`UPDATE transactions SET lockup_status = ${"active"} WHERE id = ${transaction_id}`;
         return c.json({ error: `Settlement failed: ${settleResult.error}` }, 500);
       }
 
-      await supabase.from("agent_messages").insert({
+      await sql`INSERT INTO agent_messages ${sql({
         id: crypto.randomUUID(),
         transaction_id,
         from_bank_id: tx.receiver_bank_id,
@@ -6889,7 +6853,23 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
         natural_language: `Operator ${operator_name} \u2014 Final settlement fast-forwarded for $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. Lockup released to hard finality.`,
         processed: false,
         created_at: now,
-      });
+      }, ...Object.keys({
+        id: crypto.randomUUID(),
+        transaction_id,
+        from_bank_id: tx.receiver_bank_id,
+        to_bank_id: tx.sender_bank_id,
+        message_type: "lockup_action",
+        content: {
+          agent_id: "solstice_operator",
+          action: "settle_now",
+          lockup_id: lockup.id,
+          operator: operator_name,
+          settle_result: settleResult,
+        },
+        natural_language: `Operator ${operator_name} \u2014 Final settlement fast-forwarded for $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. Lockup released to hard finality.`,
+        processed: false,
+        created_at: now,
+      }))}`
 
       console.log(`[lockup-action] \u2514\u2500 SETTLED by ${operator_name}`);
       return c.json({
@@ -6914,10 +6894,10 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
       const currentEnd = tx.lockup_until ? new Date(tx.lockup_until).getTime() : Date.now();
       const newEnd = new Date(currentEnd + extend_minutes * 60 * 1000).toISOString();
 
-      await supabase.from("lockup_tokens").update({ lockup_end: newEnd }).eq("id", lockup.id);
-      await supabase.from("transactions").update({ lockup_until: newEnd }).eq("id", transaction_id);
+      await sql`UPDATE lockup_tokens SET lockup_end = ${newEnd} WHERE id = ${lockup.id}`;
+      await sql`UPDATE transactions SET lockup_until = ${newEnd} WHERE id = ${transaction_id}`;
 
-      await supabase.from("agent_messages").insert({
+      await sql`INSERT INTO agent_messages ${sql({
         id: crypto.randomUUID(),
         transaction_id,
         from_bank_id: tx.receiver_bank_id,
@@ -6934,9 +6914,26 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
         natural_language: `Operator ${operator_name} \u2014 Lockup extended by ${extend_minutes} minutes for $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. New expiry: ${newEnd}.`,
         processed: false,
         created_at: now,
-      });
+      }, ...Object.keys({
+        id: crypto.randomUUID(),
+        transaction_id,
+        from_bank_id: tx.receiver_bank_id,
+        to_bank_id: tx.sender_bank_id,
+        message_type: "lockup_action",
+        content: {
+          agent_id: "solstice_operator",
+          action: "extend",
+          lockup_id: lockup.id,
+          operator: operator_name,
+          extend_minutes,
+          new_lockup_until: newEnd,
+        },
+        natural_language: `Operator ${operator_name} \u2014 Lockup extended by ${extend_minutes} minutes for $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. New expiry: ${newEnd}.`,
+        processed: false,
+        created_at: now,
+      }))}`
 
-      await supabase.from("cadenza_flags").insert({
+      await sql`INSERT INTO cadenza_flags ${sql({
         id: crypto.randomUUID(),
         transaction_id,
         lockup_token_id: lockup.id,
@@ -6946,7 +6943,17 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
         detected_at: now,
         action_taken: "extended",
         action_at: now,
-      });
+      }, ...Object.keys({
+        id: crypto.randomUUID(),
+        transaction_id,
+        lockup_token_id: lockup.id,
+        flag_type: "operator_extension",
+        severity: "info",
+        reasoning: `Lockup extended by ${extend_minutes} minutes by ${operator_name}`,
+        detected_at: now,
+        action_taken: "extended",
+        action_at: now,
+      }))}`
 
       console.log(`[lockup-action] \u2514\u2500 EXTENDED by ${operator_name}: +${extend_minutes}min \u2192 ${newEnd}`);
       return c.json({
@@ -6965,11 +6972,15 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
       const { reason } = body;
       console.log(`[lockup-action] \u2502 REVERSE \u2014 operator-initiated reversal`);
 
-      await supabase.from("lockup_tokens").update({
+      await sql`UPDATE lockup_tokens SET ${sql({
         resolution: "operator_reversed",
         resolved_by: resolvedBy,
         resolved_at: now,
-      }).eq("id", lockup.id);
+      }, ...Object.keys({
+        resolution: "operator_reversed",
+        resolved_by: resolvedBy,
+        resolved_at: now,
+      }))} WHERE id = ${lockup.id}`;
 
       const reversalReason = `operator_reversed by ${operator_name}: ${reason || 'no reason given'}`;
       // Task 118.2: Direct call to coreLockupReverse (bypasses HTTP, avoids 401)
@@ -6984,11 +6995,11 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
       if (reverseResult?.error) {
         console.log(`[lockup-action] \u2502 /lockup-reverse failed: ${reverseResult.error}`);
         // Rollback pre-updates so the lockup is still actionable
-        await supabase.from("lockup_tokens").update({ resolution: null, resolved_by: null, resolved_at: null }).eq("id", lockup.id);
+        await sql`UPDATE lockup_tokens SET resolution = ${null}, resolved_by = ${null}, resolved_at = ${null} WHERE id = ${lockup.id}`;
         return c.json({ error: `Reversal failed: ${reverseResult.error}` }, 500);
       }
 
-      await supabase.from("agent_messages").insert({
+      await sql`INSERT INTO agent_messages ${sql({
         id: crypto.randomUUID(),
         transaction_id,
         from_bank_id: tx.receiver_bank_id,
@@ -7005,9 +7016,26 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
         natural_language: `Operator ${operator_name} \u2014 Transaction reversed for $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. Clean reversal \u2014 receiver never had tokens (escrow model).${reason ? ` Reason: ${reason}` : ''}`,
         processed: false,
         created_at: now,
-      });
+      }, ...Object.keys({
+        id: crypto.randomUUID(),
+        transaction_id,
+        from_bank_id: tx.receiver_bank_id,
+        to_bank_id: tx.sender_bank_id,
+        message_type: "lockup_action",
+        content: {
+          agent_id: "solstice_operator",
+          action: "reverse",
+          lockup_id: lockup.id,
+          operator: operator_name,
+          reason: reason || null,
+          reverse_result: reverseResult,
+        },
+        natural_language: `Operator ${operator_name} \u2014 Transaction reversed for $${Number(amountDisplay).toLocaleString()} ${senderCode} \u2192 ${receiverCode}. Clean reversal \u2014 receiver never had tokens (escrow model).${reason ? ` Reason: ${reason}` : ''}`,
+        processed: false,
+        created_at: now,
+      }))}`
 
-      await supabase.from("cadenza_flags").insert({
+      await sql`INSERT INTO cadenza_flags ${sql({
         id: crypto.randomUUID(),
         transaction_id,
         lockup_token_id: lockup.id,
@@ -7017,7 +7045,17 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
         detected_at: now,
         action_taken: "reversed",
         action_at: now,
-      });
+      }, ...Object.keys({
+        id: crypto.randomUUID(),
+        transaction_id,
+        lockup_token_id: lockup.id,
+        flag_type: "operator_reversal",
+        severity: "auto_reverse",
+        reasoning: `Reversed by ${operator_name}${reason ? `: ${reason}` : ''}`,
+        detected_at: now,
+        action_taken: "reversed",
+        action_at: now,
+      }))}`
 
       console.log(`[lockup-action] \u2514\u2500 REVERSED by ${operator_name}`);
       return c.json({
@@ -7035,6 +7073,286 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
   } catch (err) {
     console.log(`[lockup-action] Error: ${(err as Error).message}`);
     return c.json({ error: `Lockup action error: ${(err as Error).message}` }, 500);
+  }
+});
+
+// ============================================================
+// REST GET Endpoints — Frontend Data Access
+// Used by production frontend (via dataClient.ts) to read from
+// Azure Postgres instead of Supabase directly.
+// ============================================================
+
+const R = "/make-server-49d15288";
+
+app.get(`${R}/data/banks`, async (c) => {
+  try {
+    const banks = await sql`SELECT * FROM banks ORDER BY created_at`;
+    const wallets = await sql`SELECT * FROM wallets ORDER BY created_at`;
+    // Attach wallets to each bank
+    const bankMap = new Map<string, any>();
+    for (const b of banks) {
+      b.wallets = [];
+      bankMap.set(b.id, b);
+    }
+    for (const w of wallets) {
+      bankMap.get(w.bank_id)?.wallets.push(w);
+    }
+    return c.json(banks);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/banks/:id`, async (c) => {
+  try {
+    const id = c.req.param("id");
+    const [bank] = await sql`SELECT * FROM banks WHERE id = ${id}`;
+    if (!bank) return c.json({ error: "Bank not found" }, 404);
+    bank.wallets = await sql`SELECT * FROM wallets WHERE bank_id = ${id}`;
+    return c.json(bank);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/transactions`, async (c) => {
+  try {
+    const bankId = c.req.query("bank_id");
+    const status = c.req.query("status");
+    const limit = parseInt(c.req.query("limit") || "100");
+    const sinceStr = c.req.query("since");
+
+    let rows;
+    if (bankId && status) {
+      rows = await sql`
+        SELECT * FROM transactions
+        WHERE (sender_bank_id = ${bankId} OR receiver_bank_id = ${bankId})
+          AND status = ${status}
+        ORDER BY created_at DESC LIMIT ${limit}
+      `;
+    } else if (bankId) {
+      rows = await sql`
+        SELECT * FROM transactions
+        WHERE sender_bank_id = ${bankId} OR receiver_bank_id = ${bankId}
+        ORDER BY created_at DESC LIMIT ${limit}
+      `;
+    } else if (status) {
+      rows = await sql`
+        SELECT * FROM transactions WHERE status = ${status}
+        ORDER BY created_at DESC LIMIT ${limit}
+      `;
+    } else if (sinceStr) {
+      rows = await sql`
+        SELECT * FROM transactions WHERE created_at >= ${sinceStr}
+        ORDER BY created_at DESC LIMIT ${limit}
+      `;
+    } else {
+      rows = await sql`
+        SELECT * FROM transactions ORDER BY created_at DESC LIMIT ${limit}
+      `;
+    }
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/transactions/:id`, async (c) => {
+  try {
+    const id = c.req.param("id");
+    const [tx] = await sql`SELECT * FROM transactions WHERE id = ${id}`;
+    if (!tx) return c.json({ error: "Transaction not found" }, 404);
+    return c.json(tx);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/agent-messages`, async (c) => {
+  try {
+    const txId = c.req.query("transaction_id");
+    const bankId = c.req.query("bank_id");
+    const limit = parseInt(c.req.query("limit") || "100");
+    if (txId) {
+      return c.json(await sql`SELECT * FROM agent_messages WHERE transaction_id = ${txId} ORDER BY created_at LIMIT ${limit}`);
+    }
+    if (bankId) {
+      return c.json(await sql`SELECT * FROM agent_messages WHERE from_bank_id = ${bankId} OR to_bank_id = ${bankId} ORDER BY created_at DESC LIMIT ${limit}`);
+    }
+    return c.json(await sql`SELECT * FROM agent_messages ORDER BY created_at DESC LIMIT ${limit}`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/agent-conversations`, async (c) => {
+  try {
+    const bankId = c.req.query("bank_id");
+    const txId = c.req.query("transaction_id");
+    const limit = parseInt(c.req.query("limit") || "100");
+    if (bankId) {
+      return c.json(await sql`SELECT * FROM agent_conversations WHERE bank_id = ${bankId} ORDER BY created_at DESC LIMIT ${limit}`);
+    }
+    if (txId) {
+      return c.json(await sql`SELECT * FROM agent_conversations WHERE transaction_id = ${txId} ORDER BY created_at DESC LIMIT ${limit}`);
+    }
+    return c.json(await sql`SELECT * FROM agent_conversations ORDER BY created_at DESC LIMIT ${limit}`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/compliance-logs`, async (c) => {
+  try {
+    const txId = c.req.query("transaction_id");
+    if (txId) {
+      return c.json(await sql`SELECT * FROM compliance_logs WHERE transaction_id = ${txId} ORDER BY created_at`);
+    }
+    return c.json(await sql`SELECT * FROM compliance_logs ORDER BY created_at DESC LIMIT 100`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/risk-scores`, async (c) => {
+  try {
+    const txId = c.req.query("transaction_id");
+    if (txId) {
+      const [row] = await sql`SELECT * FROM risk_scores WHERE transaction_id = ${txId}`;
+      return c.json(row || null);
+    }
+    return c.json(await sql`SELECT * FROM risk_scores ORDER BY created_at DESC LIMIT 100`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/cadenza-flags`, async (c) => {
+  try {
+    const txId = c.req.query("transaction_id");
+    const actionTaken = c.req.query("action_taken");
+    if (txId) {
+      return c.json(await sql`SELECT * FROM cadenza_flags WHERE transaction_id = ${txId} ORDER BY detected_at`);
+    }
+    if (actionTaken === "null") {
+      return c.json(await sql`SELECT * FROM cadenza_flags WHERE action_taken IS NULL ORDER BY detected_at DESC`);
+    }
+    return c.json(await sql`SELECT * FROM cadenza_flags ORDER BY detected_at DESC LIMIT 100`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/lockup-tokens`, async (c) => {
+  try {
+    const status = c.req.query("status");
+    const txId = c.req.query("transaction_id");
+    if (txId) {
+      const [row] = await sql`SELECT * FROM lockup_tokens WHERE transaction_id = ${txId}`;
+      return c.json(row || null);
+    }
+    if (status) {
+      return c.json(await sql`SELECT * FROM lockup_tokens WHERE status = ${status} ORDER BY created_at DESC`);
+    }
+    return c.json(await sql`SELECT * FROM lockup_tokens ORDER BY created_at DESC LIMIT 100`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/heartbeat-cycles`, async (c) => {
+  try {
+    const limit = parseInt(c.req.query("limit") || "50");
+    return c.json(await sql`SELECT * FROM heartbeat_cycles ORDER BY cycle_number DESC LIMIT ${limit}`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/treasury-mandates`, async (c) => {
+  try {
+    const bankId = c.req.query("bank_id");
+    if (bankId) {
+      return c.json(await sql`SELECT * FROM treasury_mandates WHERE bank_id = ${bankId} AND is_active = true ORDER BY priority`);
+    }
+    return c.json(await sql`SELECT * FROM treasury_mandates WHERE is_active = true ORDER BY priority`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/bank-agent-config`, async (c) => {
+  try {
+    const bankId = c.req.query("bank_id");
+    if (bankId) {
+      const [row] = await sql`SELECT * FROM bank_agent_config WHERE bank_id = ${bankId}`;
+      return c.json(row || null);
+    }
+    return c.json(await sql`SELECT * FROM bank_agent_config`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/network-wallets`, async (c) => {
+  try {
+    return c.json(await sql`SELECT * FROM network_wallets ORDER BY created_at`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/network-snapshots`, async (c) => {
+  try {
+    const limit = parseInt(c.req.query("limit") || "20");
+    return c.json(await sql`SELECT * FROM network_snapshots ORDER BY timestamp DESC LIMIT ${limit}`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/simulated-watchlist`, async (c) => {
+  try {
+    return c.json(await sql`SELECT * FROM simulated_watchlist WHERE status = 'active'`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/wallets`, async (c) => {
+  try {
+    const bankId = c.req.query("bank_id");
+    if (bankId) {
+      return c.json(await sql`SELECT * FROM wallets WHERE bank_id = ${bankId} ORDER BY created_at`);
+    }
+    return c.json(await sql`SELECT * FROM wallets ORDER BY created_at`);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+// Count endpoint for dashboard widgets
+app.get(`${R}/data/count`, async (c) => {
+  try {
+    const table = c.req.query("table");
+    const filter = c.req.query("filter"); // e.g., "status=escalated" or "action_taken=null"
+    if (!table || !["lockup_tokens", "cadenza_flags", "transactions"].includes(table)) {
+      return c.json({ error: "Invalid table" }, 400);
+    }
+    let rows;
+    if (filter) {
+      const [col, val] = filter.split("=");
+      if (val === "null") {
+        rows = await sql`SELECT count(*)::int as count FROM ${sql(table)} WHERE ${sql(col)} IS NULL`;
+      } else {
+        rows = await sql`SELECT count(*)::int as count FROM ${sql(table)} WHERE ${sql(col)} = ${val}`;
+      }
+    } else {
+      rows = await sql`SELECT count(*)::int as count FROM ${sql(table)}`;
+    }
+    return c.json({ count: rows[0]?.count ?? 0 });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
   }
 });
 

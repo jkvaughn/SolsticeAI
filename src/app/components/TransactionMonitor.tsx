@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { supabase, callServer } from '../supabaseClient';
+import { fetchRiskScore, fetchComplianceLogs } from '../dataClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import type {
   Transaction, AgentMessage,
@@ -575,9 +576,9 @@ function TransactionRow({ tx, lockup, expanded, onToggle, actionState, onRetry, 
 
   async function loadDetails() {
     try {
-      const [riskRes, compRes, msgRes] = await Promise.all([
-        supabase.from('risk_scores').select('*').eq('transaction_id', tx.id).maybeSingle(),
-        supabase.from('compliance_logs').select('*').eq('transaction_id', tx.id).order('created_at'),
+      const [riskData, compData, msgRes] = await Promise.all([
+        fetchRiskScore(tx.id),
+        fetchComplianceLogs(tx.id),
         supabase
           .from('agent_messages')
           .select('*, from_bank:banks!agent_messages_from_bank_id_fkey(short_code), to_bank:banks!agent_messages_to_bank_id_fkey(short_code)')
@@ -585,8 +586,8 @@ function TransactionRow({ tx, lockup, expanded, onToggle, actionState, onRetry, 
           .order('created_at'),
       ]);
 
-      if (riskRes.data) setRiskScore(riskRes.data);
-      if (compRes.data) setComplianceLogs(compRes.data);
+      if (riskData) setRiskScore(riskData);
+      setComplianceLogs(compData);
       if (msgRes.data) setTxMessages(msgRes.data);
       setDetailLoaded(true);
     } catch (err) {

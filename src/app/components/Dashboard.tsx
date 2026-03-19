@@ -3,6 +3,7 @@ import type React from 'react';
 import { Link } from 'react-router';
 import { Settings, Terminal, Activity, ArrowRight, Wallet, Zap, AlertOctagon, LayoutDashboard, Shield, TrendingUp } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { fetchCount, fetchTransactions } from '../dataClient';
 import type { Transaction } from '../types';
 import { isOrphanedTransaction } from '../types';
 import { useBanks } from '../contexts/BanksContext';
@@ -121,11 +122,11 @@ export function Dashboard() {
   useEffect(() => {
     if (persona !== 'compliance' && persona !== 'leadership') return;
     Promise.all([
-      supabase.from('lockup_tokens').select('id', { count: 'exact', head: true }).eq('status', 'escalated'),
-      supabase.from('cadenza_flags').select('id', { count: 'exact', head: true }).is('action_taken', null),
-    ]).then(([escRes, flagRes]) => {
-      setEscalationCount(escRes.count ?? 0);
-      setFlagCount(flagRes.count ?? 0);
+      fetchCount('lockup_tokens', 'status=escalated'),
+      fetchCount('cadenza_flags', 'action_taken=null'),
+    ]).then(([escCount, fCount]) => {
+      setEscalationCount(escCount);
+      setFlagCount(fCount);
     });
   }, [persona, cacheVersion]);
 

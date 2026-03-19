@@ -10,7 +10,7 @@
 // are cleaned up after each scenario via explicit ID tracking.
 // ============================================================
 
-import { getAdminClient } from "./supabase-admin.tsx";
+import sql from "./db.tsx";
 import { calculateAccruedYield } from "./yield-engine.tsx";
 
 // ── Direct function call injection (avoids HTTP self-call 401 issue) ──
@@ -367,29 +367,14 @@ interface TestContext {
 }
 
 async function getTestContext(bankId: string): Promise<TestContext> {
-  const supabase = getAdminClient();
-
   // Load sender bank + wallet
-  const { data: sender } = await supabase
-    .from('banks')
-    .select('*')
-    .eq('id', bankId)
-    .single();
+  const [sender] = await sql`SELECT * FROM banks WHERE id = ${bankId}`;
   if (!sender) throw new Error(`Bank not found: ${bankId}`);
 
-  const { data: senderWallet } = await supabase
-    .from('wallets')
-    .select('*')
-    .eq('bank_id', bankId)
-    .eq('is_default', true)
-    .maybeSingle();
+  const [senderWallet] = await sql`SELECT * FROM wallets WHERE bank_id = ${bankId} AND is_default = true`;
 
   // Load sender config
-  const { data: configRow } = await supabase
-    .from('bank_agent_config')
-    .select('*')
-    .eq('bank_id', bankId)
-    .maybeSingle();
+  const [configRow] = await sql`SELECT * FROM bank_agent_config WHERE bank_id = ${bankId}`;
 
   const senderConfig = {
     auto_accept_ceiling: configRow?.auto_accept_ceiling ?? 10_000_000,
@@ -397,22 +382,12 @@ async function getTestContext(bankId: string): Promise<TestContext> {
   };
 
   // Pick a counterparty (first active bank that isn't the sender)
-  const { data: others } = await supabase
-    .from('banks')
-    .select('*')
-    .neq('id', bankId)
-    .eq('status', 'active')
-    .limit(1);
+  const others = await sql`SELECT * FROM banks WHERE id != ${bankId} AND status = 'active' LIMIT 1`;
 
   const receiver = others?.[0];
   if (!receiver) throw new Error('No active counterparty bank found');
 
-  const { data: receiverWallet } = await supabase
-    .from('wallets')
-    .select('*')
-    .eq('bank_id', receiver.id)
-    .eq('is_default', true)
-    .maybeSingle();
+  const [receiverWallet] = await sql`SELECT * FROM wallets WHERE bank_id = ${receiver.id} AND is_default = true`;
 
   return { sender, senderWallet, senderConfig, receiver, receiverWallet };
 }
@@ -427,50 +402,49 @@ interface CleanupIds {
 }
 
 async function cleanupTestData(ids: CleanupIds): Promise<void> {
-  const supabase = getAdminClient();
   const { txIds, bankIds, lockupIds = [], restoreBanks = [] } = ids;
   console.log(`[proving-ground] Cleanup: ${txIds.length} txs, ${bankIds.length} banks, ${lockupIds.length} lockups`);
 
   // Restore modified banks to their original status
   for (const rb of restoreBanks) {
-    await supabase.from('banks').update({ status: rb.status }).eq('id', rb.id);
+    await sql`UPDATE banks SET status = ${rb.status} WHERE id = ${rb.id}`;
   }
 
   // Delete cadenza_flags for lockups
   if (lockupIds.length > 0) {
     for (const lid of lockupIds) {
-      await supabase.from('cadenza_flags').delete().eq('lockup_token_id', lid);
+      await sql`DELETE FROM cadenza_flags WHERE lockup_token_id = ${lid}`;
     }
   }
 
   if (txIds.length > 0) {
     // Delete cadenza_flags by transaction_id too
     for (const txId of txIds) {
-      await supabase.from('cadenza_flags').delete().eq('transaction_id', txId);
+      await sql`DELETE FROM cadenza_flags WHERE transaction_id = ${txId}`;
     }
     for (const txId of txIds) {
-      await supabase.from('agent_messages').delete().eq('transaction_id', txId);
-      await supabase.from('agent_conversations').delete().eq('transaction_id', txId);
+      await sql`DELETE FROM agent_messages WHERE transaction_id = ${txId}`;
+      await sql`DELETE FROM agent_conversations WHERE transaction_id = ${txId}`;
     }
     for (const txId of txIds) {
-      await supabase.from('compliance_logs').delete().eq('transaction_id', txId);
+      await sql`DELETE FROM compliance_logs WHERE transaction_id = ${txId}`;
     }
     for (const txId of txIds) {
-      await supabase.from('risk_scores').delete().eq('transaction_id', txId);
+      await sql`DELETE FROM risk_scores WHERE transaction_id = ${txId}`;
     }
   }
 
   // Delete lockup_tokens before transactions (FK dependency)
   if (lockupIds.length > 0) {
-    await supabase.from('lockup_tokens').delete().in('id', lockupIds);
+    await sql`DELETE FROM lockup_tokens WHERE id = ANY(${lockupIds})`;
   }
 
   if (txIds.length > 0) {
-    await supabase.from('transactions').delete().in('id', txIds);
+    await sql`DELETE FROM transactions WHERE id = ANY(${txIds})`;
   }
 
   if (bankIds.length > 0) {
-    await supabase.from('banks').delete().in('id', bankIds);
+    await sql`DELETE FROM banks WHERE id = ANY(${bankIds})`;
   }
 
   console.log(`[proving-ground] Cleanup complete: ${txIds.length} txs, ${bankIds.length} banks, ${lockupIds.length} lockups removed`);
@@ -584,30 +558,16 @@ async function insertTestTransaction(opts: {
   createdAt?: string;
   lockupStatus?: string;
 }): Promise<void> {
-  const supabase = getAdminClient();
   const now = opts.createdAt || new Date().toISOString();
-  const insertData: Record<string, any> = {
-    id: opts.id,
-    sender_bank_id: opts.senderBankId,
-    receiver_bank_id: opts.receiverBankId,
-    amount: opts.amount,
-    amount_display: opts.amountDisplay,
-    status: opts.status,
-    purpose_code: opts.purposeCode ?? null,
-    memo: opts.memo || '',
-    // settlement_type omitted -- let DB default apply (transactions_settlement_type_check constraint)
-    risk_reasoning: opts.riskReasoning || null,
-    settled_at: opts.settledAt || null,
-    initiated_at: now,
-    created_at: now,
-  };
-  if (opts.lockupStatus) {
-    insertData.lockup_status = opts.lockupStatus;
-  }
-  const { error } = await supabase.from('transactions').insert(insertData);
-  if (error) {
-    console.log(`[proving-ground] Insert tx ${opts.id.slice(0, 20)} error: ${error.message}`);
-    throw new Error(`Failed to insert test transaction: ${error.message}`);
+  try {
+    if (opts.lockupStatus) {
+      await sql`INSERT INTO transactions (id, sender_bank_id, receiver_bank_id, amount, amount_display, status, purpose_code, memo, risk_reasoning, settled_at, initiated_at, created_at, lockup_status) VALUES (${opts.id}, ${opts.senderBankId}, ${opts.receiverBankId}, ${opts.amount}, ${opts.amountDisplay}, ${opts.status}, ${opts.purposeCode ?? null}, ${opts.memo || ''}, ${opts.riskReasoning || null}, ${opts.settledAt || null}, ${now}, ${now}, ${opts.lockupStatus})`;
+    } else {
+      await sql`INSERT INTO transactions (id, sender_bank_id, receiver_bank_id, amount, amount_display, status, purpose_code, memo, risk_reasoning, settled_at, initiated_at, created_at) VALUES (${opts.id}, ${opts.senderBankId}, ${opts.receiverBankId}, ${opts.amount}, ${opts.amountDisplay}, ${opts.status}, ${opts.purposeCode ?? null}, ${opts.memo || ''}, ${opts.riskReasoning || null}, ${opts.settledAt || null}, ${now}, ${now})`;
+    }
+  } catch (err) {
+    console.log(`[proving-ground] Insert tx ${opts.id.slice(0, 20)} error: ${(err as Error).message}`);
+    throw new Error(`Failed to insert test transaction: ${(err as Error).message}`);
   }
 }
 
@@ -626,18 +586,7 @@ async function runC1(bankId: string): Promise<ScenarioResult> {
     // Create shadow bank with unknown jurisdiction
     const tempBankId = crypto.randomUUID();
     cleanupIds.bankIds.push(tempBankId);
-    const supabase = getAdminClient();
-    await supabase.from('banks').insert({
-      id: tempBankId,
-      name: 'PG Test Bank (XX Jurisdiction)',
-      short_code: 'PGXX',
-      jurisdiction: 'XX',
-      status: 'active',
-      solana_wallet_pubkey: ctx.sender.solana_wallet_pubkey,
-      token_decimals: 6,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    await sql`INSERT INTO banks (id, name, short_code, jurisdiction, status, solana_wallet_pubkey, token_decimals, created_at, updated_at) VALUES (${tempBankId}, ${'PG Test Bank (XX Jurisdiction)'}, ${'PGXX'}, ${'XX'}, ${'active'}, ${ctx.sender.solana_wallet_pubkey}, ${6}, ${new Date().toISOString()}, ${new Date().toISOString()})`;
     trace.push({ step: 'shadow_bank_created', status: 'ok', timestamp: new Date().toISOString(), data: { id: tempBankId, jurisdiction: 'XX' } });
 
     // Create test transaction with shadow bank as sender
@@ -743,22 +692,11 @@ async function runC3(bankId: string): Promise<ScenarioResult> {
 
   try {
     const ctx = await getTestContext(bankId);
-    const supabase = getAdminClient();
 
     // Create suspended bank
     const tempBankId = crypto.randomUUID();
     cleanupIds.bankIds.push(tempBankId);
-    await supabase.from('banks').insert({
-      id: tempBankId,
-      name: 'PG Suspended Bank',
-      short_code: 'PGSUSP',
-      jurisdiction: 'US',
-      status: 'suspended',
-      solana_wallet_pubkey: ctx.receiver.solana_wallet_pubkey,
-      token_decimals: 6,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    await sql`INSERT INTO banks (id, name, short_code, jurisdiction, status, solana_wallet_pubkey, token_decimals, created_at, updated_at) VALUES (${tempBankId}, ${'PG Suspended Bank'}, ${'PGSUSP'}, ${'US'}, ${'suspended'}, ${ctx.receiver.solana_wallet_pubkey}, ${6}, ${new Date().toISOString()}, ${new Date().toISOString()})`;
     trace.push({ step: 'suspended_bank_created', status: 'ok', timestamp: new Date().toISOString(), data: { id: tempBankId } });
 
     const txId = crypto.randomUUID();
@@ -943,23 +881,11 @@ async function runC6(bankId: string): Promise<ScenarioResult> {
 
   try {
     const ctx = await getTestContext(bankId);
-    const supabase = getAdminClient();
 
     // Create shadow bank with sanctioned BIC (Shadow Capital Ltd — SHCPKY22)
     const tempBankId = crypto.randomUUID();
     cleanupIds.bankIds.push(tempBankId);
-    await supabase.from('banks').insert({
-      id: tempBankId,
-      name: 'Shadow Capital Ltd (PG Test)',
-      short_code: 'SHCP',
-      jurisdiction: 'KY',
-      swift_bic: 'SHCPKY22',
-      status: 'active',
-      solana_wallet_pubkey: ctx.receiver.solana_wallet_pubkey,
-      token_decimals: 6,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    await sql`INSERT INTO banks (id, name, short_code, jurisdiction, swift_bic, status, solana_wallet_pubkey, token_decimals, created_at, updated_at) VALUES (${tempBankId}, ${'Shadow Capital Ltd (PG Test)'}, ${'SHCP'}, ${'KY'}, ${'SHCPKY22'}, ${'active'}, ${ctx.receiver.solana_wallet_pubkey}, ${6}, ${new Date().toISOString()}, ${new Date().toISOString()})`;
     trace.push({ step: 'shadow_bank_created', status: 'ok', timestamp: new Date().toISOString(), data: { id: tempBankId, bic: 'SHCPKY22' } });
 
     const txId = crypto.randomUUID();
@@ -1602,32 +1528,13 @@ async function insertTestLockup(opts: {
   lockupEnd?: string | null;
   status?: string;
 }): Promise<void> {
-  const supabase = getAdminClient();
   const start = opts.lockupStart || new Date().toISOString();
-  const { error } = await supabase.from('lockup_tokens').insert({
-    id: opts.id,
-    transaction_id: opts.transactionId,
-    sender_bank_id: opts.senderBankId,
-    receiver_bank_id: opts.receiverBankId,
-    yb_token_mint: `pg_yb_${opts.id.slice(0, 8)}`,
-    yb_token_symbol: 'PG-USDYB',
-    yb_token_amount: opts.amount.toString(),
-    yb_holder: 'pg_custodian_test',
-    tb_token_mint: `pg_tb_${opts.id.slice(0, 8)}`,
-    tb_token_symbol: 'PG-USTB',
-    tb_token_amount: opts.amount.toString(),
-    tb_holder: 'pg_receiver_test',
-    yield_rate_bps: opts.yieldRateBps ?? 525,
-    yield_accrued: '0',
-    yield_last_calculated: start,
-    lockup_start: start,
-    lockup_end: opts.lockupEnd !== undefined ? opts.lockupEnd : new Date(Date.now() + 120_000).toISOString(),
-    status: opts.status || 'active',
-    created_at: start,
-  });
-  if (error) {
-    console.log(`[proving-ground] Insert lockup ${opts.id.slice(0, 8)} error: ${error.message}`);
-    throw new Error(`Failed to insert test lockup: ${error.message}`);
+  const lockupEnd = opts.lockupEnd !== undefined ? opts.lockupEnd : new Date(Date.now() + 120_000).toISOString();
+  try {
+    await sql`INSERT INTO lockup_tokens (id, transaction_id, sender_bank_id, receiver_bank_id, yb_token_mint, yb_token_symbol, yb_token_amount, yb_holder, tb_token_mint, tb_token_symbol, tb_token_amount, tb_holder, yield_rate_bps, yield_accrued, yield_last_calculated, lockup_start, lockup_end, status, created_at) VALUES (${opts.id}, ${opts.transactionId}, ${opts.senderBankId}, ${opts.receiverBankId}, ${`pg_yb_${opts.id.slice(0, 8)}`}, ${'PG-USDYB'}, ${opts.amount.toString()}, ${'pg_custodian_test'}, ${`pg_tb_${opts.id.slice(0, 8)}`}, ${'PG-USTB'}, ${opts.amount.toString()}, ${'pg_receiver_test'}, ${opts.yieldRateBps ?? 525}, ${'0'}, ${start}, ${start}, ${lockupEnd}, ${opts.status || 'active'}, ${start})`;
+  } catch (err) {
+    console.log(`[proving-ground] Insert lockup ${opts.id.slice(0, 8)} error: ${(err as Error).message}`);
+    throw new Error(`Failed to insert test lockup: ${(err as Error).message}`);
   }
 }
 
@@ -1880,7 +1787,6 @@ async function runD3(bankId: string): Promise<ScenarioResult> {
 
   try {
     const ctx = await getTestContext(bankId);
-    const supabase = getAdminClient();
 
     // Create test tx + lockup
     const txId = crypto.randomUUID();
@@ -1911,7 +1817,7 @@ async function runD3(bankId: string): Promise<ScenarioResult> {
 
     // Temporarily suspend the sender bank (simulating mid-lockup flagging)
     const originalStatus = ctx.sender.status;
-    await supabase.from('banks').update({ status: 'suspended' }).eq('id', ctx.sender.id);
+    await sql`UPDATE banks SET status = 'suspended' WHERE id = ${ctx.sender.id}`;
     cleanupIds.restoreBanks.push({ id: ctx.sender.id, status: originalStatus });
     trace.push({ step: 'sender_suspended', status: 'ok', timestamp: new Date().toISOString(), data: { bankId: ctx.sender.id, originalStatus, newStatus: 'suspended' } });
 
@@ -1998,19 +1904,8 @@ async function runD4(bankId: string): Promise<ScenarioResult> {
 
     // Pre-insert an existing cadenza flag to signal prior concern
     // (must come AFTER lockup insert due to FK on lockup_token_id)
-    const supabase = getAdminClient();
     const flagId = crypto.randomUUID();
-    await supabase.from('cadenza_flags').insert({
-      id: flagId,
-      transaction_id: txId,
-      lockup_token_id: lockupId,
-      flag_type: 'anomaly_detected',
-      severity: 'escalate',
-      reasoning: 'Prior automated scan detected unusual pattern — offshore restructuring with vague purpose code near network limits. Requires human judgment.',
-      detected_at: new Date(Date.now() - 60_000).toISOString(),
-      action_taken: null,
-      action_at: null,
-    });
+    await sql`INSERT INTO cadenza_flags (id, transaction_id, lockup_token_id, flag_type, severity, reasoning, detected_at, action_taken, action_at) VALUES (${flagId}, ${txId}, ${lockupId}, ${'anomaly_detected'}, ${'escalate'}, ${'Prior automated scan detected unusual pattern — offshore restructuring with vague purpose code near network limits. Requires human judgment.'}, ${new Date(Date.now() - 60_000).toISOString()}, ${null}, ${null})`;
     trace.push({ step: 'lockup_created', status: 'ok', timestamp: new Date().toISOString(), data: { txId, lockupId, amount: 8_500_000, priorFlag: true } });
 
     // Trigger Cadenza scan — direct function call (bypasses HTTP self-call 401)
@@ -2036,11 +1931,7 @@ async function runD4(bankId: string): Promise<ScenarioResult> {
     );
 
     // Also check if lockup was set to escalated status (infinite lockup)
-    const { data: lockupCheck } = await supabase
-      .from('lockup_tokens')
-      .select('status, lockup_end')
-      .eq('id', lockupId)
-      .single();
+    const [lockupCheck] = await sql`SELECT status, lockup_end FROM lockup_tokens WHERE id = ${lockupId}`;
 
     const isEscalated = lockupCheck?.status === 'escalated' || scanResult?.decision === 'ESCALATE';
 
@@ -2126,11 +2017,7 @@ async function runD5(bankId: string): Promise<ScenarioResult> {
     const reversed = reversalResult?.status === 'reversed' || reversalResult?.action === 'user_reversal';
 
     // Also check if a cadenza_flags record was created
-    const supabase = getAdminClient();
-    const { data: flags } = await supabase
-      .from('cadenza_flags')
-      .select('id, flag_type, action_taken')
-      .eq('lockup_token_id', lockupId);
+    const flags = await sql`SELECT id, flag_type, action_taken FROM cadenza_flags WHERE lockup_token_id = ${lockupId}`;
 
     const hasReversalFlag = (flags || []).some((f: any) => f.flag_type === 'user_reversal_request' && f.action_taken === 'reversed');
 
@@ -2401,7 +2288,6 @@ export async function handleProvingGround(c: any): Promise<Response> {
     }
 
     if (action === 'cleanup') {
-      const supabase = getAdminClient();
       const counts: Record<string, number> = {};
 
       // Find PG test transactions via multiple markers:
@@ -2411,24 +2297,15 @@ export async function handleProvingGround(c: any): Promise<Response> {
       // Scenario runners use crypto.randomUUID() for IDs, so we can't match on id prefix.
       const pgTxIdSet = new Set<string>();
 
-      const { data: pgMemoRows } = await supabase
-        .from('transactions')
-        .select('id')
-        .like('memo', 'PG_TEST%');
-      for (const r of (pgMemoRows || [])) pgTxIdSet.add(r.id);
+      const pgMemoRows = await sql`SELECT id FROM transactions WHERE memo LIKE 'PG_TEST%'`;
+      for (const r of pgMemoRows) pgTxIdSet.add(r.id);
 
-      const { data: pgReasonRows } = await supabase
-        .from('transactions')
-        .select('id')
-        .like('risk_reasoning', 'PG_TEST_%');
-      for (const r of (pgReasonRows || [])) pgTxIdSet.add(r.id);
+      const pgReasonRows = await sql`SELECT id FROM transactions WHERE risk_reasoning LIKE 'PG_TEST_%'`;
+      for (const r of pgReasonRows) pgTxIdSet.add(r.id);
 
       // Find lockup tokens with PG marker and add their transaction_ids
-      const { data: pgLockupRows } = await supabase
-        .from('lockup_tokens')
-        .select('id, transaction_id')
-        .like('yb_holder', 'pg_%');
-      for (const r of (pgLockupRows || [])) {
+      const pgLockupRows = await sql`SELECT id, transaction_id FROM lockup_tokens WHERE yb_holder LIKE 'pg_%'`;
+      for (const r of pgLockupRows) {
         if (r.transaction_id) pgTxIdSet.add(r.transaction_id);
       }
 
@@ -2436,32 +2313,29 @@ export async function handleProvingGround(c: any): Promise<Response> {
       console.log(`[proving-ground] Cleanup: found ${pgTxIds.length} PG test transactions (memo: ${pgMemoRows?.length || 0}, reason: ${pgReasonRows?.length || 0}, lockup: ${pgLockupRows?.length || 0})`);
 
       // Also find test banks (short_code starting with PG)
-      const { data: pgBankRows } = await supabase
-        .from('banks')
-        .select('id')
-        .like('short_code', 'PG%');
-      const pgBankIds = (pgBankRows || []).map((r: any) => r.id);
+      const pgBankRows = await sql`SELECT id FROM banks WHERE short_code LIKE 'PG%'`;
+      const pgBankIds = pgBankRows.map((r: any) => r.id);
 
       // Delete in dependency order (children first)
 
       // 1. agent_messages + agent_conversations by transaction_id
       counts.agent_messages = 0;
       for (const txId of pgTxIds) {
-        const { data: txMsgs } = await supabase.from('agent_messages').delete().eq('transaction_id', txId).select('id');
+        const txMsgs = await sql`DELETE FROM agent_messages WHERE transaction_id = ${txId} RETURNING id`;
         counts.agent_messages += txMsgs?.length || 0;
-        await supabase.from('agent_conversations').delete().eq('transaction_id', txId);
+        await sql`DELETE FROM agent_conversations WHERE transaction_id = ${txId}`;
       }
 
       // 2. cadenza_flags by transaction_id + lockup_token_id
       let flagCount = 0;
       for (const txId of pgTxIds) {
-        const { data: flags } = await supabase.from('cadenza_flags').delete().eq('transaction_id', txId).select('id');
-        flagCount += flags?.length || 0;
+        const deletedFlags = await sql`DELETE FROM cadenza_flags WHERE transaction_id = ${txId} RETURNING id`;
+        flagCount += deletedFlags?.length || 0;
       }
       // Also delete by lockup_token_id for PG lockups (catches flags orphaned from tx cleanup)
-      for (const r of (pgLockupRows || [])) {
-        const { data: flags } = await supabase.from('cadenza_flags').delete().eq('lockup_token_id', r.id).select('id');
-        flagCount += flags?.length || 0;
+      for (const r of pgLockupRows) {
+        const deletedFlags = await sql`DELETE FROM cadenza_flags WHERE lockup_token_id = ${r.id} RETURNING id`;
+        flagCount += deletedFlags?.length || 0;
       }
       counts.cadenza_flags = flagCount;
 
@@ -2469,9 +2343,9 @@ export async function handleProvingGround(c: any): Promise<Response> {
       counts.compliance_logs = 0;
       counts.risk_scores = 0;
       for (const txId of pgTxIds) {
-        const { data: comp } = await supabase.from('compliance_logs').delete().eq('transaction_id', txId).select('id');
+        const comp = await sql`DELETE FROM compliance_logs WHERE transaction_id = ${txId} RETURNING id`;
         counts.compliance_logs += comp?.length || 0;
-        const { data: risk } = await supabase.from('risk_scores').delete().eq('transaction_id', txId).select('id');
+        const risk = await sql`DELETE FROM risk_scores WHERE transaction_id = ${txId} RETURNING id`;
         counts.risk_scores += risk?.length || 0;
       }
 
@@ -2480,23 +2354,23 @@ export async function handleProvingGround(c: any): Promise<Response> {
       counts.lockup_tokens = 0;
       const deletedLockupIds = new Set<string>();
       for (const txId of pgTxIds) {
-        const { data: lockups } = await supabase.from('lockup_tokens').delete().eq('transaction_id', txId).select('id');
+        const lockups = await sql`DELETE FROM lockup_tokens WHERE transaction_id = ${txId} RETURNING id`;
         for (const l of (lockups || [])) deletedLockupIds.add(l.id);
       }
       // Also clean any PG lockups missed above (orphaned from crashes)
-      const { data: pgHolderLockups } = await supabase.from('lockup_tokens').delete().like('yb_holder', 'pg_%').select('id');
+      const pgHolderLockups = await sql`DELETE FROM lockup_tokens WHERE yb_holder LIKE 'pg_%' RETURNING id`;
       for (const l of (pgHolderLockups || [])) deletedLockupIds.add(l.id);
       counts.lockup_tokens = deletedLockupIds.size;
 
       // 5. transactions
       if (pgTxIds.length > 0) {
-        await supabase.from('transactions').delete().in('id', pgTxIds);
+        await sql`DELETE FROM transactions WHERE id = ANY(${pgTxIds})`;
       }
       counts.transactions = pgTxIds.length;
 
       // 6. test banks
       if (pgBankIds.length > 0) {
-        await supabase.from('banks').delete().in('id', pgBankIds);
+        await sql`DELETE FROM banks WHERE id = ANY(${pgBankIds})`;
       }
       counts.banks = pgBankIds.length;
 
