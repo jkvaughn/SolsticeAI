@@ -1,9 +1,9 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-03-18T21:30:00Z
-> Phase: Phase B — Staging Environment + Azure Static Web Apps (Tasks 132a–132c)
+> Last updated: 2026-03-19T00:30:00Z
+> Phase: Phase C complete + Product Tasks 129–131 + Color Cleanup
 > Server version: v7 Task-125 (lockup-route-dedup-iso20022-fix)
-> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-132c)
+> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-139)
 
 ---
 
@@ -435,5 +435,87 @@ Captured the full database schema as a Supabase migration file (16 tables, all c
 - Migration SQL includes all 16 tables + Task 127 additions (travel_rule_payload, simulated_watchlist)
 - Azure deploy succeeded (GitHub Actions run #23267897933)
 - Staging URL serves the React SPA
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Tasks 133–138 — Phase C: Production Stack on Azure
+Timestamp: 2026-03-18T23:00:00Z
+Status: DONE
+
+### Summary:
+Full production Azure stack deployed via Terraform IaC in dedicated `rg-coda-app` resource group. Azure Postgres Flexible Server (16 tables migrated), Container Apps (Hono/Deno backend, health check passing), ACR with Docker image, Static Web App with production domain. Azure Entra ID authentication with dual provider (azure/supabase). Environment-aware realtime hook replacing Supabase Realtime with polling fallback for production. Solstice Network env vars configured on Container App.
+
+### Infrastructure deployed:
+| Resource | Name | Location |
+|----------|------|----------|
+| Postgres | `coda-prod-pgdb-o1jyyxla` | westus3 |
+| Container App | `coda-prod-api` | westus2 |
+| ACR | `codaacrem64sl` | westus2 |
+| Static Web App (prod) | `coda-prod-web` | westus2 |
+| Static Web App (staging) | `solstice-ai-staging` | westus2 |
+
+### URLs:
+- Production: `https://coda.solsticenetwork.xyz`
+- Staging: `https://coda-staging.solsticenetwork.xyz`
+- Backend: `https://coda-prod-api.whitemoss-8572d17c.westus2.azurecontainerapps.io`
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 129 — Compact Memo Optimization
+Timestamp: 2026-03-18T23:40:00Z
+Status: DONE
+
+### Summary:
+Shortened Solana memo format: header "CODA Solstice | ISO 20022 pacs.009" → "CODA pacs.009 Settlement", removed MsgId and E2EId lines, truncated TxId to 8 chars, dropped milliseconds from Date. ~250 bytes typical (down from ~400).
+
+### Modified files:
+| File | Change |
+|------|--------|
+| `supabase/functions/server/solana-real.tsx` | Compact memo in `executeTransfer()` |
+| `supabase/functions/server/index.tsx` | Compact memo in `buildISO20022LockupMemo()` |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Tasks 130+131 — Bank-Scoped Persona Views + Settings/Profile Pages
+Timestamp: 2026-03-18T23:50:00Z
+Status: DONE
+
+### Summary:
+Task 131: Full Settings page (Appearance/Network/Notifications/Danger Zone) and Profile page (identity card with editable name, real Supabase stats, default persona/bank dropdowns). Task 130: PersonaContext extended with selectedBankId, PersonaSwitcher bank dropdown, useBankFilter hook, PersonaBanner shows scoped bank.
+
+### New files:
+| File | Description |
+|------|-------------|
+| `src/app/hooks/useBankFilter.ts` | isScopedTransaction() + bankFilterClause() |
+
+### Modified files:
+| File | Change |
+|------|--------|
+| `src/app/components/SettingsPage.tsx` | Full rebuild: 4 collapsible sections |
+| `src/app/components/ProfilePage.tsx` | Full rebuild: identity card + activity stats + prefs |
+| `src/app/contexts/PersonaContext.tsx` | Added selectedBankId, localStorage persistence |
+| `src/app/components/PersonaSwitcher.tsx` | Bank scope dropdown when persona active |
+| `src/app/components/PersonaBanner.tsx` | Shows scoped bank name + BIC |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 139 — Color Compliance Cleanup
+Timestamp: 2026-03-19T00:30:00Z
+Status: DONE
+
+### Summary:
+Three-pass color audit and cleanup: (1) Replaced hardcoded hex backgrounds and gray-* classes with CODA tokens across 27 files. (2) Replaced text-[#1d1d1f]/dark:text-[#f5f5f7] with text-coda-text in 15 Shadcn UI components. (3) Replaced 145 purple-*/violet-* references with coda-brand equivalents across 29 files. Fixed sidebar profile icon (removed extra padding div, now uses bare CircleUser icon). Fixed types.ts status config gray references.
+
+### Violation counts:
+| Category | Before | After |
+|----------|--------|-------|
+| gray-* Tailwind | 15+ | 0 |
+| Hardcoded bg-[#hex] | 5 | 0 |
+| text-[#1d1d1f] in UI | 13+ | 0 |
+| purple-*/violet-* | 145 | 0 |
 
 ---END_TASK---

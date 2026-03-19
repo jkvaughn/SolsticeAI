@@ -1422,3 +1422,88 @@ Captured full database schema as Supabase migration (16 tables, 1,703 lines). De
 - GitHub Secrets: 4 VITE_* vars for build-time injection
 
 ---END_TASK---
+
+---
+
+## Tasks 133–138: Phase C — Production Stack on Azure (2026-03-18)
+
+---TASK_COMPLETE---
+Step: Tasks 133–138 — Phase C: Production Stack on Azure
+Timestamp: 2026-03-18T23:00:00Z
+Status: DONE
+
+### Summary:
+Full production Azure stack: Terraform IaC (`rg-coda-app`), Postgres Flexible Server (16 tables), Container Apps (Hono/Deno backend), ACR + Docker image, Static Web App with `coda.solsticenetwork.xyz` domain, Azure Entra ID auth (dual provider), env-aware realtime hook (Supabase or polling), Solstice Network env vars on Container App.
+
+### Files created:
+| File | Description |
+|------|-------------|
+| `infra/*.tf` (12 files) | Terraform IaC for all Azure resources |
+| `docker/Dockerfile` | Deno 1.44.0 backend container |
+| `staticwebapp.config.json` | Entra ID auth config |
+| `src/app/hooks/useRealtimeSubscription.ts` | Env-aware realtime hook |
+| `.github/workflows/azure-static-web-apps-production.yml` | Production deploy workflow |
+
+### Files modified:
+11 components updated for useRealtimeSubscription, AuthContext dual provider, env types, .env templates
+
+---END_TASK---
+
+---
+
+## Task 129: Compact Memo Optimization (2026-03-18)
+
+---TASK_COMPLETE---
+Step: Task 129 — Compact Memo Optimization
+Timestamp: 2026-03-18T23:40:00Z
+Status: DONE
+
+### Summary:
+Shortened Solana memo: removed MsgId/E2EId, truncated TxId to 8 chars, dropped ms from Date. ~250 bytes (was ~400).
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `solana-real.tsx` | Compact memo in executeTransfer() |
+| `index.tsx` | Compact memo in buildISO20022LockupMemo() |
+
+---END_TASK---
+
+---
+
+## Tasks 130+131: Bank-Scoped Personas + Settings/Profile (2026-03-18)
+
+---TASK_COMPLETE---
+Step: Tasks 130+131 — Bank-Scoped Persona Views + Settings/Profile Pages
+Timestamp: 2026-03-18T23:50:00Z
+Status: DONE
+
+### Summary:
+Full Settings page (4 sections) and Profile page (identity + stats + prefs). PersonaContext with selectedBankId, PersonaSwitcher bank dropdown, useBankFilter hook.
+
+### Files created:
+| File | Description |
+|------|-------------|
+| `src/app/hooks/useBankFilter.ts` | Bank scoping filter hook |
+
+### Files modified:
+SettingsPage, ProfilePage (full rebuilds), PersonaContext, PersonaSwitcher, PersonaBanner
+
+---END_TASK---
+
+---
+
+## Task 139: Color Compliance Cleanup (2026-03-19)
+
+---TASK_COMPLETE---
+Step: Task 139 — Color Compliance Cleanup
+Timestamp: 2026-03-19T00:30:00Z
+Status: DONE
+
+### Summary:
+Three-pass audit: (1) gray-*/hex backgrounds → CODA tokens (27 files), (2) Shadcn UI hex → text-coda-text (15 files), (3) purple-*/violet-* → coda-brand (29 files, 145 occurrences). Fixed profile sidebar icon. Fixed types.ts status configs.
+
+### Files modified:
+56 files total across all three passes (some files touched in multiple passes)
+
+---END_TASK---
