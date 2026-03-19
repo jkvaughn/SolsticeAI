@@ -227,15 +227,10 @@ Treat all on-chain settlements as if they have production-grade finality.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `;
 
-export async function getNetworkModeContext(): Promise<string> {
-  try {
-    const mode = await kv.get("network_mode");
-    // Default to devnet if not set
-    if (!mode || mode === "devnet") return DEVNET_CONTEXT;
-    return ""; // Production mode — no context injection, let Gemini assess freely
-  } catch {
-    return DEVNET_CONTEXT; // Default to devnet on error
-  }
+export function getNetworkModeContext(): string {
+  const cluster = Deno.env.get("SOLANA_CLUSTER") || "devnet";
+  if (cluster === "mainnet-beta") return ""; // Production — no context injection
+  return DEVNET_CONTEXT; // Devnet/default — inject demo-mode context
 }
 
 app.use("*", logger(console.log));
@@ -555,32 +550,6 @@ app.get("/make-server-49d15288/auth/me", async (c) => {
     });
   } catch (err) {
     console.log(`[auth/me] Error: ${(err as Error).message}`);
-    return c.json({ error: (err as Error).message }, 500);
-  }
-});
-
-// ============================================================
-// Network Mode — GET/SET devnet vs production context for AI
-// ============================================================
-app.post("/make-server-49d15288/network-mode", async (c) => {
-  try {
-    const body = await c.req.json();
-    const { action, mode } = body;
-
-    if (action === "get") {
-      const current = await kv.get("network_mode");
-      return c.json({ mode: current || "devnet" });
-    }
-
-    if (action === "set" && (mode === "devnet" || mode === "production")) {
-      await kv.set("network_mode", mode);
-      console.log(`[network-mode] Mode set to: ${mode}`);
-      return c.json({ mode, message: `Network mode updated to ${mode}` });
-    }
-
-    return c.json({ error: "Invalid action. Use { action: 'get' } or { action: 'set', mode: 'devnet'|'production' }" }, 400);
-  } catch (err) {
-    console.log(`[network-mode] Error: ${(err as Error).message}`);
     return c.json({ error: (err as Error).message }, 500);
   }
 });

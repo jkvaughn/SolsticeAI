@@ -207,11 +207,7 @@ export function useNetworkSimulation(): NetworkSimulationControls {
           .limit(1);
         const feesCollected = netWallets?.[0]?.balance || 0;
 
-        let networkMode = 'devnet';
-        try {
-          const modeRes = await callServer<{ mode: string }>('/network-mode', { action: 'get' });
-          networkMode = modeRes.mode || 'devnet';
-        } catch { /* ignore */ }
+        const networkMode = (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta' ? 'production' : 'devnet';
 
         const { data: flags } = await supabase
           .from('cadenza_flags')

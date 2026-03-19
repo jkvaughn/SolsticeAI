@@ -1617,3 +1617,27 @@ Made frontend environment-aware for Solstice Network production deployment. Hide
 | `.env.production` | Added VITE_USE_LIVE_NETWORK_DATA=true |
 
 ---END_TASK---
+
+---
+
+## Task 143: Remove Network Mode Toggle — Build-Time Agent Context (2026-03-19)
+
+---TASK_COMPLETE---
+Step: Task 143 — Remove Network Mode Toggle, use build-time SOLANA_CLUSTER for agent context
+Timestamp: 2026-03-19T21:00:00Z
+Status: DONE
+
+### Summary:
+Removed the confusing Devnet/Production toggle from Settings page. The toggle only controlled AI agent prompt context (injecting DEVNET_CONTEXT into Gemini prompts) but implied it switched the actual Solana RPC connection — it did not. Replaced with automatic build-time detection: backend `getNetworkModeContext()` now reads `SOLANA_CLUSTER` env var instead of KV store. Frontend Settings page shows a read-only environment indicator derived from `VITE_SOLANA_CLUSTER`. Removed the `/network-mode` server endpoint entirely. Removed `/network-mode` calls from `useNetworkSimulation.ts` and `NetworkInfrastructureWidget.tsx`.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `supabase/functions/server/index.tsx` | `getNetworkModeContext()` reads `SOLANA_CLUSTER` env var (sync, no KV). Removed `/network-mode` POST endpoint. |
+| `src/app/components/SettingsPage.tsx` | Removed toggle buttons, `networkMode` state, `networkLoading`, `handleNetworkModeChange`. Read-only environment indicator from `VITE_SOLANA_CLUSTER`. Removed "Agent Mode" row. |
+| `src/app/hooks/useNetworkSimulation.ts` | Replaced `/network-mode` server call with `import.meta.env.VITE_SOLANA_CLUSTER` check |
+| `src/app/components/dashboard/NetworkInfrastructureWidget.tsx` | Replaced `/network-mode` server call with `import.meta.env.VITE_SOLANA_CLUSTER` check |
+| `PROJECT_STATUS.md` | Updated for Task 143 |
+| `PROJECT_HISTORY.md` | Appended Task 143 |
+
+---END_TASK---

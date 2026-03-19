@@ -8,7 +8,7 @@ import { motion } from './motion-shim';
 import {
   Settings, Sun, Moon, Monitor, Wifi, Globe,
   ChevronDown, ChevronRight, Bell, BellOff,
-  AlertTriangle, Trash2, RotateCcw, Gauge, Timer,
+  AlertTriangle, Trash2, RotateCcw, Timer,
   Layers, Maximize2, Minimize2,
 } from 'lucide-react';
 
@@ -92,27 +92,10 @@ export function SettingsPage() {
   }, []);
 
   // ── Network state ──
-  const [networkMode, setNetworkMode] = useState<'devnet' | 'production'>('devnet');
-  const [networkLoading, setNetworkLoading] = useState(true);
   const [refreshInterval, setRefreshIntervalState] = useState<RefreshInterval>(loadRefreshInterval);
 
-  useEffect(() => {
-    callServer<{ mode: string }>('/network-mode', { action: 'get' })
-      .then(res => {
-        setNetworkMode((res.mode as 'devnet' | 'production') || 'devnet');
-      })
-      .catch(err => console.error('[Settings] Failed to fetch network mode:', err))
-      .finally(() => setNetworkLoading(false));
-  }, []);
-
-  const handleNetworkModeChange = useCallback(async (mode: 'devnet' | 'production') => {
-    setNetworkMode(mode);
-    try {
-      await callServer('/network-mode', { action: 'set', mode });
-    } catch (err) {
-      console.error('[Settings] Failed to set network mode:', err);
-    }
-  }, []);
+  // Derive network mode from build-time env var (no toggle needed)
+  const isProductionCluster = (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta';
 
   const handleRefreshInterval = useCallback((val: RefreshInterval) => {
     setRefreshIntervalState(val);
@@ -289,118 +272,59 @@ export function SettingsPage() {
         {/* 2. Network                                             */}
         {/* ─────────────────────────────────────────────────────── */}
         <CollapsibleCard title="Network" icon={Wifi} defaultOpen>
-          {/* Network mode */}
+          {/* Network environment (read-only, determined by build config) */}
           <div className="mb-4">
-            <p className="text-[11px] font-medium text-coda-text-muted uppercase tracking-wider mb-3">Network Mode</p>
-            {networkLoading ? (
-              <div className="h-20 flex items-center justify-center">
-                <span className="text-xs text-coda-text-muted font-mono">Loading...</span>
+            <p className="text-[11px] font-medium text-coda-text-muted uppercase tracking-wider mb-3">Environment</p>
+
+            {/* Live status indicator */}
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
+              isDark ? 'bg-white/[0.03] border-white/[0.06]' : 'bg-black/[0.02] border-black/[0.04]'
+            }`}>
+              <div className="relative flex-shrink-0">
+                <div className={`w-2.5 h-2.5 rounded-full ${isProductionCluster ? 'bg-coda-brand' : 'bg-emerald-500'}`} />
+                <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full animate-pulse ${isProductionCluster ? 'bg-coda-brand' : 'bg-emerald-500'}`} />
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-3">
-                  {([
-                    {
-                      mode: 'devnet' as const,
-                      icon: Wifi,
-                      label: 'Devnet',
-                      desc: 'Synthetic tokens on Solana Devnet',
-                      dot: 'bg-emerald-500',
-                    },
-                    {
-                      mode: 'production' as const,
-                      icon: Globe,
-                      label: 'Production',
-                      desc: 'Solstice Network — live settlement',
-                      dot: 'bg-coda-brand',
-                    },
-                  ]).map(opt => {
-                    const Icon = opt.icon;
-                    const active = networkMode === opt.mode;
-                    return (
-                      <button
-                        key={opt.mode}
-                        onClick={() => handleNetworkModeChange(opt.mode)}
-                        className={`relative flex flex-col items-start gap-3 p-4 rounded-xl border text-left transition-all duration-300 cursor-pointer ${
-                          active
-                            ? isDark
-                              ? 'bg-white/10 border-white/25 shadow-lg'
-                              : 'bg-black/[0.04] border-black/15 shadow-lg'
-                            : isDark
-                              ? 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]'
-                              : 'bg-black/[0.02] border-black/[0.04] hover:bg-black/[0.04]'
-                        }`}
-                      >
-                        {active && (
-                          <div className={`absolute top-3 right-3 w-2 h-2 rounded-full ${opt.dot}`} />
-                        )}
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                          active
-                            ? opt.mode === 'devnet'
-                              ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text'
-                              : 'bg-coda-brand/10 text-coda-brand'
-                            : isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted'
-                        }`}>
-                          <Icon size={18} />
-                        </div>
-                        <div>
-                          <p className={`text-[13px] font-medium ${active ? 'text-coda-text' : 'text-coda-text-secondary'}`}>
-                            {opt.label}
-                          </p>
-                          <p className="text-[10px] text-coda-text-muted mt-0.5 leading-relaxed">{opt.desc}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-medium text-coda-text">
+                  {isProductionCluster ? 'Solstice Network' : 'Solana Devnet'}
+                </p>
+                <p className="text-[10px] text-coda-text-muted">
+                  {isProductionCluster
+                    ? 'Connected — production SPE settlement active'
+                    : 'Connected — synthetic token settlement active'}
+                </p>
+              </div>
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                isProductionCluster ? 'bg-coda-brand/10 text-coda-brand' : 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text'
+              }`}>
+                {isProductionCluster ? <Globe size={18} /> : <Wifi size={18} />}
+              </div>
+            </div>
 
-                {/* Live status indicator */}
-                <div className={`flex items-center gap-3 px-4 py-3 mt-3 rounded-xl border ${
-                  isDark ? 'bg-white/[0.03] border-white/[0.06]' : 'bg-black/[0.02] border-black/[0.04]'
-                }`}>
-                  <div className="relative flex-shrink-0">
-                    <div className={`w-2.5 h-2.5 rounded-full ${networkMode === 'devnet' ? 'bg-emerald-500' : 'bg-coda-brand'}`} />
-                    <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full animate-pulse ${networkMode === 'devnet' ? 'bg-emerald-500' : 'bg-coda-brand'}`} />
+            {/* Network details */}
+            <div className={`mt-3 rounded-xl border overflow-hidden ${
+              isDark ? 'bg-white/[0.02] border-white/[0.06]' : 'bg-black/[0.015] border-black/[0.04]'
+            }`}>
+              <div className="px-3 py-2 border-b border-black/[0.04] dark:border-white/[0.06]">
+                <p className="text-[10px] font-bold text-coda-text-muted uppercase tracking-wider">Active Connection</p>
+              </div>
+              <div className="px-3 py-2 space-y-1.5">
+                {[
+                  { label: 'Cluster', value: import.meta.env.VITE_SOLANA_CLUSTER || 'devnet' },
+                  { label: 'Network', value: isProductionCluster ? 'Solstice Network' : 'Solana Devnet' },
+                  { label: 'Auth Provider', value: (import.meta.env.VITE_AUTH_PROVIDER || 'supabase').toUpperCase() },
+                  { label: 'Explorer', value: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com' },
+                  { label: 'Realtime', value: import.meta.env.VITE_USE_SUPABASE_REALTIME === 'false' ? 'Polling' : 'Supabase Realtime' },
+                  { label: 'Live Data', value: import.meta.env.VITE_USE_LIVE_NETWORK_DATA === 'true' ? 'Enabled' : 'Simulation' },
+                  { label: 'Environment', value: import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development' },
+                ].map(row => (
+                  <div key={row.label} className="flex items-center justify-between gap-4">
+                    <span className="text-[10px] font-mono text-coda-text-muted whitespace-nowrap">{row.label}</span>
+                    <span className="text-[10px] font-mono text-coda-text-secondary truncate text-right">{row.value}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-medium text-coda-text">
-                      {networkMode === 'devnet' ? 'Solana Devnet' : 'Solstice Network'}
-                    </p>
-                    <p className="text-[10px] text-coda-text-muted">
-                      {networkMode === 'devnet'
-                        ? 'Connected — synthetic token settlement active'
-                        : 'Connected — production SPE settlement active'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Network details */}
-                <div className={`mt-3 rounded-xl border overflow-hidden ${
-                  isDark ? 'bg-white/[0.02] border-white/[0.06]' : 'bg-black/[0.015] border-black/[0.04]'
-                }`}>
-                  <div className="px-3 py-2 border-b border-black/[0.04] dark:border-white/[0.06]">
-                    <p className="text-[10px] font-bold text-coda-text-muted uppercase tracking-wider">Active Connection</p>
-                  </div>
-                  <div className="px-3 py-2 space-y-1.5">
-                    {[
-                      { label: 'Cluster', value: import.meta.env.VITE_SOLANA_CLUSTER || 'devnet' },
-                      { label: 'Network', value: (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta' ? 'Solstice Network' : 'Solana Devnet' },
-                      { label: 'Auth Provider', value: (import.meta.env.VITE_AUTH_PROVIDER || 'supabase').toUpperCase() },
-                      { label: 'Explorer', value: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com' },
-                      { label: 'Realtime', value: import.meta.env.VITE_USE_SUPABASE_REALTIME === 'false' ? 'Polling' : 'Supabase Realtime' },
-                      { label: 'Live Data', value: import.meta.env.VITE_USE_LIVE_NETWORK_DATA === 'true' ? 'Enabled' : 'Simulation' },
-                      { label: 'Agent Mode', value: networkMode === 'production' ? 'Production' : 'Devnet' },
-                      { label: 'Environment', value: import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development' },
-                    ].map(row => (
-                      <div key={row.label} className="flex items-center justify-between gap-4">
-                        <span className="text-[10px] font-mono text-coda-text-muted whitespace-nowrap">{row.label}</span>
-                        <span className="text-[10px] font-mono text-coda-text-secondary truncate text-right">{row.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Auto-refresh interval */}
