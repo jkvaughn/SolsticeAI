@@ -215,7 +215,7 @@ export function ProfilePage() {
               ) : (
                 <button
                   onClick={() => { setEditBuffer(name); setIsEditingName(true); }}
-                  className="group flex items-center gap-2 cursor-pointer bg-transparent border-none"
+                  className="group flex items-center justify-center gap-2 cursor-pointer bg-transparent border-none mx-auto"
                 >
                   <h3 className="text-xl font-semibold font-sans text-coda-text">
                     {name}
@@ -232,13 +232,12 @@ export function ProfilePage() {
                 {currentUser.email}
               </p>
 
-              {/* Role badge */}
-              <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-coda-brand/10 text-coda-brand">
-                Network Administrator
-              </span>
-
-              {/* Auth provider badge */}
-              <span
+              {/* Badges */}
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <span className="px-3 py-1 rounded-full text-xs font-medium bg-coda-brand/10 text-coda-brand">
+                  Network Administrator
+                </span>
+                <span
                 className={`inline-block px-3 py-1 rounded-full text-[10px] font-medium ${
                   currentUser.provider === 'Azure Entra ID'
                     ? 'bg-coda-brand/10 text-coda-brand'
@@ -247,6 +246,7 @@ export function ProfilePage() {
               >
                 {currentUser.provider}
               </span>
+              </div>
             </div>
           </div>
 
@@ -302,34 +302,6 @@ export function ProfilePage() {
             </div>
           </div>
 
-          {/* Sign out */}
-          <div className="pt-2 border-t border-coda-border/20">
-            {!signOutConfirm ? (
-              <button
-                onClick={() => setSignOutConfirm(true)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-coda-text-secondary hover:text-red-500 hover:bg-red-500/8 transition-all duration-300 cursor-pointer"
-              >
-                <LogOut size={15} />
-                Sign Out
-              </button>
-            ) : (
-              <div className="flex items-center gap-3 justify-center">
-                <span className="text-xs text-red-500">End session?</span>
-                <button
-                  onClick={() => setSignOutConfirm(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-coda-text-secondary hover:bg-coda-surface/60 cursor-pointer transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSignOut}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500 text-white hover:bg-red-600 cursor-pointer transition-colors"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
         </motion.div>
 
         {/* ════════════════════════════════════════════════════════
@@ -465,6 +437,35 @@ export function ProfilePage() {
             </div>
           </div>
         </motion.div>
+      </div>
+
+      {/* ── Sign Out — standalone section ── */}
+      <div className="flex justify-center pt-2">
+        {!signOutConfirm ? (
+          <button
+            onClick={() => setSignOutConfirm(true)}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-coda-text-muted hover:text-red-500 hover:bg-red-500/8 transition-all duration-300 cursor-pointer"
+          >
+            <LogOut size={15} />
+            Sign Out
+          </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-red-500">End session?</span>
+            <button
+              onClick={() => setSignOutConfirm(false)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-coda-text-secondary hover:bg-coda-surface/60 cursor-pointer transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500 text-white hover:bg-red-600 cursor-pointer transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
