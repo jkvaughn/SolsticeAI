@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { usePersona } from '../contexts/PersonaContext';
 import { useBanks } from '../contexts/BanksContext';
 import { useTheme } from './ThemeProvider';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 import type { PersonaType } from '../types';
 
 // ============================================================
@@ -63,6 +64,7 @@ export function PersonaSwitcher() {
   const { resolved } = useTheme();
   const isDark = resolved === 'dark';
   const navigate = useNavigate();
+  const isAdmin = useIsAdmin();
 
   const handleSelect = (opt: typeof PERSONA_OPTIONS[number]) => {
     setPersona(opt.value);
@@ -76,7 +78,7 @@ export function PersonaSwitcher() {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        {PERSONA_OPTIONS.map(opt => {
+        {PERSONA_OPTIONS.filter(opt => opt.value !== null || isAdmin).map(opt => {
           const Icon = opt.icon;
           const active = opt.value === persona;
           return (

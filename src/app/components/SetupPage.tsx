@@ -5,6 +5,8 @@ import {
   Wallet, Clock, Globe, RotateCcw, Network, ArrowRight, Shield,
   FlaskConical, Building2, Landmark, Coins
 } from 'lucide-react';
+import { Navigate } from 'react-router';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 import { callServer } from '../supabaseClient';
 import type { Bank, Wallet as WalletType, SetupBankRequest } from '../types';
 import { truncateAddress, explorerUrl, formatTokenAmount } from '../types';
@@ -156,6 +158,7 @@ async function fetchSolBalanceRpc(pubkey: string): Promise<number | null> {
 }
 
 export function SetupPage() {
+  const isAdmin = useIsAdmin();
   const { banks, isLoading: loading, revalidate } = useBanks();
   const [showForm, setShowForm] = useState(false);
   const [deploying, setDeploying] = useState(false);
@@ -595,6 +598,8 @@ export function SetupPage() {
 
   const defaultWallet = (bank: Bank & { wallets?: WalletType[] }) =>
     bank.wallets?.find((w) => w.is_default) || bank.wallets?.[0];
+
+  if (!isAdmin) return <Navigate to="/" replace />;
 
   return (
     <div className="space-y-4">

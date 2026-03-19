@@ -4,6 +4,8 @@ import { useTheme } from './ThemeProvider';
 import { useAuth } from '../contexts/AuthContext';
 import { useBanks } from '../contexts/BanksContext';
 import { usePersona } from '../contexts/PersonaContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 import { PageHeader } from './PageHeader';
 import { motion } from './motion-shim';
 import { supabase } from '../supabaseClient';
@@ -18,6 +20,7 @@ import {
   ChevronDown,
   Pencil,
   Check,
+  Copy,
 } from 'lucide-react';
 
 // ============================================================
@@ -39,13 +42,15 @@ export function ProfilePage() {
   const { resolved } = useTheme();
   const isDark = resolved === 'dark';
   const { user, signOut } = useAuth();
-  const { activeBanks } = useBanks();
+  const { activeBanks, banks } = useBanks();
+  const currentUser = useCurrentUser();
+  const isAdmin = useIsAdmin();
   const navigate = useNavigate();
   const [signOutConfirm, setSignOutConfirm] = useState(false);
 
   // ── Editable name ──
   const [name, setName] = useState(() =>
-    localStorage.getItem(NAME_STORAGE_KEY) || 'Demo Operator',
+    localStorage.getItem(NAME_STORAGE_KEY) || currentUser.name,
   );
   const [isEditingName, setIsEditingName] = useState(false);
   const [editBuffer, setEditBuffer] = useState(name);
@@ -93,6 +98,46 @@ export function ProfilePage() {
     return () => { cancelled = true; };
   }, []);
 
+  // ── Recent escalations for mini-table ──
+  interface EscalationRow {
+    id: string;
+    transaction_id: string;
+    sender_bank_id: string;
+    receiver_bank_id: string;
+    resolution: string;
+    resolved_at: string;
+  }
+  const [recentEscalations, setRecentEscalations] = useState<EscalationRow[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchEscalations() {
+      const { data } = await supabase
+        .from('lockup_tokens')
+        .select('id, transaction_id, sender_bank_id, receiver_bank_id, resolution, resolved_at')
+        .like('resolved_by', 'operator:%')
+        .order('resolved_at', { ascending: false })
+        .limit(5);
+      if (!cancelled && data) setRecentEscalations(data as EscalationRow[]);
+    }
+    fetchEscalations();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Helper: resolve bank id → short_code ──
+  const bankCode = useCallback((id: string) => {
+    return banks.find(b => b.id === id)?.short_code ?? id.slice(0, 6);
+  }, [banks]);
+
+  // ── Helper: copy to clipboard ──
+  const [copied, setCopied] = useState(false);
+  const copyUserId = useCallback(() => {
+    navigator.clipboard.writeText(currentUser.userId).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }, [currentUser.userId]);
+
   // ── Preference dropdowns ──
   const [defaultPersona, setDefaultPersona] = useState(
     () => localStorage.getItem(DEFAULT_PERSONA_KEY) || '',
@@ -118,7 +163,7 @@ export function ProfilePage() {
   }, [signOut, navigate]);
 
   // ── Initials ──
-  const initials = name.charAt(0).toUpperCase();
+  const initials = currentUser.avatarInitials;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
@@ -182,9 +227,25 @@ export function ProfilePage() {
                 </button>
               )}
 
+              {/* Email */}
+              <p className="text-coda-text-muted font-mono text-[11px]">
+                {currentUser.email}
+              </p>
+
               {/* Role badge */}
               <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-coda-brand/10 text-coda-brand">
                 Network Administrator
+              </span>
+
+              {/* Auth provider badge */}
+              <span
+                className={`inline-block px-3 py-1 rounded-full text-[10px] font-medium ${
+                  currentUser.provider === 'Azure Entra ID'
+                    ? 'bg-coda-brand/10 text-coda-brand'
+                    : 'bg-emerald-500/10 text-emerald-500'
+                }`}
+              >
+                {currentUser.provider}
               </span>
             </div>
           </div>
@@ -201,6 +262,29 @@ export function ProfilePage() {
               </div>
             </div>
 
+            {/* Account ID */}
+            {currentUser.userId && (
+              <div className="flex items-center gap-3">
+                <div className="w-4 shrink-0" />
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[10px] text-coda-text-muted">
+                    {currentUser.userId.slice(0, 8)}...{currentUser.userId.slice(-4)}
+                  </span>
+                  <button
+                    onClick={copyUserId}
+                    className="p-0.5 rounded hover:bg-coda-brand/10 transition-colors cursor-pointer"
+                    title="Copy account ID"
+                  >
+                    {copied ? (
+                      <Check size={10} className="text-coda-brand" />
+                    ) : (
+                      <Copy size={10} className="text-coda-text-muted" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Status */}
             <div className="flex items-center gap-3">
               <span className="relative flex h-4 w-4 items-center justify-center shrink-0">
@@ -210,6 +294,11 @@ export function ProfilePage() {
               <span className="text-sm font-sans text-coda-text-secondary">
                 Online
               </span>
+              {isAdmin && (
+                <span className="text-[8px] font-bold uppercase tracking-wider text-coda-brand bg-coda-brand/10 px-1.5 py-0.5 rounded">
+                  ADMIN
+                </span>
+              )}
             </div>
           </div>
 
@@ -276,6 +365,41 @@ export function ProfilePage() {
               small
             />
           </div>
+
+          {/* ── Recent Escalations ── */}
+          {recentEscalations.length > 0 && (
+            <div className="dashboard-card-subtle p-4 space-y-3">
+              <h4 className="text-[11px] font-semibold font-sans text-coda-text-muted uppercase tracking-wide">
+                Recent Escalations
+              </h4>
+              <table className="w-full text-[10px] font-mono">
+                <thead>
+                  <tr className="text-coda-text-muted">
+                    <th className="text-left pb-1.5 font-medium">Route</th>
+                    <th className="text-left pb-1.5 font-medium">Resolution</th>
+                    <th className="text-right pb-1.5 font-medium">Time</th>
+                  </tr>
+                </thead>
+                <tbody className="text-coda-text-secondary">
+                  {recentEscalations.map(row => (
+                    <tr key={row.id} className="border-t border-coda-border/10">
+                      <td className="py-1.5">
+                        {bankCode(row.sender_bank_id)} &rarr; {bankCode(row.receiver_bank_id)}
+                      </td>
+                      <td className="py-1.5">{row.resolution}</td>
+                      <td className="py-1.5 text-right text-coda-text-muted">
+                        {row.resolved_at
+                          ? new Date(row.resolved_at).toLocaleString(undefined, {
+                              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                            })
+                          : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* ── Preferences ── */}
           <div className="dashboard-card-subtle p-5 space-y-5">

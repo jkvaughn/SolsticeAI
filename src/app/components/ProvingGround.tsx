@@ -5,7 +5,8 @@ import {
   Trash2, Clock, Scale
 } from 'lucide-react';
 import { motion, AnimatePresence } from './motion-shim';
-import { Link } from 'react-router';
+import { Link, Navigate } from 'react-router';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 import { PageHeader } from './PageHeader';
 import { PageTransition } from './PageTransition';
 import { useBanks } from '../contexts/BanksContext';
@@ -89,6 +90,7 @@ function formatEta(ms: number): string {
 // ── Main Component ──────────────────────────────────────────
 
 export function ProvingGround() {
+  const isAdmin = useIsAdmin();
   const { banks } = useBanks();
   const activeBanks = (banks || []).filter((b) => b.status === 'active');
 
@@ -459,6 +461,8 @@ export function ProvingGround() {
   const showSingleScorecard = !compareMode && selectedResultA && !isRunningAll;
   const showRunAllProgress = isRunningAll && runAllProgress;
   const showIdle = !showCompareSummary && !showSingleSummary && !showCompareScorecard && !showSingleScorecard && !showRunAllProgress && !currentRunningId;
+
+  if (!isAdmin) return <Navigate to="/" replace />;
 
   // ── No active banks state ─────────────────────────────────
   if (activeBanks.length === 0 && !loadError) {

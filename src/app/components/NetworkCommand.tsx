@@ -15,6 +15,8 @@
 import { useEffect, useRef } from 'react';
 import { Play, Square, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { Navigate } from 'react-router';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 import {
   useNetworkSimulation,
 } from '../hooks/useNetworkSimulation';
@@ -112,6 +114,7 @@ export function NetworkCommand() {
   const { state: sim, start, stop, reset } = useNetworkSimulation();
   const { sidebarWidth } = useLayout();
   const { theme } = useTheme();
+  const isAdmin = useIsAdmin();
 
   // Ticker scroll via rAF
   const tickerRef = useRef<HTMLDivElement>(null);
@@ -135,6 +138,8 @@ export function NetworkCommand() {
     tickerRaf.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(tickerRaf.current);
   }, []);
+
+  if (!isAdmin) return <Navigate to="/" replace />;
 
   const flagCount = sim.cadenzaFlags.length;
 
