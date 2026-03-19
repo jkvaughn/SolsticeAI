@@ -10,6 +10,7 @@ interface ImportMetaEnv {
   readonly VITE_SOLANA_FAUCET_URL?: string;
   readonly VITE_AUTH_PROVIDER?: 'azure' | 'supabase';
   readonly VITE_USE_SUPABASE_REALTIME?: 'true' | 'false';
+  readonly VITE_ADMIN_EMAIL?: string;
 }
 
 interface ImportMeta {

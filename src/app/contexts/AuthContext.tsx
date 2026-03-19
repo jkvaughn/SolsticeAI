@@ -31,6 +31,7 @@ interface AuthContextValue extends AuthState {
   signOut: () => Promise<void>;
   accessToken: string | null;
   authProvider: string;
+  userEmail: string | null;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -112,6 +113,7 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
       signOut,
       accessToken: null, // Azure auth uses cookies, not bearer tokens
       authProvider: 'azure',
+      userEmail: state.user?.email ?? null,
     }}>
       {children}
     </AuthContext.Provider>
@@ -219,6 +221,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       signOut,
       accessToken,
       authProvider: 'supabase',
+      userEmail: state.user?.email ?? null,
     }}>
       {children}
     </AuthContext.Provider>

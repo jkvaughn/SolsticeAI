@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme, type ThemePreference } from './ThemeProvider';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 import { callServer } from '../supabaseClient';
 import { PageHeader } from './PageHeader';
 import { PageTransition } from './PageTransition';
@@ -67,6 +68,7 @@ function loadRefreshInterval(): RefreshInterval {
 export function SettingsPage() {
   const { resolved, preference, setTheme } = useTheme();
   const isDark = resolved === 'dark';
+  const isAdmin = useIsAdmin();
 
   // ── Appearance state ──
   const [density, setDensityState] = useState<Density>(loadDensity);
@@ -434,7 +436,7 @@ export function SettingsPage() {
         {/* ─────────────────────────────────────────────────────── */}
         {/* 4. Danger Zone                                         */}
         {/* ─────────────────────────────────────────────────────── */}
-        <CollapsibleCard title="Danger Zone" icon={AlertTriangle} variant="danger">
+        {isAdmin && <CollapsibleCard title="Danger Zone" icon={AlertTriangle} variant="danger">
           <div className="space-y-3">
             <DangerAction
               icon={RotateCcw}
@@ -458,7 +460,7 @@ export function SettingsPage() {
           <p className="text-[10px] text-coda-text-muted mt-3 leading-relaxed">
             These actions are irreversible. Cached data will be rebuilt on next agent cycle.
           </p>
-        </CollapsibleCard>
+        </CollapsibleCard>}
 
       </PageTransition>
     </div>

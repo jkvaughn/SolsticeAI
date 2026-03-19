@@ -17,6 +17,7 @@ import { LayoutProvider } from "../../contexts/LayoutContext";
 import { supabase } from "../../supabaseClient";
 import { useRealtimeSubscription } from "../../hooks/useRealtimeSubscription";
 import { usePersona } from "../../contexts/PersonaContext";
+import { useIsAdmin } from "../../hooks/useIsAdmin";
 import type { PersonaType } from "../../types";
 
 // ============================================================
@@ -93,6 +94,7 @@ export function DashboardLayout({
   const location = useLocation();
   const { user } = useAuth();
   const { persona } = usePersona();
+  const isAdmin = useIsAdmin();
 
   // --- Escalation count badge (real-time) ---
   const [escalationCount, setEscalationCount] = React.useState(0);
@@ -298,7 +300,7 @@ export function DashboardLayout({
                 <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3 mb-2">Config</p>
               )}
               <div className="space-y-1">
-                {configNav.map(renderNavButton)}
+                {configNav.filter(item => isAdmin || item.id === 'agent-config').map(renderNavButton)}
               </div>
             </div>
 
@@ -339,6 +341,7 @@ export function DashboardLayout({
                   </TooltipContent>
                 </Tooltip>
               )}
+              {isAdmin && <span className="text-[8px] font-bold uppercase tracking-wider text-coda-brand font-mono px-2 py-0.5 rounded bg-coda-brand/10 text-center">ADMIN</span>}
             </div>
           </div>
         </motion.div>

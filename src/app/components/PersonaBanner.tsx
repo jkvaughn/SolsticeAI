@@ -1,6 +1,7 @@
 import { Shield, Landmark, BarChart3 } from 'lucide-react';
 import { usePersona } from '../contexts/PersonaContext';
 import { useBanks } from '../contexts/BanksContext';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 import type { PersonaType } from '../types';
 
 // ============================================================
@@ -41,6 +42,7 @@ const PERSONA_CONFIG: Record<Exclude<PersonaType, null>, {
 export function PersonaBanner() {
   const { persona, setPersona, selectedBankId } = usePersona();
   const { activeBanks } = useBanks();
+  const isAdmin = useIsAdmin();
 
   if (!persona) return null;
 
@@ -67,12 +69,12 @@ export function PersonaBanner() {
         &mdash; {contextLabel}
       </span>
       <div className="flex-1" />
-      <button
+      {isAdmin && <button
         onClick={() => setPersona(null)}
         className={`text-[10px] font-medium ${config.text} hover:underline cursor-pointer`}
       >
         Exit View
-      </button>
+      </button>}
     </div>
   );
 }
