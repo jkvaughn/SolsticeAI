@@ -2610,9 +2610,9 @@ async function handleInitiatePayment(
   };
 
   try {
-    await sql\`INSERT INTO transactions \${sql(txRecord, ...Object.keys(txRecord))}\`;
+    await sql`INSERT INTO transactions ${sql(txRecord, ...Object.keys(txRecord))}`;
   } catch (txErr) {
-    throw new Error(\`Failed to create transaction: \${(txErr as Error).message}\`);
+    throw new Error(`Failed to create transaction: ${(txErr as Error).message}`);
   }
 
   // ── Travel Rule Payload (IVMS 101) ──
@@ -2639,10 +2639,10 @@ async function handleInitiatePayment(
       };
 
   try {
-    await sql\`UPDATE transactions SET travel_rule_payload = \${JSON.stringify(travelRulePayload)} WHERE id = \${txId}\`;
-    console.log(\`[\${aid}] Travel Rule: \${travelRulePayload.status} (amount=$\${amount.toLocaleString()}, threshold=$3,000)\`);
+    await sql`UPDATE transactions SET travel_rule_payload = ${JSON.stringify(travelRulePayload)} WHERE id = ${txId}`;
+    console.log(`[${aid}] Travel Rule: ${travelRulePayload.status} (amount=$${amount.toLocaleString()}, threshold=$3,000)`);
   } catch (travelRuleErr) {
-    console.log(\`[\${aid}] Warning: Failed to write travel_rule_payload: \${(travelRuleErr as Error).message}\`);
+    console.log(`[${aid}] Warning: Failed to write travel_rule_payload: ${(travelRuleErr as Error).message}`);
   }
 
   // Send payment_request message to receiver
@@ -2853,11 +2853,11 @@ async function coreAgentThink(
 
   let userPrompt = input;
   if (contextType === "incoming_message" && transactionId) {
-    const [txRaw] = await sql\`SELECT * FROM transactions WHERE id = \${transactionId}\`;
+    const [txRaw] = await sql`SELECT * FROM transactions WHERE id = ${transactionId}`;
     const tx = txRaw ? { ...txRaw } as any : null;
     if (tx) {
-      const [sb] = await sql\`SELECT name, short_code FROM banks WHERE id = \${tx.sender_bank_id}\`;
-      const [rb] = await sql\`SELECT name, short_code FROM banks WHERE id = \${tx.receiver_bank_id}\`;
+      const [sb] = await sql`SELECT name, short_code FROM banks WHERE id = ${tx.sender_bank_id}`;
+      const [rb] = await sql`SELECT name, short_code FROM banks WHERE id = ${tx.receiver_bank_id}`;
       tx.sender_bank = sb || null;
       tx.receiver_bank = rb || null;
     }
@@ -2876,8 +2876,8 @@ async function coreAgentThink(
   // Save pipeline/treasury-generated inputs as "system" (not "user") so the frontend
   // doesn't render auto-generated prompts with the "You" label
   const inputRole = (contextType === 'user_instruction' || contextType === 'user_chat') ? 'user' : 'system';
-  await sql\`INSERT INTO agent_conversations (id, bank_id, transaction_id, role, content, created_at) VALUES (\${crypto.randomUUID()}, \${bankId}, \${transactionId || null}, \${inputRole}, \${input}, \${now})\`;
-  await sql\`INSERT INTO agent_conversations (id, bank_id, transaction_id, role, content, created_at) VALUES (\${crypto.randomUUID()}, \${bankId}, \${transactionId || null}, \${"model"}, \${geminiResponse.message_to_user || geminiResponse.reasoning}, \${new Date(Date.now() + 100).toISOString()})\`;
+  await sql`INSERT INTO agent_conversations (id, bank_id, transaction_id, role, content, created_at) VALUES (${crypto.randomUUID()}, ${bankId}, ${transactionId || null}, ${inputRole}, ${input}, ${now})`;
+  await sql`INSERT INTO agent_conversations (id, bank_id, transaction_id, role, content, created_at) VALUES (${crypto.randomUUID()}, ${bankId}, ${transactionId || null}, ${"model"}, ${geminiResponse.message_to_user || geminiResponse.reasoning}, ${new Date(Date.now() + 100).toISOString()})`;
 
   // ── Treasury cycle: handle NO_ACTION early return ──
   if (contextType === 'treasury_cycle' &&
@@ -2920,11 +2920,11 @@ async function coreAgentThink(
 // ============================================================
 async function coreOrchestrate(bankId: string, messageId: string): Promise<any> {
   const aid = agentId(bankId);
-  const [msg] = await sql\`SELECT * FROM agent_messages WHERE id = \${messageId}\`;
-  if (!msg) throw new Error(\`Message not found\`);
-  await sql\`UPDATE agent_messages SET processed = \${true}, processed_at = \${new Date().toISOString()} WHERE id = \${messageId}\`;
+  const [msg] = await sql`SELECT * FROM agent_messages WHERE id = ${messageId}`;
+  if (!msg) throw new Error(`Message not found`);
+  await sql`UPDATE agent_messages SET processed = ${true}, processed_at = ${new Date().toISOString()} WHERE id = ${messageId}`;
   if (msg.transaction_id) {
-    const [tx] = await sql\`SELECT status FROM transactions WHERE id = \${msg.transaction_id}\`;
+    const [tx] = await sql`SELECT status FROM transactions WHERE id = ${msg.transaction_id}`;
     if (tx && ["settled", "rejected", "reversed", "executing"].includes(tx.status)) {
       console.log(`[${aid}] Skipping: tx ${msg.transaction_id.slice(0, 8)} already ${tx.status}`);
       return { reasoning: `Transaction already ${tx.status}.`, action: "no_action", params: {}, message_to_counterparty: null, message_to_user: `Transaction already ${tx.status}.`, transaction_id: msg.transaction_id };
@@ -2953,11 +2953,11 @@ async function runSettlementPipeline(bankId: string, msg: any): Promise<any> {
     console.log(`[${aid}] TX: ${txId.slice(0, 8)}  Bank: ${bankId.slice(0, 8)}`);
     console.log(`[${aid}] ======================================================`);
     console.log(`[${aid}] Step 1/4: Compliance check`);
-    const [txCompRaw] = await sql\`SELECT * FROM transactions WHERE id = \${txId}\`;
-    if (!txCompRaw) throw new Error(\`TX not found for compliance\`);
+    const [txCompRaw] = await sql`SELECT * FROM transactions WHERE id = ${txId}`;
+    if (!txCompRaw) throw new Error(`TX not found for compliance`);
     const txComp = txCompRaw as any;
-    const [txCompSender] = await sql\`SELECT * FROM banks WHERE id = \${txComp.sender_bank_id}\`;
-    const [txCompReceiver] = await sql\`SELECT * FROM banks WHERE id = \${txComp.receiver_bank_id}\`;
+    const [txCompSender] = await sql`SELECT * FROM banks WHERE id = ${txComp.sender_bank_id}`;
+    const [txCompReceiver] = await sql`SELECT * FROM banks WHERE id = ${txComp.receiver_bank_id}`;
     txComp.sender_bank = txCompSender || null;
     txComp.receiver_bank = txCompReceiver || null;
     console.log(`[${aid}] |  TX: status=${txComp.status}, amount=$${txComp.amount_display}, purpose=${JSON.stringify(txComp.purpose_code)}`);
@@ -3049,7 +3049,7 @@ async function runSettlementPipeline(bankId: string, msg: any): Promise<any> {
       const failedChecks = checks.filter((ch) => !ch.passed);
       const failedSummary = failedChecks.map((ch) => `${ch.type.replace(/_/g, ' ')}: ${ch.detail}`).join('; ');
       const passedCount = checks.filter((ch) => ch.passed).length;
-      const [bank] = await sql\`SELECT * FROM banks WHERE id = \${bankId}\`;
+      const [bank] = await sql`SELECT * FROM banks WHERE id = ${bankId}`;
       const rejectionReason = `Compliance failed (${passedCount}/${checks.length} passed): ${failedSummary}`;
       if (bank) await handleRejectPayment(bank, txId, rejectionReason, `${bank.short_code} agent rejected: ${failedSummary}`);
       return { reasoning: `Compliance failed. ${failedSummary}`, action: "reject_payment",
@@ -3060,11 +3060,11 @@ async function runSettlementPipeline(bankId: string, msg: any): Promise<any> {
 
     // Step 2: Risk Scoring (INLINE)
     console.log(`[${aid}] Step 2/4: Risk scoring`);
-    const [txRiskRaw] = await sql\`SELECT * FROM transactions WHERE id = \${txId}\`;
+    const [txRiskRaw] = await sql`SELECT * FROM transactions WHERE id = ${txId}`;
     if (!txRiskRaw) throw new Error("TX not found for risk scoring");
     const txRisk = txRiskRaw as any;
-    const [txRiskSender] = await sql\`SELECT * FROM banks WHERE id = \${txRisk.sender_bank_id}\`;
-    const [txRiskReceiver] = await sql\`SELECT * FROM banks WHERE id = \${txRisk.receiver_bank_id}\`;
+    const [txRiskSender] = await sql`SELECT * FROM banks WHERE id = ${txRisk.sender_bank_id}`;
+    const [txRiskReceiver] = await sql`SELECT * FROM banks WHERE id = ${txRisk.receiver_bank_id}`;
     txRisk.sender_bank = txRiskSender || null;
     txRisk.receiver_bank = txRiskReceiver || null;
 
@@ -3072,9 +3072,9 @@ async function runSettlementPipeline(bankId: string, msg: any): Promise<any> {
     const senderBankIdRisk = txRisk.sender_bank_id;
     const receiverBankIdRisk = txRisk.receiver_bank_id;
 
-    const corridorHistory = await sql\`SELECT id, amount_display, purpose_code, risk_level, risk_score, status, created_at, sender_bank_id, receiver_bank_id FROM transactions WHERE ((sender_bank_id = \${senderBankIdRisk} AND receiver_bank_id = \${receiverBankIdRisk}) OR (sender_bank_id = \${receiverBankIdRisk} AND receiver_bank_id = \${senderBankIdRisk})) AND id != \${txId} ORDER BY created_at DESC LIMIT 10\`;
+    const corridorHistory = await sql`SELECT id, amount_display, purpose_code, risk_level, risk_score, status, created_at, sender_bank_id, receiver_bank_id FROM transactions WHERE ((sender_bank_id = ${senderBankIdRisk} AND receiver_bank_id = ${receiverBankIdRisk}) OR (sender_bank_id = ${receiverBankIdRisk} AND receiver_bank_id = ${senderBankIdRisk})) AND id != ${txId} ORDER BY created_at DESC LIMIT 10`;
 
-    const senderRecentTxns = await sql\`SELECT id, amount_display, receiver_bank_id, purpose_code, status, created_at FROM transactions WHERE sender_bank_id = \${senderBankIdRisk} AND id != \${txId} ORDER BY created_at DESC LIMIT 10\`;
+    const senderRecentTxns = await sql`SELECT id, amount_display, receiver_bank_id, purpose_code, status, created_at FROM transactions WHERE sender_bank_id = ${senderBankIdRisk} AND id != ${txId} ORDER BY created_at DESC LIMIT 10`;
 
     const senderBankCodeR = (txRisk as any).sender_bank?.short_code || '?';
     const receiverBankCodeR = (txRisk as any).receiver_bank?.short_code || '?';
@@ -3218,11 +3218,11 @@ Based on your bank's policies, should you ACCEPT or REJECT this payment?`;
     // Step 4: Execute if accepted (INLINE)
     if (thinkResult.action === "accept_payment") {
       console.log(`[${aid}] Step 4/4: On-chain settlement`);
-      const [txExecRaw] = await sql\`SELECT * FROM transactions WHERE id = \${txId}\`;
+      const [txExecRaw] = await sql`SELECT * FROM transactions WHERE id = ${txId}`;
       if (!txExecRaw) throw new Error("TX not found for execution");
       const txExec = txExecRaw as any;
-      const [txExecSender] = await sql\`SELECT * FROM banks WHERE id = \${txExec.sender_bank_id}\`;
-      const [txExecReceiver] = await sql\`SELECT * FROM banks WHERE id = \${txExec.receiver_bank_id}\`;
+      const [txExecSender] = await sql`SELECT * FROM banks WHERE id = ${txExec.sender_bank_id}`;
+      const [txExecReceiver] = await sql`SELECT * FROM banks WHERE id = ${txExec.receiver_bank_id}`;
       txExec.sender_bank = txExecSender || null;
       txExec.receiver_bank = txExecReceiver || null;
       const senderBank = (txExec as any).sender_bank;
@@ -3710,7 +3710,7 @@ function generateMarketEvent(cycleNumber: number, banks: any[]): {
 async function captureNetworkSnapshot(): Promise<void> {
   try {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const recentTxns = await sql\`SELECT amount_display, amount, status, risk_score FROM transactions WHERE created_at >= \${fiveMinAgo}\`;
+    const recentTxns = await sql`SELECT amount_display, amount, status, risk_score FROM transactions WHERE created_at >= ${fiveMinAgo}`;
 
     const txns = recentTxns || [];
     const count = txns.length;
@@ -3886,11 +3886,14 @@ app.post("/make-server-49d15288/seed-mandates", async (c) => {
 
         try {
           for (const row of rows) {
-            await sql\`INSERT INTO treasury_mandates \${sql(row, ...Object.keys(row))}\`;
+            await sql`INSERT INTO treasury_mandates ${sql(row, ...Object.keys(row))}`;
           }
           console.log(`[seed-mandates] ${code}: seeded ${rows.length} mandates`);
           totalMandates += rows.length;
           results.push({ bank: code, status: 'seeded', mandates_seeded: rows.length });
+        } catch (insertErr) {
+          console.log(`[seed-mandates] ${code}: insert failed — ${(insertErr as Error).message}`);
+          results.push({ bank: code, status: `insert_error: ${(insertErr as Error).message}`, mandates_seeded: 0 });
         }
       } catch (bankErr) {
         console.log(`[seed-mandates] ${code}: generation failed — ${(bankErr as Error).message}`);
@@ -3920,17 +3923,17 @@ async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
   console.log(`[treasury-cycle] CYCLE ${cycleNumber} START`);
 
   // Load banks first so we can generate market event before inserting cycle record
-  const banksRaw = await sql\`SELECT * FROM banks WHERE status = 'active'\`;
+  const banksRaw = await sql`SELECT * FROM banks WHERE status = 'active'`;
   if (!banksRaw || banksRaw.length === 0) {
-    throw new Error(\`No active banks: none found\`);
+    throw new Error(`No active banks: none found`);
   }
   const banks = [] as any[];
   for (const b of banksRaw) {
-    const walletRows = await sql\`SELECT balance_tokens, balance_lamports, token_account_address, solana_pubkey FROM wallets WHERE bank_id = \${b.id}\`;
+    const walletRows = await sql`SELECT balance_tokens, balance_lamports, token_account_address, solana_pubkey FROM wallets WHERE bank_id = ${b.id}`;
     if (walletRows.length > 0) banks.push({ ...b, wallets: walletRows });
   }
   if (banks.length === 0) {
-    throw new Error(\`No active banks with wallets found\`);
+    throw new Error(`No active banks with wallets found`);
   }
 
   // Generate market event BEFORE inserting cycle (market_event column is NOT NULL)
@@ -3939,9 +3942,9 @@ async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
 
   const cycleId = crypto.randomUUID();
   try {
-    await sql\`INSERT INTO heartbeat_cycles (id, cycle_number, status, banks_evaluated, transactions_initiated, market_event, started_at) VALUES (\${cycleId}, \${cycleNumber}, ${'running'}, \${0}, \${0}, \${JSON.stringify(marketEvent)}, \${new Date().toISOString()})\`;
+    await sql`INSERT INTO heartbeat_cycles (id, cycle_number, status, banks_evaluated, transactions_initiated, market_event, started_at) VALUES (${cycleId}, ${cycleNumber}, ${'running'}, ${0}, ${0}, ${JSON.stringify(marketEvent)}, ${new Date().toISOString()})`;
   } catch (cycleErr) {
-    throw new Error(\`Failed to create cycle: \${(cycleErr as Error).message}\`);
+    throw new Error(`Failed to create cycle: ${(cycleErr as Error).message}`);
   }
 
   let totalBanksEvaluated = 0;
@@ -3972,7 +3975,7 @@ async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
         continue;
       }
 
-      const mandates = await sql\`SELECT * FROM treasury_mandates WHERE bank_id = \${bank.id} AND is_active = \${true} ORDER BY priority ASC\`;
+      const mandates = await sql`SELECT * FROM treasury_mandates WHERE bank_id = ${bank.id} AND is_active = ${true} ORDER BY priority ASC`;
 
       if (!mandates || mandates.length === 0) {
         bankResults.push({ bank: code, action: "no_mandates" });
@@ -3984,12 +3987,12 @@ async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
       const initialSupply: number = bank.initial_deposit_supply || 10_000_000;
       const deployedPct = initialSupply > 0 ? Math.max(0, ((initialSupply - currentBalance) / initialSupply) * 100) : 0;
 
-      const recentTxns = await sql\`SELECT * FROM transactions WHERE (sender_bank_id = \${bank.id} OR receiver_bank_id = \${bank.id}) ORDER BY created_at DESC LIMIT 10\`;
+      const recentTxns = await sql`SELECT * FROM transactions WHERE (sender_bank_id = ${bank.id} OR receiver_bank_id = ${bank.id}) ORDER BY created_at DESC LIMIT 10`;
 
-      const otherBanksRaw = await sql\`SELECT * FROM banks WHERE id != \${bank.id} AND status = 'active'\`;
+      const otherBanksRaw = await sql`SELECT * FROM banks WHERE id != ${bank.id} AND status = 'active'`;
       const otherBanks = [] as any[];
       for (const ob of otherBanksRaw) {
-        const obWallets = await sql\`SELECT balance_tokens, balance_lamports FROM wallets WHERE bank_id = \${ob.id}\`;
+        const obWallets = await sql`SELECT balance_tokens, balance_lamports FROM wallets WHERE bank_id = ${ob.id}`;
         otherBanks.push({ ...ob, wallets: obWallets });
       }
 
@@ -4024,7 +4027,7 @@ async function coreTreasuryCycle(cycleNumber: number): Promise<any> {
   }
 
   const completedAt = new Date().toISOString();
-  await sql\`UPDATE heartbeat_cycles SET status = 'completed', banks_evaluated = \${totalBanksEvaluated}, transactions_initiated = \${totalTransactions}, market_event = \${JSON.stringify(marketEvent)}, completed_at = \${completedAt} WHERE id = \${cycleId}\`;
+  await sql`UPDATE heartbeat_cycles SET status = 'completed', banks_evaluated = ${totalBanksEvaluated}, transactions_initiated = ${totalTransactions}, market_event = ${JSON.stringify(marketEvent)}, completed_at = ${completedAt} WHERE id = ${cycleId}`;
 
   await captureNetworkSnapshot();
 
@@ -4085,11 +4088,11 @@ app.post("/make-server-49d15288/network-heartbeat", async (c) => {
     const { action } = body;
 
     if (action === "status") {
-      const [lastCycle] = await sql\`SELECT * FROM heartbeat_cycles ORDER BY cycle_number DESC LIMIT 1\`;
+      const [lastCycle] = await sql`SELECT * FROM heartbeat_cycles ORDER BY cycle_number DESC LIMIT 1`;
 
-      const [{ count: bankCount }] = await sql\`SELECT count(*)::int AS count FROM banks WHERE status = 'active'\`;
+      const [{ count: bankCount }] = await sql`SELECT count(*)::int AS count FROM banks WHERE status = 'active'`;
 
-      const [{ count: mandateCount }] = await sql\`SELECT count(*)::int AS count FROM treasury_mandates WHERE is_active = \${true}\`;
+      const [{ count: mandateCount }] = await sql`SELECT count(*)::int AS count FROM treasury_mandates WHERE is_active = ${true}`;
 
       return c.json({
         last_cycle: lastCycle || null,
@@ -4100,7 +4103,7 @@ app.post("/make-server-49d15288/network-heartbeat", async (c) => {
     }
 
     if (action === "next_cycle") {
-      const [lastCycle] = await sql\`SELECT cycle_number FROM heartbeat_cycles ORDER BY cycle_number DESC LIMIT 1\`;
+      const [lastCycle] = await sql`SELECT cycle_number FROM heartbeat_cycles ORDER BY cycle_number DESC LIMIT 1`;
 
       const nextCycleNumber = (lastCycle?.cycle_number || 0) + 1;
       console.log(`[network-heartbeat] Triggering cycle ${nextCycleNumber}`);
@@ -4112,8 +4115,8 @@ app.post("/make-server-49d15288/network-heartbeat", async (c) => {
 
     if (action === "reset_cycles") {
       console.log("[network-heartbeat] Resetting cycles and snapshots...");
-      await sql\`DELETE FROM network_snapshots WHERE id != '00000000-0000-0000-0000-000000000000'\`;
-      await sql\`DELETE FROM heartbeat_cycles WHERE id != '00000000-0000-0000-0000-000000000000'\`;
+      await sql`DELETE FROM network_snapshots WHERE id != '00000000-0000-0000-0000-000000000000'`;
+      await sql`DELETE FROM heartbeat_cycles WHERE id != '00000000-0000-0000-0000-000000000000'`;
       console.log("[network-heartbeat] Reset complete");
       return c.json({ status: "reset_complete", timestamp: new Date().toISOString() });
     }
@@ -4135,11 +4138,11 @@ app.post("/make-server-49d15288/network-metrics", async (c) => {
     const twentyFourHAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
 
     // TPS: transactions in last 5 min / 300
-    const recentTxns5m = await sql\`SELECT id FROM transactions WHERE created_at >= \${fiveMinAgo}\`;
+    const recentTxns5m = await sql`SELECT id FROM transactions WHERE created_at >= ${fiveMinAgo}`;
     const tps = (recentTxns5m?.length || 0) / 300;
 
     // 24h transaction aggregates
-    const txns24h = await sql\`SELECT amount_display, amount, status, risk_score, risk_level, sender_bank_id, receiver_bank_id, purpose_code FROM transactions WHERE created_at >= \${twentyFourHAgo}\`;
+    const txns24h = await sql`SELECT amount_display, amount, status, risk_score, risk_level, sender_bank_id, receiver_bank_id, purpose_code FROM transactions WHERE created_at >= ${twentyFourHAgo}`;
     const allTxns = txns24h || [];
     const settled = allTxns.filter((t: any) => t.status === 'settled');
     const rejected = allTxns.filter((t: any) => t.status === 'rejected');
@@ -4151,10 +4154,10 @@ app.post("/make-server-49d15288/network-metrics", async (c) => {
     const avgRiskScore = riskScores24h.length > 0 ? riskScores24h.reduce((a: number, b: number) => a + b, 0) / riskScores24h.length : 0;
 
     // Corridor breakdown — build from banks
-    const allBanksRaw = await sql\`SELECT id, short_code, name, status FROM banks\`;
+    const allBanksRaw = await sql`SELECT id, short_code, name, status FROM banks`;
     const allBanks = [] as any[];
     for (const ab of allBanksRaw) {
-      const abWallets = await sql\`SELECT balance_tokens, balance_lamports FROM wallets WHERE bank_id = \${ab.id}\`;
+      const abWallets = await sql`SELECT balance_tokens, balance_lamports FROM wallets WHERE bank_id = ${ab.id}`;
       allBanks.push({ ...ab, wallets: abWallets });
     }
     const bankMap: Record<string, string> = {};
@@ -4193,10 +4196,10 @@ app.post("/make-server-49d15288/network-metrics", async (c) => {
     });
 
     // Recent cycles
-    const recentCycles = await sql\`SELECT * FROM heartbeat_cycles ORDER BY cycle_number DESC LIMIT 5\`;
+    const recentCycles = await sql`SELECT * FROM heartbeat_cycles ORDER BY cycle_number DESC LIMIT 5`;
 
     // Anomalies: locked txns or risk_score > 60
-    const anomalies = await sql\`SELECT id, amount_display, amount, status, risk_score, risk_level, purpose_code, sender_bank_id, receiver_bank_id, created_at FROM transactions WHERE status = 'locked' OR risk_score > 60 ORDER BY created_at DESC LIMIT 20\`;
+    const anomalies = await sql`SELECT id, amount_display, amount, status, risk_score, risk_level, purpose_code, sender_bank_id, receiver_bank_id, created_at FROM transactions WHERE status = 'locked' OR risk_score > 60 ORDER BY created_at DESC LIMIT 20`;
 
     return c.json({
       tps: Math.round(tps * 1000) / 1000,
@@ -4235,13 +4238,13 @@ app.post("/make-server-49d15288/retry-transaction", async (c) => {
     }
 
     // Load transaction
-    const [txRaw] = await sql\`SELECT * FROM transactions WHERE id = \${transaction_id}\`;
+    const [txRaw] = await sql`SELECT * FROM transactions WHERE id = ${transaction_id}`;
     if (!txRaw) {
-      return c.json({ error: \`Transaction not found\` }, 404);
+      return c.json({ error: `Transaction not found` }, 404);
     }
     const tx = txRaw as any;
-    const [txSender] = await sql\`SELECT id, short_code FROM banks WHERE id = \${tx.sender_bank_id}\`;
-    const [txReceiver] = await sql\`SELECT id, short_code, status FROM banks WHERE id = \${tx.receiver_bank_id}\`;
+    const [txSender] = await sql`SELECT id, short_code FROM banks WHERE id = ${tx.sender_bank_id}`;
+    const [txReceiver] = await sql`SELECT id, short_code, status FROM banks WHERE id = ${tx.receiver_bank_id}`;
     tx.sender_bank = txSender || null;
     tx.receiver_bank = txReceiver || null;
 
@@ -4261,7 +4264,7 @@ app.post("/make-server-49d15288/retry-transaction", async (c) => {
     console.log(`[retry-transaction] Retrying tx ${transaction_id.slice(0, 8)} — current status: ${tx.status}`);
 
     // Find the payment_request message for this transaction
-    const msgs = await sql\`SELECT * FROM agent_messages WHERE transaction_id = \${transaction_id} AND message_type = 'payment_request' ORDER BY created_at DESC LIMIT 1\`;
+    const msgs = await sql`SELECT * FROM agent_messages WHERE transaction_id = ${transaction_id} AND message_type = 'payment_request' ORDER BY created_at DESC LIMIT 1`;
 
     if (!msgs || msgs.length === 0) {
       return c.json({ error: "No payment_request message found for this transaction" }, 404);
@@ -4270,14 +4273,14 @@ app.post("/make-server-49d15288/retry-transaction", async (c) => {
     const msg = msgs[0];
 
     // Reset transaction to initiated so the orchestrator can re-run all steps
-    await sql\`UPDATE transactions SET status = 'initiated', compliance_passed = \${null}, compliance_checks = \${null}, compliance_completed_at = \${null}, risk_level = \${null}, risk_score = \${null}, risk_reasoning = \${null}, risk_scored_at = \${null}, solana_tx_signature = \${null}, solana_slot = \${null}, solana_block_time = \${null}, settled_at = \${null}, lockup_until = \${null} WHERE id = \${transaction_id}\`;
+    await sql`UPDATE transactions SET status = 'initiated', compliance_passed = ${null}, compliance_checks = ${null}, compliance_completed_at = ${null}, risk_level = ${null}, risk_score = ${null}, risk_reasoning = ${null}, risk_scored_at = ${null}, solana_tx_signature = ${null}, solana_slot = ${null}, solana_block_time = ${null}, settled_at = ${null}, lockup_until = ${null} WHERE id = ${transaction_id}`;
 
     // Reset the message to unprocessed
-    await sql\`UPDATE agent_messages SET processed = \${false}, processed_at = \${null} WHERE id = \${msg.id}\`;
+    await sql`UPDATE agent_messages SET processed = ${false}, processed_at = ${null} WHERE id = ${msg.id}`;
 
     // Clean up any existing compliance logs & risk scores from prior partial run
-    await sql\`DELETE FROM compliance_logs WHERE transaction_id = \${transaction_id}\`;
-    await sql\`DELETE FROM risk_scores WHERE transaction_id = \${transaction_id}\`;
+    await sql`DELETE FROM compliance_logs WHERE transaction_id = ${transaction_id}`;
+    await sql`DELETE FROM risk_scores WHERE transaction_id = ${transaction_id}`;
 
     console.log(`[retry-transaction] Reset tx ${transaction_id.slice(0, 8)} to initiated — calling coreOrchestrate directly`);
 
@@ -4310,10 +4313,10 @@ app.post("/make-server-49d15288/expire-transaction", async (c) => {
     }
 
     // Load transaction
-    const [tx] = await sql\`SELECT status FROM transactions WHERE id = \${transaction_id}\`;
+    const [tx] = await sql`SELECT status FROM transactions WHERE id = ${transaction_id}`;
 
     if (!tx) {
-      return c.json({ error: \`Transaction not found\` }, 404);
+      return c.json({ error: `Transaction not found` }, 404);
     }
 
     // Guard: already terminal
@@ -4326,10 +4329,10 @@ app.post("/make-server-49d15288/expire-transaction", async (c) => {
     const now = new Date().toISOString();
 
     // Mark as rejected with expiry reason
-    await sql\`UPDATE transactions SET status = 'rejected', risk_reasoning = \${\`Expired: orphaned transaction was stuck in '\${tx.status}' status and manually expired at \${now}\`} WHERE id = \${transaction_id}\`;
+    await sql`UPDATE transactions SET status = 'rejected', risk_reasoning = ${`Expired: orphaned transaction was stuck in '${tx.status}' status and manually expired at ${now}`} WHERE id = ${transaction_id}`;
 
     // Mark any unprocessed messages for this tx as processed
-    await sql\`UPDATE agent_messages SET processed = \${true}, processed_at = \${now} WHERE transaction_id = \${transaction_id} AND processed = \${false}\`;
+    await sql`UPDATE agent_messages SET processed = ${true}, processed_at = ${now} WHERE transaction_id = ${transaction_id} AND processed = ${false}`;
 
     console.log(`[expire-transaction] Tx ${transaction_id.slice(0, 8)} expired (rejected)`);
 
@@ -4405,6 +4408,10 @@ app.post("/make-server-49d15288/reset-tokens", async (c) => {
       await sql`UPDATE wallets SET token_account_address = ${null}, balance_tokens = ${0} WHERE id != '00000000-0000-0000-0000-000000000000'`;
       console.log("[reset-tokens] Cleared token data from wallets (kept keypairs + SOL)");
       results["wallets"] = { success: true, detail: "token_columns_cleared" };
+    } catch (err) {
+      console.log(`[reset-tokens] Error clearing wallets: ${(err as Error).message}`);
+      results["wallets"] = { success: false, error: (err as Error).message };
+    }
 
     // Step 3: Reset banks to 'onboarding' status, clear token columns
     // Note: token_decimals kept at TOKEN_DECIMALS (not null) to avoid NOT NULL constraint violations
@@ -4415,6 +4422,10 @@ app.post("/make-server-49d15288/reset-tokens", async (c) => {
       await sql`UPDATE banks SET token_mint_address = ${null}, token_symbol = ${null}, token_decimals = ${TOKEN_DECIMALS}, status = 'onboarding', updated_at = ${new Date().toISOString()} WHERE id != '00000000-0000-0000-0000-000000000000'`;
       console.log(`[reset-tokens] Reset ${bankCount} banks to 'onboarding' (kept keypairs)`);
       results["banks"] = { success: true, detail: `${bankCount} banks reset to onboarding` };
+    } catch (err) {
+      console.log(`[reset-tokens] Error resetting banks: ${(err as Error).message}`);
+      results["banks"] = { success: false, error: (err as Error).message };
+    }
 
     // Log preserved wallet addresses
     if (banksBeforeReset) {
