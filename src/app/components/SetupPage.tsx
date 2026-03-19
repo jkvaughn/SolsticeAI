@@ -213,37 +213,8 @@ export function SetupPage() {
     invalidateInfra();
   }
 
-  // ── Network mode (Devnet / Production) ──
-  const [networkMode, setNetworkMode] = useState<'devnet' | 'production'>('devnet');
-  const [networkModeLoading, setNetworkModeLoading] = useState(true);
-  const [networkModeSaving, setNetworkModeSaving] = useState(false);
-
-  // Fetch network mode on mount
-  useEffect(() => {
-    callServer<{ mode: string }>('/network-mode', { action: 'get' })
-      .then((res) => {
-        setNetworkMode((res.mode === 'production' ? 'production' : 'devnet'));
-        setNetworkModeLoading(false);
-      })
-      .catch((err: any) => {
-        console.warn('[network-mode] Failed to fetch:', err);
-        setNetworkModeLoading(false);
-      });
-  }, []);
-
-  async function toggleNetworkMode() {
-    const newMode = networkMode === 'devnet' ? 'production' : 'devnet';
-    setNetworkModeSaving(true);
-    try {
-      await callServer<{ mode: string }>('/network-mode', { action: 'set', mode: newMode });
-      setNetworkMode(newMode);
-      console.log(`[network-mode] Switched to ${newMode}`);
-    } catch (err: any) {
-      console.error('[network-mode] Failed to set:', err);
-    } finally {
-      setNetworkModeSaving(false);
-    }
-  }
+  // Network mode derived from build-time env var (no toggle, no server call)
+  const networkMode = isProductionCluster ? 'production' : 'devnet';
 
   // ── Fetch live SOL balances from Solana Devnet RPC ──
   const fetchSolBalances = useCallback(async (bankList: { solana_wallet_pubkey?: string | null }[]) => {
@@ -654,74 +625,42 @@ export function SetupPage() {
             <Shield className="w-3.5 h-3.5 text-coda-text-muted" />
             <h2 className="text-sm font-medium dashboard-text">Network Environment</h2>
           </div>
-          {networkModeLoading ? (
-            <Loader2 className="w-3 h-3 text-coda-text-muted animate-spin" />
-          ) : (
-            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono font-medium ${
-              networkMode === 'devnet'
-                ? 'bg-coda-brand/15 text-coda-brand border border-coda-brand/20'
-                : 'bg-black/[0.06] dark:bg-white/[0.08] text-coda-text-secondary border border-black/[0.08] dark:border-white/[0.10]'
-            }`}>
-              {networkMode === 'devnet' ? (
-                <><FlaskConical className="w-3 h-3" />Devnet Mode</>
-              ) : (
-                <><Building2 className="w-3 h-3" />Solstice Network</>
-              )}
-            </span>
-          )}
+          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono font-medium ${
+            networkMode === 'devnet'
+              ? 'bg-coda-brand/15 text-coda-brand border border-coda-brand/20'
+              : 'bg-black/[0.06] dark:bg-white/[0.08] text-coda-text-secondary border border-black/[0.08] dark:border-white/[0.10]'
+          }`}>
+            {networkMode === 'devnet' ? (
+              <><FlaskConical className="w-3 h-3" />Devnet Mode</>
+            ) : (
+              <><Building2 className="w-3 h-3" />Solstice Network</>
+            )}
+          </span>
         </div>
         <div className="px-4 py-3">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex-1 min-w-0">
-              {networkMode === 'devnet' ? (
-                <>
-                  <p className="text-xs text-coda-text-secondary leading-relaxed">
-                    AI agents are aware this is a <span className="text-coda-brand font-medium">controlled demo environment</span> on
-                    Solana Devnet. Token-2022 settlements are treated as the intended infrastructure &mdash;
-                    Devnet will <span className="text-coda-text font-medium">not</span> be flagged as an operational risk in risk assessments.
-                  </p>
-                  <p className="text-[11px] text-coda-text-muted mt-1.5">
-                    Agents evaluate transactions purely on financial merit: counterparty reputation, jurisdiction, amount, and purpose codes.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-xs text-coda-text-secondary leading-relaxed">
-                    AI agents operate in <span className="text-coda-text font-medium">production assessment mode</span> on
-                    the <span className="text-coda-brand font-medium">Solstice Network</span>.
-                    Token-2022 settlements execute on the production SPE with full institutional-grade infrastructure.
-                  </p>
-                  <p className="text-[11px] text-coda-text-muted mt-1.5">
-                    Agents evaluate transactions on financial merit with production-grade risk assessment.
-                  </p>
-                </>
-              )}
-            </div>
-            <button
-              onClick={toggleNetworkMode}
-              disabled={networkModeSaving || networkModeLoading}
-              className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
-                networkMode === 'devnet'
-                  ? 'bg-coda-brand'
-                  : 'bg-neutral-800 dark:bg-neutral-300'
-              }`}
-              title={`Switch to ${networkMode === 'devnet' ? 'Production' : 'Devnet'} mode`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                  networkMode === 'production' ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-              {networkModeSaving && (
-                <Loader2 className="absolute inset-0 m-auto w-3 h-3 text-white/70 animate-spin" />
-              )}
-            </button>
-          </div>
-          <div className="mt-2.5 flex items-center gap-4 text-[10px] font-mono text-coda-text-muted">
-            <span className={networkMode === 'devnet' ? 'text-coda-brand/70' : ''}>Devnet</span>
-            <span className="text-coda-text-muted">/</span>
-            <span className={networkMode === 'production' ? 'text-coda-text-secondary' : ''}>Production</span>
-          </div>
+          {networkMode === 'devnet' ? (
+            <>
+              <p className="text-xs text-coda-text-secondary leading-relaxed">
+                AI agents are aware this is a <span className="text-coda-brand font-medium">controlled demo environment</span> on
+                Solana Devnet. Token-2022 settlements are treated as the intended infrastructure &mdash;
+                Devnet will <span className="text-coda-text font-medium">not</span> be flagged as an operational risk in risk assessments.
+              </p>
+              <p className="text-[11px] text-coda-text-muted mt-1.5">
+                Agents evaluate transactions purely on financial merit: counterparty reputation, jurisdiction, amount, and purpose codes.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-coda-text-secondary leading-relaxed">
+                AI agents operate in <span className="text-coda-text font-medium">production assessment mode</span> on
+                the <span className="text-coda-brand font-medium">Solstice Network</span>.
+                Token-2022 settlements execute on the production SPE with full institutional-grade infrastructure.
+              </p>
+              <p className="text-[11px] text-coda-text-muted mt-1.5">
+                Agents evaluate transactions on financial merit with production-grade risk assessment.
+              </p>
+            </>
+          )}
         </div>
       </div>
 
