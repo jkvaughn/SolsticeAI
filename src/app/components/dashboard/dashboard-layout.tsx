@@ -220,8 +220,8 @@ export function DashboardLayout({
   };
 
   // User initials
-  const userInitial = (user?.user_metadata?.name || user?.email || '?')[0].toUpperCase();
-  const userName = user?.user_metadata?.name || 'User';
+  const userInitial = (user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '?')[0].toUpperCase();
+  const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'User';
   const userEmail = user?.email || '';
 
   return (

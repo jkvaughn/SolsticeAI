@@ -147,7 +147,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       }
       const supabaseUser = session?.user ?? null;
       setState({
-        user: supabaseUser ? { id: supabaseUser.id, email: supabaseUser.email ?? '', name: supabaseUser.user_metadata?.name } : null,
+        user: supabaseUser ? { id: supabaseUser.id, email: supabaseUser.email ?? '', name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name } : null,
         supabaseUser,
         session: session ?? null,
         loading: false,
@@ -160,7 +160,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         const supabaseUser = session?.user ?? null;
         setState(prev => ({
           ...prev,
-          user: supabaseUser ? { id: supabaseUser.id, email: supabaseUser.email ?? '', name: supabaseUser.user_metadata?.name } : null,
+          user: supabaseUser ? { id: supabaseUser.id, email: supabaseUser.email ?? '', name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name } : null,
           supabaseUser,
           session: session ?? null,
           loading: false,

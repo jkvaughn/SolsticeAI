@@ -657,7 +657,7 @@ function ProcessingStepLabel({ steps, color }: { steps: string[]; color: 'emeral
 
 export function EscalationDashboard() {
   const { user } = useAuth();
-  const operatorName = user?.user_metadata?.name || user?.email || 'Operator';
+  const operatorName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'Operator';
 
   const [escalations, setEscalations] = useState<EscalationItem[]>([]);
   const [totalMonitored, setTotalMonitored] = useState(0);
