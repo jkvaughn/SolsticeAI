@@ -6,6 +6,30 @@
 
 ---
 
+## Task 142: Solstice Network Production Integration
+
+---TASK_COMPLETE---
+Step: Task 142 — Solstice Network Production Integration
+Timestamp: 2026-03-19T19:00:00Z
+Status: DONE
+
+### Summary:
+Made frontend environment-aware for Solstice Network production deployment. Hide Devnet faucet on production, show "Solstice Network" branding instead of "Production", auto-start network simulation with live data when `VITE_USE_LIVE_NETWORK_DATA=true`. Added "Active Connection" panel to Settings page showing Cluster, Network, Auth Provider, Explorer URL, Realtime mode, Live Data, and Environment.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `LoginPage.tsx` | Environment-aware footer: "Solstice Network" vs "Solana Devnet" |
+| `SetupPage.tsx` | Hide faucet on production, Solstice CLI funding instructions, SNT branding |
+| `SettingsPage.tsx` | "Solstice Network" label, Globe icon for Production, reactive Active Connection panel |
+| `NetworkInfrastructureWidget.tsx` | "Solstice Network" label on production |
+| `useNetworkSimulation.ts` | Auto-start simulation when VITE_USE_LIVE_NETWORK_DATA=true |
+| `.env.production` | Added VITE_USE_LIVE_NETWORK_DATA=true |
+
+---END_TASK---
+
+---
+
 ## Task 40: Phase 6 Session 5 — Skeleton loaders + lazy-loaded routes for performance
 
 ---TASK_COMPLETE---
