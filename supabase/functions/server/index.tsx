@@ -76,6 +76,7 @@ const app = new Hono();
 // unknown banks.
 // ────────────────────────────────────────────────────────────
 const SWIFT_BIC_REGISTRY: Record<string, string> = {
+  // Real institutions (staging)
   JPM:  "CHASUS33",   // JPMorgan Chase, New York
   CITI: "CITIUS33",   // Citibank N.A., New York
   BAC:  "BOFAUS3N",   // Bank of America, Charlotte
@@ -86,8 +87,14 @@ const SWIFT_BIC_REGISTRY: Record<string, string> = {
   PNC:  "PNCCUS33",   // PNC Financial, Pittsburgh
   TD:   "TDOMCATT",   // TD Bank, Toronto
   HSBC: "MRMDUS33",   // HSBC USA, New York
-  FNBT: "FNBTUS44",   // First National Bank of Texas (demo)
+  FNBT: "FNBTUS44",   // First National Bank of Texas (staging demo)
   UBS:  "UBSWCHZH",   // UBS Group AG, Zurich
+  BNY:  "IRVTUS3N",   // BNY Mellon (staging custodian)
+  // Test institutions (production)
+  TBA:  "TBANUS01",   // Test Bank Alpha
+  TBB:  "TBBNUS02",   // Test Bank Bravo
+  TBC:  "TBCNUS03",   // Test Bank Charlie
+  TBD:  "TBDNUS04",   // Test Bank Delta (production custodian)
 };
 
 /** Resolve SWIFT/BIC: bank record → registry → short_code fallback */
@@ -894,26 +901,30 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
 });
 
 // ============================================================
-// 1b. SETUP-CUSTODIAN �� BNY custodian + Solstice fees wallet
-//     Links BNY custodian to existing BNY bank wallet from banks table.
-//     Generates new Solana Devnet keypair for Solstice fees wallet only.
+// 1b. SETUP-CUSTODIAN — Universal custodian + Solstice fees wallet
+//     Links custodian bank to its existing wallet from banks table.
+//     Accepts `custodian_code` param (defaults to BNY for staging, TBD for prod).
+//     Generates new Solana keypair for Solstice fees wallet only.
 //     Idempotent — returns existing data if already created.
 // ============================================================
 app.post("/make-server-49d15288/setup-custodian", async (c) => {
   try {
-    console.log("[setup-custodian] ▶ Setting up BNY custodian + Solstice fees wallet");
+    const body = await c.req.json().catch(() => ({}));
+    const custodianCode = (body.custodian_code || "BNY").toUpperCase();
+    console.log(`[setup-custodian] ▶ Setting up ${custodianCode} custodian + Solstice fees wallet`);
 
-    // Check if already set up
-    const existingCustodianRaw = await kv.get("infra:custodian:BNY");
+    // Check if already set up (use custodian code as KV key)
+    const custodianKvKey = `infra:custodian:${custodianCode}`;
+    const existingCustodianRaw = await kv.get(custodianKvKey);
     const existingFees = await kv.get("infra:network_wallet:SOLSTICE_FEES");
 
     // If custodian exists but was created with a standalone keypair (no linked_bank_id),
-    // treat it as stale and re-link to the actual BNY bank wallet.
+    // treat it as stale and re-link to the actual bank wallet.
     let existingCustodian = existingCustodianRaw;
     if (existingCustodianRaw) {
       const parsed = JSON.parse(existingCustodianRaw as string);
       if (!parsed.linked_bank_id) {
-        console.log(`[setup-custodian] Stale custodian record (no linked_bank_id) — will re-link to BNY bank`);
+        console.log(`[setup-custodian] Stale custodian record (no linked_bank_id) — will re-link to ${custodianCode} bank`);
         existingCustodian = null; // Force re-creation with bank link
       }
     }
@@ -940,34 +951,34 @@ app.post("/make-server-49d15288/setup-custodian", async (c) => {
       });
     }
 
-    // ── BNY Custodian: link to existing BNY bank from banks table ──
+    // ── Custodian: link to existing bank from banks table ──
     if (!existingCustodian) {
-      let bnyBank: any = null;
-      let bnyErr: any = null;
-      try { [bnyBank] = await sql`SELECT id, name, short_code, solana_wallet_pubkey, solana_wallet_keypair_encrypted, status, created_at FROM banks WHERE short_code = ${"BNY"}` } catch (e) { bnyErr = e; }
+      let custBank: any = null;
+      let custErr: any = null;
+      try { [custBank] = await sql`SELECT id, name, short_code, solana_wallet_pubkey, solana_wallet_keypair_encrypted, status, created_at FROM banks WHERE short_code = ${custodianCode}` } catch (e) { custErr = e; }
 
-      if (bnyErr) {
-        console.log(`[setup-custodian] ✗ Error querying banks table for BNY: ${bnyErr.message}`);
-        return c.json({ error: `Failed to find BNY bank: ${bnyErr.message}` }, 500);
+      if (custErr) {
+        console.log(`[setup-custodian] ✗ Error querying banks table for ${custodianCode}: ${custErr.message}`);
+        return c.json({ error: `Failed to find ${custodianCode} bank: ${custErr.message}` }, 500);
       }
 
-      if (!bnyBank || !bnyBank.solana_wallet_pubkey) {
-        console.log(`[setup-custodian] ✗ BNY bank not found or has no wallet. Please create BNY bank first.`);
-        return c.json({ error: "BNY bank not found in network. Please create 'The Bank of New York Mellon Corporation' (BNY) first via Bank Setup." }, 400);
+      if (!custBank || !custBank.solana_wallet_pubkey) {
+        console.log(`[setup-custodian] ✗ ${custodianCode} bank not found or has no wallet. Please create the custodian bank first.`);
+        return c.json({ error: `Custodian bank '${custodianCode}' not found in network. Please create it via Bank Setup first.` }, 400);
       }
 
-      const bnyRecord = {
-        id: bnyBank.id,
-        name: "BNY Mellon",
-        code: "BNY",
-        wallet_address: bnyBank.solana_wallet_pubkey,
-        keypair_encrypted: bnyBank.solana_wallet_keypair_encrypted,
+      const custRecord = {
+        id: custBank.id,
+        name: custBank.name,
+        code: custodianCode,
+        wallet_address: custBank.solana_wallet_pubkey,
+        keypair_encrypted: custBank.solana_wallet_keypair_encrypted,
         role: "universal_custodian",
-        linked_bank_id: bnyBank.id,
-        created_at: bnyBank.created_at || new Date().toISOString(),
+        linked_bank_id: custBank.id,
+        created_at: custBank.created_at || new Date().toISOString(),
       };
-      await kv.set("infra:custodian:BNY", JSON.stringify(bnyRecord));
-      console.log(`[setup-custodian] ✓ BNY custodian linked to existing bank wallet: ${bnyBank.solana_wallet_pubkey}`);
+      await kv.set(custodianKvKey, JSON.stringify(custRecord));
+      console.log(`[setup-custodian] ✓ ${custodianCode} custodian linked to existing bank wallet: ${custBank.solana_wallet_pubkey}`);
     }
 
     // ── Solstice Network Fees: generate new wallet if not yet created ──

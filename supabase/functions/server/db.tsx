@@ -69,9 +69,13 @@ const sql: SqlTag = function (
     return { __fragment: true, text: `"${ident}"`, values: [] };
   }
 
-  // Helper mode: sql(rows, "col1", "col2") — returns a fragment for bulk insert
-  if (Array.isArray(stringsOrRows) && stringsOrRows.length > 0 && typeof stringsOrRows[0] === "object" && !("raw" in stringsOrRows)) {
-    const rows = stringsOrRows as Record<string, unknown>[];
+  // Helper mode: sql(record, "col1", "col2") or sql([records], "col1", "col2")
+  // — returns a fragment for INSERT. Accepts a single object or an array of objects.
+  if (
+    (Array.isArray(stringsOrRows) && stringsOrRows.length > 0 && typeof stringsOrRows[0] === "object" && !("raw" in stringsOrRows)) ||
+    (!Array.isArray(stringsOrRows) && typeof stringsOrRows === "object" && stringsOrRows !== null && !("raw" in stringsOrRows))
+  ) {
+    const rows = Array.isArray(stringsOrRows) ? stringsOrRows as Record<string, unknown>[] : [stringsOrRows as Record<string, unknown>];
     const columns = valuesOrCols as string[];
     if (rows.length === 0) return { __fragment: true, text: "VALUES ", values: [] };
 

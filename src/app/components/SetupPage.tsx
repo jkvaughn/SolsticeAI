@@ -30,8 +30,46 @@ import {
 const isProductionCluster = (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') === 'mainnet-beta';
 const gasToken = isProductionCluster ? 'SNT' : 'SOL';
 
-// Demo bank configurations — all 3 banks included (FNBT re-enabled)
-const DEMO_BANKS: SetupBankRequest[] = [
+// ── Test bank configurations (production vs staging) ──
+// Production uses generic test bank names to keep the DB clean for real onboarding.
+// Staging uses realistic names for demo/development purposes.
+
+const TEST_BANKS_PROD: SetupBankRequest[] = [
+  {
+    name: 'Test Bank Alpha',
+    short_code: 'TBA',
+    swift_bic: 'TBANUS01',
+    jurisdiction: 'US',
+    initial_deposit_supply: 10_000_000,
+    agent_system_prompt: "You are Test Bank Alpha's autonomous settlement agent on the CODA Solstice Network. As a Tier 1 test institution, you maintain strict compliance standards and prefer established counterparties. You process high-volume wholesale settlements daily. Your risk tolerance is moderate — you accept most well-documented interbank transfers but flag anything unusual. Always verify purpose codes and memos before accepting.",
+  },
+  {
+    name: 'Test Bank Bravo',
+    short_code: 'TBB',
+    swift_bic: 'TBBNUS02',
+    jurisdiction: 'US',
+    initial_deposit_supply: 10_000_000,
+    agent_system_prompt: "You are Test Bank Bravo's autonomous settlement agent on the CODA Solstice Network. As a global transaction banking test institution, you handle high-volume cross-border and domestic wholesale settlements. You are efficient and approval-oriented for known counterparties in good standing. You prioritize speed while maintaining compliance. Always confirm receipt and settlement promptly.",
+  },
+  {
+    name: 'Test Bank Charlie',
+    short_code: 'TBC',
+    swift_bic: 'TBCNUS03',
+    jurisdiction: 'US',
+    initial_deposit_supply: 5_000_000,
+    agent_system_prompt: "You are Test Bank Charlie's autonomous settlement agent on the CODA Solstice Network. As a community-sized test institution, you are thorough and conservative in your approach. You carefully review all incoming settlement requests, especially from larger institutions. You value transparency and always provide detailed reasoning for your decisions. Your compliance standards are high relative to your size.",
+  },
+  {
+    name: 'Test Bank Delta',
+    short_code: 'TBD',
+    swift_bic: 'TBDNUS04',
+    jurisdiction: 'US',
+    initial_deposit_supply: 10_000_000,
+    agent_system_prompt: "You are Test Bank Delta's autonomous settlement agent on the CODA Solstice Network. As the universal custodian test institution, you oversee cross-bank settlement custody and manage the three-token lockup flow. You ensure all custodial operations follow strict compliance and settlement finality requirements.",
+  },
+];
+
+const TEST_BANKS_STAGING: SetupBankRequest[] = [
   {
     name: 'JPMorgan Chase',
     short_code: 'JPM',
@@ -56,7 +94,17 @@ const DEMO_BANKS: SetupBankRequest[] = [
     initial_deposit_supply: 5_000_000,
     agent_system_prompt: "You are First National Bank of Texas's autonomous settlement agent on the CODA Solstice Network. As a community bank and IBAT member, you are thorough and conservative in your approach. You carefully review all incoming settlement requests, especially from larger institutions. You value transparency and always provide detailed reasoning for your decisions. Your compliance standards are high relative to your size.",
   },
+  {
+    name: 'The Bank of New York Mellon Corporation',
+    short_code: 'BNY',
+    swift_bic: 'IRVTUS3N',
+    jurisdiction: 'US',
+    initial_deposit_supply: 10_000_000,
+    agent_system_prompt: "You are BNY Mellon's autonomous settlement agent on the CODA Solstice Network. As the universal custodian, you oversee cross-bank settlement custody and manage the three-token lockup flow. You ensure all custodial operations follow strict compliance and settlement finality requirements.",
+  },
 ];
+
+const DEMO_BANKS: SetupBankRequest[] = isProductionCluster ? TEST_BANKS_PROD : TEST_BANKS_STAGING;
 
 const DEMO_SHORT_CODES = DEMO_BANKS.map((b) => b.short_code.toUpperCase());
 
@@ -193,11 +241,15 @@ export function SetupPage() {
   const [infraDeploying, setInfraDeploying] = useState(false);
   const [infraError, setInfraError] = useState<string | null>(null);
 
+  // Custodian bank code — TBD (Test Bank Delta) in production, BNY in staging
+  const custodianCode = isProductionCluster ? 'TBD' : 'BNY';
+  const custodianLabel = isProductionCluster ? 'Test Bank Delta (TBD)' : 'BNY Mellon';
+
   async function setupCustodian() {
     setInfraDeploying(true);
     setInfraError(null);
     try {
-      const res = await callServer<{ status: string; custodian: InfraWallet; fees_wallet: InfraWallet }>('/setup-custodian', {});
+      const res = await callServer<{ status: string; custodian: InfraWallet; fees_wallet: InfraWallet }>('/setup-custodian', { custodian_code: custodianCode });
       console.log('[setup-custodian] ✓ Created:', res.status);
       // Invalidate SWR cache so it picks up the new wallets
       invalidateInfra();
@@ -939,7 +991,7 @@ export function SetupPage() {
                 Setup Custodian & Fees Wallet
               </h3>
               <p className="text-xs text-coda-text-muted font-mono max-w-md mx-auto mb-4">
-                Links BNY Mellon (universal custodian) to its existing bank wallet and creates a Solstice Network Fees wallet on Solana Devnet.
+                Links {custodianLabel} (universal custodian) to its existing bank wallet and creates a Solstice Network Fees wallet on {isProductionCluster ? 'Solstice Network' : 'Solana Devnet'}.
                 Required for the three-token lockup flow (yield-bearing + T-bill backed settlement).
               </p>
               <button
