@@ -78,22 +78,47 @@ export async function getSolBalance(walletPubkey: string): Promise<number> {
 }
 
 // ============================================================
-// FAUCET: Request SOL/SNT airdrop from the network validator.
-// Works on Solana Devnet and Solstice Network (custom validator).
-// Amount is in SOL (e.g. 1 = 1 SOL/SNT).
+// FAUCET: Fund wallets via SystemProgram.transfer from a faucet keypair.
+// On Solstice Network, requestAirdrop is not available — we use a
+// pre-funded faucet wallet instead. On Devnet, falls back to requestAirdrop.
+// Amount is in SOL/SNT (e.g. 100 = 100 SNT).
 // ============================================================
 
-export async function requestFaucet(walletPubkey: string, amountSol: number = 1): Promise<{ balance: number; txSignature: string }> {
+export async function requestFaucet(walletPubkey: string, amountSol: number = 100): Promise<{ balance: number; txSignature: string }> {
   const connection = getConnection();
   const pubkey = new PublicKey(walletPubkey);
   const lamports = Math.round(amountSol * LAMPORTS_PER_SOL);
 
-  console.log(`[faucet] Requesting ${amountSol} SOL/SNT airdrop to ${walletPubkey} (${lamports} lamports)`);
+  // Try faucet keypair transfer first (Solstice Network)
+  const faucetKeypairB64 = Deno.env.get("FAUCET_KEYPAIR");
+  if (faucetKeypairB64) {
+    console.log(`[faucet] Using faucet keypair transfer: ${amountSol} SNT to ${walletPubkey}`);
+    const faucetKeypair = decodeKeypair(faucetKeypairB64);
+    console.log(`[faucet] Faucet address: ${faucetKeypair.publicKey.toBase58()}`);
 
+    const tx = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: faucetKeypair.publicKey,
+        toPubkey: pubkey,
+        lamports,
+      })
+    );
+
+    const signature = await sendAndConfirmTransaction(connection, tx, [faucetKeypair], {
+      commitment: "confirmed",
+    });
+    console.log(`[faucet] ✓ Transfer confirmed: ${signature}`);
+
+    const newBalance = await checkBalance(connection, pubkey);
+    console.log(`[faucet] New balance: ${(newBalance / LAMPORTS_PER_SOL).toFixed(4)} SNT`);
+    return { balance: newBalance, txSignature: signature };
+  }
+
+  // Fallback: requestAirdrop (Solana Devnet)
+  console.log(`[faucet] No FAUCET_KEYPAIR — falling back to requestAirdrop: ${amountSol} SOL to ${walletPubkey}`);
   const signature = await connection.requestAirdrop(pubkey, lamports);
   console.log(`[faucet] Airdrop tx: ${signature} — waiting for confirmation...`);
 
-  // Wait for confirmation with timeout
   const latestBlockhash = await connection.getLatestBlockhash();
   await connection.confirmTransaction({
     signature,
@@ -102,12 +127,8 @@ export async function requestFaucet(walletPubkey: string, amountSol: number = 1)
   }, "confirmed");
 
   const newBalance = await checkBalance(connection, pubkey);
-  console.log(`[faucet] ✓ Airdrop confirmed. New balance: ${(newBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL/SNT`);
-
-  return {
-    balance: newBalance,
-    txSignature: signature,
-  };
+  console.log(`[faucet] ✓ Airdrop confirmed. New balance: ${(newBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+  return { balance: newBalance, txSignature: signature };
 }
 
 // ============================================================

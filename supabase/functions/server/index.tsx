@@ -250,12 +250,26 @@ app.use(
   "/*",
   cors({
     origin: "*",
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Admin-Email"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Length"],
     maxAge: 600,
   })
 );
+
+// ── Super-admin gate ──────────────────────────────────────────
+// Verifies X-Admin-Email header matches ADMIN_EMAIL env var.
+// Used on sensitive endpoints (faucet, setup-bank, setup-custodian, reset).
+const ADMIN_EMAIL = (Deno.env.get("ADMIN_EMAIL") || "jeremy@rimark.io").toLowerCase();
+
+function requireAdmin(c: any): Response | null {
+  const email = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+  if (!email || email !== ADMIN_EMAIL) {
+    console.log(`[admin-gate] ✗ Denied: "${email}" (expected: ${ADMIN_EMAIL})`);
+    return c.json({ error: "Unauthorized — super admin access required" }, 403);
+  }
+  return null; // authorized
+}
 
 // Agent ID helper
 function agentId(bankId: string): string {
@@ -566,6 +580,8 @@ app.get("/make-server-49d15288/auth/me", async (c) => {
 // on existing bank rows using SWIFT_BIC_REGISTRY. Idempotent.
 // ============================================================
 app.post("/make-server-49d15288/backfill-swift", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
   try {
     // 1. Read all banks
     let banks: any[];
@@ -631,6 +647,8 @@ app.post("/make-server-49d15288/backfill-swift", async (c) => {
 //    (no stage)         → defaults to "wallet" (safe, no Solana RPC calls)
 // ============================================================
 app.post("/make-server-49d15288/setup-bank", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
   try {
     const body = await c.req.json();
     const { name, short_code, jurisdiction, initial_deposit_supply, agent_system_prompt, stage: rawStage, bank_id, swift_bic } = body;
@@ -907,6 +925,8 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
 //       Amount defaults to 1 SOL/SNT (enough for activation + operations).
 // ============================================================
 app.post("/make-server-49d15288/faucet", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
   try {
     const body = await c.req.json();
     const { wallet_address, amount } = body;
@@ -920,7 +940,7 @@ app.post("/make-server-49d15288/faucet", async (c) => {
       return c.json({ error: "Invalid wallet address format" }, 400);
     }
 
-    const amountSol = typeof amount === "number" && amount > 0 && amount <= 5 ? amount : 1;
+    const amountSol = typeof amount === "number" && amount > 0 && amount <= 500 ? amount : 100;
     console.log(`[faucet] ▶ Request: ${amountSol} SOL/SNT to ${wallet_address}`);
 
     const result = await requestFaucet(wallet_address, amountSol);
@@ -948,6 +968,8 @@ app.post("/make-server-49d15288/faucet", async (c) => {
 //     Idempotent — returns existing data if already created.
 // ============================================================
 app.post("/make-server-49d15288/setup-custodian", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
   try {
     const body = await c.req.json().catch(() => ({}));
     const custodianCode = (body.custodian_code || "BNY").toUpperCase();
@@ -3900,6 +3922,8 @@ function fallbackMandates(bank: any): any[] {
 //     network composition. Existing mandates are deleted first.
 // ============================================================
 app.post("/make-server-49d15288/seed-mandates", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
   try {
     console.log("[seed-mandates] Starting mandate seeding (full regeneration)...");
 
@@ -4414,6 +4438,8 @@ app.post("/make-server-49d15288/expire-transaction", async (c) => {
 //     clear transactions/messages/token data, rebuild via re-activate
 // ============================================================
 app.post("/make-server-49d15288/reset-tokens", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
   try {
     console.log("[reset-tokens] Starting soft token reset...");
 
@@ -4514,6 +4540,8 @@ app.post("/make-server-49d15288/reset-tokens", async (c) => {
 // 9b. RESET-NETWORK — Delete all data from all 14 tables (FK order)
 // ============================================================
 app.post("/make-server-49d15288/reset-network", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
   try {
     console.log("[reset-network] Starting full network reset...");
 

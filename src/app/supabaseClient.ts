@@ -65,7 +65,7 @@ export async function callServer<T = unknown>(
   route: string,
   body?: Record<string, unknown> | unknown,
   maxRetries = 3,
-  options?: { authenticated?: boolean },
+  options?: { authenticated?: boolean; headers?: Record<string, string> },
 ): Promise<T> {
   const url = `${serverBaseUrl}${route}`;
   const requestId = `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -97,6 +97,7 @@ export async function callServer<T = unknown>(
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
+          ...(options?.headers || {}),
         },
         body: body ? JSON.stringify(body) : undefined,
       });
