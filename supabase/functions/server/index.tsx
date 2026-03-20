@@ -24,6 +24,7 @@ import {
   mintLockupToEscrow,
   burnLockupFromEscrow,
   LOCKUP_TOKEN_SYMBOL,
+  requestFaucet,
 } from "./solana-real.tsx";
 
 // ── Prompt modules ─────────────────────────────────────────
@@ -897,6 +898,45 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
     console.log(`[setup-bank] ✗ UNEXPECTED ERROR: ${errObj.message}`);
     console.log(`[setup-bank] Stack: ${errObj.stack || "(no stack)"}`);
     return c.json({ error: `Setup bank error: ${errObj.message}`, stack: errObj.stack?.slice(0, 500) }, 500);
+  }
+});
+
+// ============================================================
+// 1a-2. FAUCET — Airdrop SOL/SNT to a wallet via the network validator
+//       Used by the frontend "Fund Wallet" button during bank onboarding.
+//       Amount defaults to 1 SOL/SNT (enough for activation + operations).
+// ============================================================
+app.post("/make-server-49d15288/faucet", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { wallet_address, amount } = body;
+
+    if (!wallet_address || typeof wallet_address !== "string") {
+      return c.json({ error: "wallet_address is required" }, 400);
+    }
+
+    // Validate it's a real Solana public key format
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet_address)) {
+      return c.json({ error: "Invalid wallet address format" }, 400);
+    }
+
+    const amountSol = typeof amount === "number" && amount > 0 && amount <= 5 ? amount : 1;
+    console.log(`[faucet] ▶ Request: ${amountSol} SOL/SNT to ${wallet_address}`);
+
+    const result = await requestFaucet(wallet_address, amountSol);
+
+    return c.json({
+      status: "funded",
+      wallet_address,
+      amount_sol: amountSol,
+      balance_lamports: result.balance,
+      balance_sol: result.balance / 1e9,
+      tx_signature: result.txSignature,
+    });
+  } catch (err) {
+    const errObj = err as Error;
+    console.log(`[faucet] ✗ ERROR: ${errObj.message}`);
+    return c.json({ error: `Faucet error: ${errObj.message}` }, 500);
   }
 });
 

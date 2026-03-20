@@ -1195,6 +1195,8 @@ function SeedBankCardUI({ card, onActivate }: {
   const [localSolBalance, setLocalSolBalance] = useState<number | null>(card.sol_balance ?? null);
   const [activating, setActivating] = useState(false);
   const [faucetOpened, setFaucetOpened] = useState(false);
+  const [funding, setFunding] = useState(false);
+  const [fundError, setFundError] = useState<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isFunded = localSolBalance !== null && localSolBalance >= MIN_SOL_REQUIRED;
@@ -1247,6 +1249,25 @@ function SeedBankCardUI({ card, onActivate }: {
           }
         }
       }, 10_000);
+    }
+  }
+
+  async function handleFundWallet() {
+    if (!card.public_key) return;
+    setFunding(true);
+    setFundError(null);
+    try {
+      const res = await callServer<{ status: string; balance_sol: number; tx_signature: string }>('/faucet', {
+        wallet_address: card.public_key,
+        amount: 1,
+      });
+      console.log(`[faucet] ✓ Funded ${card.short_code}: ${res.balance_sol.toFixed(4)} ${gasToken}, tx: ${res.tx_signature}`);
+      setLocalSolBalance(res.balance_sol);
+    } catch (err: any) {
+      console.error(`[faucet] ✗ Error funding ${card.short_code}:`, err);
+      setFundError(err.message || 'Faucet request failed');
+    } finally {
+      setFunding(false);
     }
   }
 
@@ -1401,15 +1422,11 @@ function SeedBankCardUI({ card, onActivate }: {
                 <>
                   <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
                     <span className="text-coda-text-muted font-bold w-4">1.</span>
-                    Copy the wallet address above
+                    Click <strong className="text-coda-brand">Fund Wallet</strong> below to airdrop {gasToken} from the Solstice Network faucet
                   </div>
                   <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
                     <span className="text-coda-text-muted font-bold w-4">2.</span>
-                    Fund via Solstice CLI: <code className="text-coda-brand ml-1">solstice airdrop --address &lt;addr&gt;</code>
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px] font-mono text-coda-text-secondary">
-                    <span className="text-coda-text-muted font-bold w-4">3.</span>
-                    Come back here and click <strong className="text-coda-brand">Activate Bank</strong>
+                    Click <strong className="text-coda-brand">Activate Bank</strong> to deploy Token-2022 on-chain
                   </div>
                 </>
               ) : (
@@ -1435,6 +1452,14 @@ function SeedBankCardUI({ card, onActivate }: {
             </div>
           )}
 
+          {/* Fund error */}
+          {fundError && (
+            <div className="bg-red-950/20 border border-red-800/50 rounded-lg p-2 flex items-center gap-2">
+              <XCircle className="w-3 h-3 text-red-400 shrink-0" />
+              <span className="text-[11px] font-mono text-red-400">{fundError}</span>
+            </div>
+          )}
+
           {/* Funded success message */}
           {isFunded && (
             <div className="bg-coda-brand-bg border border-coda-brand/20 rounded-xl p-2.5 flex items-center gap-2">
@@ -1447,7 +1472,16 @@ function SeedBankCardUI({ card, onActivate }: {
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2">
-            {!isProductionCluster && (
+            {isProductionCluster ? (
+              <button
+                onClick={handleFundWallet}
+                disabled={funding || isFunded}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-mono text-amber-600 dark:text-amber-400 transition-colors"
+              >
+                {funding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Coins className="w-3 h-3" />}
+                {funding ? 'Funding...' : isFunded ? 'Funded' : `Fund Wallet (1 ${gasToken})`}
+              </button>
+            ) : (
               <button
                 onClick={handleOpenFaucet}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-coda-border-subtle rounded-lg text-xs font-mono text-coda-text-secondary hover:text-coda-text hover:border-coda-text-muted transition-colors"
