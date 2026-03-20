@@ -10,8 +10,12 @@ import {
   ArrowDownUp, CircleDollarSign, Coins, Hourglass,
   UserCheck, RotateCcw, FastForward, Plus, Lock, Loader2,
 } from 'lucide-react';
-import { supabase, callServer } from '../supabaseClient';
-import { fetchRiskScore, fetchComplianceLogs, fetchWallets, fetchLockupToken, fetchCadenzaFlags } from '../dataClient';
+import { callServer } from '../supabaseClient';
+import {
+  fetchRiskScore, fetchComplianceLogs, fetchWallets, fetchLockupToken,
+  fetchCadenzaFlags, fetchCorridorTransactions, fetchCorridorTransactionCount,
+  fetchHeartbeatCycles, fetchTreasuryMandates,
+} from '../dataClient';
 import { PageTransition } from './PageTransition';
 import { SettlementLifecycle } from './SettlementLifecycle';
 import type { Transaction, AgentMessage, Wallet as WalletType } from '../types';
@@ -118,15 +122,10 @@ async function fetchTxSecondary(key: string): Promise<TxSecondaryData> {
   const receiverBankId = parts[2];
   const createdAt = parts[3] || null;
 
-  const [senderWallets, receiverWallets, corridorRes, lockupData, flagsData] = await Promise.all([
+  const [senderWallets, receiverWallets, corridorTxs, lockupData, flagsData] = await Promise.all([
     fetchWallets(senderBankId),
     fetchWallets(receiverBankId),
-    supabase.from('transactions')
-      .select('id, amount_display, status, purpose_code, risk_level, created_at, solana_tx_signature')
-      .or(`and(sender_bank_id.eq.${senderBankId},receiver_bank_id.eq.${receiverBankId}),and(sender_bank_id.eq.${receiverBankId},receiver_bank_id.eq.${senderBankId})`)
-      .neq('id', txId)
-      .order('created_at', { ascending: false })
-      .limit(10),
+    fetchCorridorTransactions(senderBankId, receiverBankId, txId, 10),
     fetchLockupToken(txId),
     fetchCadenzaFlags({ transaction_id: txId }),
   ]);
@@ -137,21 +136,20 @@ async function fetchTxSecondary(key: string): Promise<TxSecondaryData> {
 
   if (createdAt) {
     const txTime = new Date(createdAt).getTime();
-    const [cyclesRes, mandateRes] = await Promise.all([
-      supabase
-        .from('heartbeat_cycles').select('*')
-        .lte('started_at', new Date(txTime + 5000).toISOString())
-        .order('started_at', { ascending: false }).limit(5),
-      supabase
-        .from('treasury_mandates').select('*')
-        .eq('bank_id', receiverBankId).eq('is_active', true)
-        .order('priority', { ascending: true }),
+    const [cyclesData, mandatesData] = await Promise.all([
+      fetchHeartbeatCycles(5),
+      fetchTreasuryMandates(receiverBankId),
     ]);
 
-    mandates = mandateRes.data || [];
+    mandates = mandatesData || [];
 
-    if (cyclesRes.data) {
-      const matchingCycle = cyclesRes.data.find((c: any) => {
+    // Filter cycles to those that started before or near the transaction time
+    const relevantCycles = (cyclesData || []).filter(
+      (c: any) => new Date(c.started_at).getTime() <= txTime + 5000
+    );
+
+    if (relevantCycles.length > 0) {
+      const matchingCycle = relevantCycles.find((c: any) => {
         const start = new Date(c.started_at).getTime();
         const end = c.completed_at ? new Date(c.completed_at).getTime() : Date.now();
         return txTime >= start - 2000 && txTime <= end + 5000;
@@ -162,10 +160,7 @@ async function fetchTxSecondary(key: string): Promise<TxSecondaryData> {
         const windowEnd = matchingCycle.completed_at
           ? new Date(new Date(matchingCycle.completed_at).getTime() + 5000).toISOString()
           : new Date(Date.now() + 10000).toISOString();
-        const { count } = await supabase.from('transactions')
-          .select('id', { count: 'exact', head: true })
-          .gte('created_at', windowStart).lte('created_at', windowEnd);
-        cycleTxCount = count || 0;
+        cycleTxCount = await fetchCorridorTransactionCount(windowStart, windowEnd);
       }
     }
   }
@@ -173,7 +168,7 @@ async function fetchTxSecondary(key: string): Promise<TxSecondaryData> {
   return {
     senderWallet: senderWallets.find((w: any) => w.is_default) || senderWallets[0] || null,
     receiverWallet: receiverWallets.find((w: any) => w.is_default) || receiverWallets[0] || null,
-    corridorHistory: corridorRes.data || [],
+    corridorHistory: corridorTxs || [],
     cycle,
     cycleTxCount,
     mandates,
