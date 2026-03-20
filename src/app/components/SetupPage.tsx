@@ -7,7 +7,20 @@ import {
 } from 'lucide-react';
 import { Navigate } from 'react-router';
 import { useIsAdmin } from '../hooks/useIsAdmin';
+import { useAuth } from '../contexts/AuthContext';
 import { callServer } from '../supabaseClient';
+
+// Module-level admin helper — used by both SetupPage and SeedBankCardUI
+function adminCallServer<T = unknown>(
+  route: string,
+  body?: Record<string, unknown> | unknown,
+  maxRetries = 3,
+  email?: string | null,
+) {
+  return callServer<T>(route, body, maxRetries, {
+    headers: email ? { 'X-Admin-Email': email } : {},
+  });
+}
 import type { Bank, Wallet as WalletType, SetupBankRequest } from '../types';
 import { truncateAddress, explorerUrl, formatTokenAmount } from '../types';
 import { useBanks } from '../contexts/BanksContext';
@@ -211,7 +224,12 @@ async function fetchSolBalanceRpc(pubkey: string): Promise<number | null> {
 
 export function SetupPage() {
   const isAdmin = useIsAdmin();
+  const { userEmail } = useAuth();
   const { banks, isLoading: loading, revalidate } = useBanks();
+
+  // Bind admin email for server calls
+  const adminCall = <T = unknown>(route: string, body?: Record<string, unknown> | unknown, maxRetries = 3) =>
+    adminCallServer<T>(route, body, maxRetries, userEmail);
   const [showForm, setShowForm] = useState(false);
   const [deploying, setDeploying] = useState(false);
   const [deploySteps, setDeploySteps] = useState<{ id: string; label: string; status: 'pending' | 'running' | 'complete' | 'error'; detail?: string }[]>([]);
@@ -249,7 +267,7 @@ export function SetupPage() {
     setInfraDeploying(true);
     setInfraError(null);
     try {
-      const res = await callServer<{ status: string; custodian: InfraWallet; fees_wallet: InfraWallet }>('/setup-custodian', { custodian_code: custodianCode });
+      const res = await adminCall<{ status: string; custodian: InfraWallet; fees_wallet: InfraWallet }>('/setup-custodian', { custodian_code: custodianCode });
       console.log('[setup-custodian] ✓ Created:', res.status);
       // Invalidate SWR cache so it picks up the new wallets
       invalidateInfra();
@@ -303,7 +321,7 @@ export function SetupPage() {
 
   // One-shot SWIFT/BIC backfill on mount
   useEffect(() => {
-    callServer<{ message: string; updated: { short_code: string; swift_bic: string }[] }>('/backfill-swift', {})
+    adminCall<{ message: string; updated: { short_code: string; swift_bic: string }[] }>('/backfill-swift', {})
       .then((res) => {
         if (res.updated?.length > 0) {
           console.log(`[backfill-swift] Backfilled ${res.updated.length} bank(s):`, res.updated.map((u: any) => `${u.short_code}→${u.swift_bic}`).join(', '));
@@ -379,9 +397,9 @@ export function SetupPage() {
 
         try {
           const payload = { ...bank, stage: 'wallet' };
-          console.log(`[seed] ${code} → callServer /setup-bank payload:`, JSON.stringify(payload));
+          console.log(`[seed] ${code} → adminCall /setup-bank payload:`, JSON.stringify(payload));
 
-          const result = await callServer<{
+          const result = await adminCall<{
             stage: string;
             public_key?: string;
             bank_id?: string;
@@ -451,7 +469,7 @@ export function SetupPage() {
     updateCard(card.short_code, { status: 'activating', detail: 'Deploying tokens...' });
 
     try {
-      const result = await callServer<{
+      const result = await adminCall<{
         stage: string;
         public_key?: string;
         bank_id?: string;
@@ -502,7 +520,7 @@ export function SetupPage() {
     ]);
 
     try {
-      const result = await callServer<{
+      const result = await adminCall<{
         stage: string;
         public_key?: string;
         bank_id?: string;
@@ -553,7 +571,7 @@ export function SetupPage() {
     console.log('[reset] Starting network reset...');
     setResetting(true);
     try {
-      await callServer('/reset-network', {});
+      await adminCall('/reset-network', {});
       console.log('[reset] Reset complete');
       setSeedCards([]);
       seedCardsRef.current = [];
@@ -573,7 +591,7 @@ export function SetupPage() {
     console.log('[reset] Starting token reset...');
     setResettingTokens(true);
     try {
-      const result = await callServer<{
+      const result = await adminCall<{
         status: string;
         banks_preserved: number;
         tables: Record<string, { success: boolean; error?: string; detail?: string }>;
@@ -774,6 +792,7 @@ export function SetupPage() {
                   key={card.short_code}
                   card={card}
                   onActivate={() => activateBank(card)}
+                  adminEmail={userEmail}
                 />
               ))}
             </div>
@@ -1186,9 +1205,10 @@ export function SetupPage() {
 }
 
 // ── Seed Bank Card Component ───────────────────────────────
-function SeedBankCardUI({ card, onActivate }: {
+function SeedBankCardUI({ card, onActivate, adminEmail }: {
   card: SeedBankCard;
   onActivate: () => void;
+  adminEmail?: string | null;
 }) {
   const [copied, setCopied] = useState(false);
   const [checkingBalance, setCheckingBalance] = useState(false);
@@ -1257,10 +1277,10 @@ function SeedBankCardUI({ card, onActivate }: {
     setFunding(true);
     setFundError(null);
     try {
-      const res = await callServer<{ status: string; balance_sol: number; tx_signature: string }>('/faucet', {
+      const res = await adminCallServer<{ status: string; balance_sol: number; tx_signature: string }>('/faucet', {
         wallet_address: card.public_key,
-        amount: 1,
-      });
+        amount: 100,
+      }, 3, adminEmail);
       console.log(`[faucet] ✓ Funded ${card.short_code}: ${res.balance_sol.toFixed(4)} ${gasToken}, tx: ${res.tx_signature}`);
       setLocalSolBalance(res.balance_sol);
     } catch (err: any) {
@@ -1479,7 +1499,7 @@ function SeedBankCardUI({ card, onActivate }: {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-mono text-amber-600 dark:text-amber-400 transition-colors"
               >
                 {funding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Coins className="w-3 h-3" />}
-                {funding ? 'Funding...' : isFunded ? 'Funded' : `Fund Wallet (1 ${gasToken})`}
+                {funding ? 'Funding...' : isFunded ? 'Funded' : `Fund Wallet (100 ${gasToken})`}
               </button>
             ) : (
               <button
