@@ -253,6 +253,53 @@ export async function fetchWallets(bankId?: string): Promise<any[]> {
   return data ?? [];
 }
 
+export async function fetchCorridorTransactions(
+  senderBankId: string,
+  receiverBankId: string,
+  excludeTxId: string,
+  limit = 10
+): Promise<any[]> {
+  if (useServer) {
+    return serverGet('/corridor-transactions', {
+      sender_bank_id: senderBankId,
+      receiver_bank_id: receiverBankId,
+      exclude_tx_id: excludeTxId,
+      limit: String(limit),
+    });
+  }
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('id, amount_display, status, purpose_code, risk_level, created_at, solana_tx_signature')
+    .or(
+      `and(sender_bank_id.eq.${senderBankId},receiver_bank_id.eq.${receiverBankId}),and(sender_bank_id.eq.${receiverBankId},receiver_bank_id.eq.${senderBankId})`
+    )
+    .neq('id', excludeTxId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchCorridorTransactionCount(
+  startTime: string,
+  endTime: string
+): Promise<number> {
+  if (useServer) {
+    const result = await serverGet<{ count: number }>('/corridor-transaction-count', {
+      start: startTime,
+      end: endTime,
+    });
+    return result.count;
+  }
+  const { count, error } = await supabase
+    .from('transactions')
+    .select('id', { count: 'exact', head: true })
+    .gte('created_at', startTime)
+    .lte('created_at', endTime);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function fetchCount(table: string, filter?: string): Promise<number> {
   if (useServer) {
     const p: Record<string, string> = { table };

@@ -7366,5 +7366,48 @@ app.get(`${R}/data/count`, async (c) => {
   }
 });
 
+app.get(`${R}/data/corridor-transactions`, async (c) => {
+  try {
+    const senderBankId = c.req.query("sender_bank_id");
+    const receiverBankId = c.req.query("receiver_bank_id");
+    const excludeTxId = c.req.query("exclude_tx_id");
+    const limit = parseInt(c.req.query("limit") || "10", 10);
+    if (!senderBankId || !receiverBankId || !excludeTxId) {
+      return c.json({ error: "sender_bank_id, receiver_bank_id, and exclude_tx_id are required" }, 400);
+    }
+    const rows = await sql`
+      SELECT id, amount_display, status, purpose_code, risk_level, created_at, solana_tx_signature
+      FROM transactions
+      WHERE (
+        (sender_bank_id = ${senderBankId} AND receiver_bank_id = ${receiverBankId})
+        OR (sender_bank_id = ${receiverBankId} AND receiver_bank_id = ${senderBankId})
+      )
+      AND id != ${excludeTxId}
+      ORDER BY created_at DESC
+      LIMIT ${limit}
+    `;
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/corridor-transaction-count`, async (c) => {
+  try {
+    const start = c.req.query("start");
+    const end = c.req.query("end");
+    if (!start || !end) {
+      return c.json({ error: "start and end are required" }, 400);
+    }
+    const rows = await sql`
+      SELECT count(*)::int as count FROM transactions
+      WHERE created_at >= ${start} AND created_at <= ${end}
+    `;
+    return c.json({ count: rows[0]?.count ?? 0 });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
 console.log(`\u2588\u2588\u2588\u2588 EDGE FUNCTION COLD START \u2588\u2588\u2588\u2588 v13 Task-118.2 (coreLockupSettle/Reverse-all-callsites) ${new Date().toISOString()}`);
 Deno.serve(app.fetch);

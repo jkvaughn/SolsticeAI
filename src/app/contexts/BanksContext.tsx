@@ -23,6 +23,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '../supabaseClient';
+import { fetchBanks as fetchBanksFromClient } from '../dataClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import type { Bank } from '../types';
 
@@ -110,21 +111,12 @@ export function BanksProvider({ children }: { children: ReactNode }) {
 
     const doFetch = async () => {
       try {
-        const { data, error } = await supabase
-          .from('banks')
-          .select('*, wallets(*)')
-          .order('created_at', { ascending: true });
+        const result = await fetchBanksFromClient();
 
         if (!mountedRef.current) return;
 
-        if (error) {
-          console.error('[BanksContext] fetch error:', error.message);
-          return;
-        }
-
-        const result = data ?? [];
-        setBanks(result);
-        writeSessionBanks(result);
+        setBanks(result as Bank[]);
+        writeSessionBanks(result as Bank[]);
       } catch (err) {
         // Only log if still mounted — unmount-triggered "Failed to fetch" is expected
         if (mountedRef.current) {
