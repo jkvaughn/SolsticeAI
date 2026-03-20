@@ -21,6 +21,31 @@ import { useIsAdmin } from "../../hooks/useIsAdmin";
 import type { PersonaType } from "../../types";
 
 // ============================================================
+// ENVIRONMENT BANNER (local / staging only, hidden in production)
+// ============================================================
+function EnvironmentBanner() {
+  const isProduction = !!import.meta.env.VITE_SERVER_BASE_URL;
+  if (isProduction) return null;
+
+  const isLocal = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const label = isLocal ? 'LOCAL' : 'STAGING';
+  const dotColor = isLocal ? '#b45309' : '#2563eb';
+
+  return (
+    <div className="dashboard-card mb-4 py-1.5 px-5 flex items-center justify-center gap-2">
+      <span
+        className="inline-block w-1.5 h-1.5 rounded-full"
+        style={{ background: dotColor, boxShadow: `0 0 6px ${dotColor}40` }}
+      />
+      <span className="text-[10.5px] font-semibold tracking-widest text-coda-text-secondary">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ============================================================
 // TYPES
 // ============================================================
 type TimeRange = '1H' | '24H' | '7D' | '30D';
@@ -354,6 +379,7 @@ export function DashboardLayout({
           }`}
         >
           <div className="pt-8 pb-4 px-4 relative z-10 min-h-full">
+            <EnvironmentBanner />
             {children}
           </div>
         </div>
