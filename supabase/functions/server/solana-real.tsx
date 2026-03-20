@@ -78,6 +78,39 @@ export async function getSolBalance(walletPubkey: string): Promise<number> {
 }
 
 // ============================================================
+// FAUCET: Request SOL/SNT airdrop from the network validator.
+// Works on Solana Devnet and Solstice Network (custom validator).
+// Amount is in SOL (e.g. 1 = 1 SOL/SNT).
+// ============================================================
+
+export async function requestFaucet(walletPubkey: string, amountSol: number = 1): Promise<{ balance: number; txSignature: string }> {
+  const connection = getConnection();
+  const pubkey = new PublicKey(walletPubkey);
+  const lamports = Math.round(amountSol * LAMPORTS_PER_SOL);
+
+  console.log(`[faucet] Requesting ${amountSol} SOL/SNT airdrop to ${walletPubkey} (${lamports} lamports)`);
+
+  const signature = await connection.requestAirdrop(pubkey, lamports);
+  console.log(`[faucet] Airdrop tx: ${signature} — waiting for confirmation...`);
+
+  // Wait for confirmation with timeout
+  const latestBlockhash = await connection.getLatestBlockhash();
+  await connection.confirmTransaction({
+    signature,
+    blockhash: latestBlockhash.blockhash,
+    lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+  }, "confirmed");
+
+  const newBalance = await checkBalance(connection, pubkey);
+  console.log(`[faucet] ✓ Airdrop confirmed. New balance: ${(newBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL/SNT`);
+
+  return {
+    balance: newBalance,
+    txSignature: signature,
+  };
+}
+
+// ============================================================
 // GENERATE-WALLET: Pure keypair generation, no network calls.
 // Safe to call any time — always succeeds.
 // ============================================================
