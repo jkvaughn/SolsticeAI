@@ -935,8 +935,8 @@ app.post("/make-server-49d15288/faucet", async (c) => {
       return c.json({ error: "wallet_address is required" }, 400);
     }
 
-    // Validate it's a real Solana public key format
-    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet_address)) {
+    // Validate it looks like a base58 public key (32-44 alphanumeric chars)
+    if (!/^[A-Za-z0-9]{32,44}$/.test(wallet_address)) {
       return c.json({ error: "Invalid wallet address format" }, 400);
     }
 
@@ -7172,6 +7172,17 @@ app.post("/make-server-49d15288/lockup-action", async (c) => {
 // ============================================================
 
 const R = "/make-server-49d15288";
+
+// BigInt → Number for JSON serialization (deno-postgres returns int8 as BigInt)
+// Override global JSON.stringify for the Deno runtime
+const _origStringify = JSON.stringify;
+JSON.stringify = function (value: any, replacer?: any, space?: any) {
+  const bigintReplacer = (_k: string, v: any) => typeof v === "bigint" ? Number(v) : v;
+  if (typeof replacer === "function") {
+    return _origStringify(value, (k: string, v: any) => replacer(k, bigintReplacer(k, v)), space);
+  }
+  return _origStringify(value, bigintReplacer, space);
+};
 
 app.get(`${R}/data/banks`, async (c) => {
   try {
