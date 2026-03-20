@@ -96,6 +96,8 @@ export async function requestFaucet(walletPubkey: string, amountSol: number = 10
     const faucetKeypair = decodeKeypair(faucetKeypairB64);
     console.log(`[faucet] Faucet address: ${faucetKeypair.publicKey.toBase58()}`);
 
+    // Send transfer and poll for confirmation (block height expiry workaround)
+    const { blockhash } = await connection.getLatestBlockhash("finalized");
     const tx = new Transaction().add(
       SystemProgram.transfer({
         fromPubkey: faucetKeypair.publicKey,
@@ -103,15 +105,37 @@ export async function requestFaucet(walletPubkey: string, amountSol: number = 10
         lamports,
       })
     );
+    tx.recentBlockhash = blockhash;
+    tx.feePayer = faucetKeypair.publicKey;
+    tx.sign(faucetKeypair);
 
-    const signature = await sendAndConfirmTransaction(connection, tx, [faucetKeypair], {
-      commitment: "confirmed",
+    const rawTx = tx.serialize();
+    const signature = await connection.sendRawTransaction(rawTx, {
+      skipPreflight: true,
+      maxRetries: 5,
     });
-    console.log(`[faucet] ✓ Transfer confirmed: ${signature}`);
+    console.log(`[faucet] Sent tx: ${signature} — polling for status...`);
 
-    const newBalance = await checkBalance(connection, pubkey);
-    console.log(`[faucet] New balance: ${(newBalance / LAMPORTS_PER_SOL).toFixed(4)} SNT`);
-    return { balance: newBalance, txSignature: signature };
+    // Poll for signature status instead of using confirmTransaction
+    // (avoids block height expiry issues with high-latency connections)
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const statusResp = await connection.getSignatureStatuses([signature]);
+      const status = statusResp?.value?.[0];
+      if (status) {
+        if (status.err) {
+          throw new Error(`Transaction failed: ${JSON.stringify(status.err)}`);
+        }
+        if (status.confirmationStatus === "confirmed" || status.confirmationStatus === "finalized") {
+          console.log(`[faucet] ✓ Confirmed (${status.confirmationStatus}) after ${(i + 1) * 2}s`);
+          const newBalance = await checkBalance(connection, pubkey);
+          console.log(`[faucet] New balance: ${(newBalance / LAMPORTS_PER_SOL).toFixed(4)} SNT`);
+          return { balance: newBalance, txSignature: signature };
+        }
+        console.log(`[faucet] Status: ${status.confirmationStatus || "processing"} (poll ${i + 1})`);
+      }
+    }
+    throw new Error(`Transaction ${signature} not confirmed after 60s`);
   }
 
   // Fallback: requestAirdrop (Solana Devnet)
