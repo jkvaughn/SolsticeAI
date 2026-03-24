@@ -258,19 +258,23 @@ export function SetupPage() {
 
   const [infraDeploying, setInfraDeploying] = useState(false);
   const [infraError, setInfraError] = useState<string | null>(null);
+  const [changingCustodian, setChangingCustodian] = useState(false);
 
-  // Custodian bank code — TBD (Test Bank Delta) in production, BNY in staging
-  const custodianCode = isProductionCluster ? 'TBD' : 'BNY';
-  const custodianLabel = isProductionCluster ? 'Test Bank Delta (TBD)' : 'BNY Mellon';
+  // Custodian bank selector — defaults based on environment
+  const defaultCustodianCode = isProductionCluster ? 'TBD' : 'BNY';
+  const [selectedCustodianCode, setSelectedCustodianCode] = useState(defaultCustodianCode);
+  const activeBanks = banks.filter(b => b.status === 'active');
+  const selectedBank = activeBanks.find(b => b.short_code === selectedCustodianCode);
+  const custodianLabel = selectedBank ? `${selectedBank.name} (${selectedBank.short_code})` : selectedCustodianCode;
 
   async function setupCustodian() {
     setInfraDeploying(true);
     setInfraError(null);
     try {
-      const res = await adminCall<{ status: string; custodian: InfraWallet; fees_wallet: InfraWallet }>('/setup-custodian', { custodian_code: custodianCode });
+      const res = await adminCall<{ status: string; custodian: InfraWallet; fees_wallet: InfraWallet }>('/setup-custodian', { custodian_code: selectedCustodianCode });
       console.log('[setup-custodian] ✓ Created:', res.status);
-      // Invalidate SWR cache so it picks up the new wallets
       invalidateInfra();
+      setChangingCustodian(false);
     } catch (err: any) {
       console.error('[setup-custodian] Error:', err);
       setInfraError(err.message || 'Failed to setup custodian');
@@ -994,8 +998,8 @@ export function SetupPage() {
             <div className="flex items-center justify-center py-4">
               <Loader2 className="w-4 h-4 text-coda-text-muted animate-spin" />
             </div>
-          ) : !custodian && !feesWallet ? (
-            /* Not yet created — show setup prompt */
+          ) : (!custodian && !feesWallet) || changingCustodian ? (
+            /* Not yet created or changing — show setup prompt */
             <div className="text-center py-4">
               <div className="flex items-center justify-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
@@ -1007,29 +1011,73 @@ export function SetupPage() {
                 </div>
               </div>
               <h3 className="font-mono text-sm font-bold dashboard-text mb-1">
-                Setup Custodian & Fees Wallet
+                {changingCustodian ? 'Reassign Custodian Bank' : 'Setup Custodian & Fees Wallet'}
               </h3>
               <p className="text-xs text-coda-text-muted font-mono max-w-md mx-auto mb-4">
-                Links {custodianLabel} (universal custodian) to its existing bank wallet and creates a Solstice Network Fees wallet on {isProductionCluster ? 'Solstice Network' : 'Solana Devnet'}.
-                Required for the three-token lockup flow (yield-bearing + T-bill backed settlement).
+                {changingCustodian
+                  ? 'Select which bank will serve as the universal custodian for the three-token lockup flow.'
+                  : `Links the selected bank (universal custodian) to its existing wallet and creates a Solstice Network Fees wallet on ${isProductionCluster ? 'Solstice Network' : 'Solana Devnet'}. Required for the three-token lockup flow (yield-bearing + T-bill backed settlement).`
+                }
               </p>
-              <button
-                onClick={setupCustodian}
-                disabled={infraDeploying}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-coda-brand hover:bg-coda-brand-dim disabled:opacity-50 text-white text-sm font-mono rounded-xl transition-colors liquid-button"
-              >
-                {infraDeploying ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Linking & creating...
-                  </>
-                ) : (
-                  <>
-                    <Landmark className="w-4 h-4" />
-                    Setup Custodian & Fees Wallet
-                  </>
+              {/* Bank selector dropdown */}
+              {activeBanks.length > 0 && (
+                <div className="max-w-xs mx-auto mb-4">
+                  <label className="block text-[10px] font-mono text-coda-text-muted mb-1 text-left">Custodian Bank</label>
+                  <select
+                    value={selectedCustodianCode}
+                    onChange={(e) => setSelectedCustodianCode(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-coda-border/30 bg-coda-surface text-sm font-mono text-coda-text focus:outline-none focus:ring-1 focus:ring-coda-brand/50"
+                  >
+                    {activeBanks.map((b) => (
+                      <option key={b.short_code} value={b.short_code}>
+                        {b.name} ({b.short_code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={changingCustodian ? async () => {
+                    setInfraDeploying(true);
+                    setInfraError(null);
+                    try {
+                      await adminCall<{ status: string }>('/reassign-custodian', { custodian_code: selectedCustodianCode });
+                      invalidateInfra();
+                      setChangingCustodian(false);
+                    } catch (err: any) {
+                      setInfraError(err.message || 'Failed to reassign custodian');
+                    } finally {
+                      setInfraDeploying(false);
+                    }
+                  } : setupCustodian}
+                  disabled={infraDeploying || activeBanks.length === 0}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-coda-brand hover:bg-coda-brand-dim disabled:opacity-50 text-white text-sm font-mono rounded-xl transition-colors liquid-button cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {infraDeploying ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {changingCustodian ? 'Reassigning...' : 'Linking & creating...'}
+                    </>
+                  ) : (
+                    <>
+                      <Landmark className="w-4 h-4" />
+                      {changingCustodian ? `Assign ${selectedCustodianCode} as Custodian` : 'Setup Custodian & Fees Wallet'}
+                    </>
+                  )}
+                </button>
+                {changingCustodian && (
+                  <button
+                    onClick={() => setChangingCustodian(false)}
+                    className="px-3 py-2 text-xs font-mono text-coda-text-muted hover:text-coda-text rounded-xl border border-coda-border/30 hover:bg-coda-surface-hover transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
                 )}
-              </button>
+              </div>
+              {activeBanks.length === 0 && (
+                <p className="text-[10px] font-mono text-amber-400 mt-2">No active banks — activate banks above first.</p>
+              )}
               {infraError && (
                 <div className="mt-3 p-2.5 rounded-lg border border-red-800/50 bg-red-950/20 max-w-md mx-auto">
                   <div className="flex items-center gap-2 text-xs font-mono text-red-400">
@@ -1074,6 +1122,20 @@ export function SetupPage() {
                   createdAt={feesWallet.created_at}
                   adminEmail={userEmail}
                 />
+              )}
+              {/* Change Custodian action */}
+              {custodian && activeBanks.length > 1 && (
+                <div className="col-span-full flex justify-end">
+                  <button
+                    onClick={() => {
+                      setSelectedCustodianCode(custodian.code || defaultCustodianCode);
+                      setChangingCustodian(true);
+                    }}
+                    className="text-[10px] font-mono text-coda-text-muted hover:text-coda-text transition-colors cursor-pointer"
+                  >
+                    Change custodian bank...
+                  </button>
+                </div>
               )}
             </div>
           )}

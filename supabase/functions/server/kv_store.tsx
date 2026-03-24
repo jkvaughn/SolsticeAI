@@ -38,6 +38,13 @@ export const mget = async (keys: string[]): Promise<unknown[]> => {
   return rows.map((r: { value: unknown }) => r.value);
 };
 
+export const scan = async (prefix: string): Promise<{ key: string; value: unknown }[]> => {
+  const rows = await sql`
+    SELECT key, value FROM kv_store_49d15288 WHERE key LIKE ${prefix + '%'}
+  `;
+  return rows.map((r: { key: string; value: unknown }) => ({ key: r.key, value: r.value }));
+};
+
 export const mdel = async (keys: string[]): Promise<void> => {
   await sql`DELETE FROM kv_store_49d15288 WHERE key = ANY(${keys})`;
 };
