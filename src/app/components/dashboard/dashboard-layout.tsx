@@ -218,7 +218,8 @@ export function DashboardLayout({
           <button
             onClick={() => handleNavigate(item.route)}
             className={`
-              squircle-sm w-full flex items-center px-3 py-2.5 duration-500 ease-out relative cursor-pointer
+              squircle-sm w-full flex items-center gap-3 py-2.5 duration-500 ease-out relative cursor-pointer
+              ${sidebarExpanded ? 'px-3' : 'justify-center px-0'}
               ${active
                 ? isDark
                   ? 'bg-white text-black shadow-lg'
@@ -246,15 +247,11 @@ export function DashboardLayout({
                 </span>
               )}
             </div>
-            <span
-              className={`whitespace-nowrap transition-all duration-500 flex-1 text-left ${
-                sidebarExpanded
-                  ? 'opacity-100 translate-x-0'
-                  : 'opacity-0 -translate-x-2 w-0'
-              }`}
-            >
-              {item.label}
-            </span>
+            {sidebarExpanded && (
+              <span className="whitespace-nowrap flex-1 text-left">
+                {item.label}
+              </span>
+            )}
             {showBadge && sidebarExpanded && (
               <span className="flex-shrink-0 min-w-[20px] h-5 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1.5 shadow-md tabular-nums">
                 {escalationCount}
