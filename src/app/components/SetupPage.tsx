@@ -662,25 +662,25 @@ export function SetupPage() {
         <div className="flex gap-2">
           <button
             onClick={revalidate}
-            className="flex items-center gap-1.5 px-3 py-1.5 dashboard-button text-xs text-foreground"
+            className="flex items-center px-3 py-1.5 bg-transparent text-xs text-coda-text liquid-button"
           >
             <RefreshCw className="w-3 h-3" />
-            Refresh
+            <span>Refresh</span>
           </button>
           <button
             onClick={() => { setShowForm(!showForm); setDeployError(null); }}
             disabled={deploying}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 dark:bg-neutral-200 dark:hover:bg-neutral-300 dark:text-neutral-900 disabled:opacity-50 rounded-xl text-xs text-white transition-colors liquid-button"
+            className="flex items-center px-3 py-1.5 bg-transparent disabled:opacity-50 text-xs text-coda-text liquid-button liquid-button-add"
           >
             <Plus className="w-3 h-3" />
-            Add Bank
+            <span>Add Bank</span>
           </button>
         </div>
       </PageHeader>
 
       {/* Global error display (visible after reset operations) */}
       {deployError && !showForm && (
-        <div className="mb-4 p-3 rounded-lg border border-red-800/50 bg-red-950/20">
+        <div className="mb-4 p-3 rounded-lg border border-red-500/20 bg-red-500/5">
           <div className="flex items-center gap-2 text-xs font-mono text-red-400">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
             <span className="flex-1">{deployError}</span>
@@ -704,7 +704,7 @@ export function SetupPage() {
           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono font-medium ${
             networkMode === 'devnet'
               ? 'bg-coda-brand/15 text-coda-brand border border-coda-brand/20'
-              : 'bg-black/[0.06] dark:bg-white/[0.08] text-coda-text-secondary border border-black/[0.08] dark:border-white/[0.10]'
+              : 'bg-transparent text-coda-text-secondary border border-black/[0.08] dark:border-white/[0.10]'
           }`}>
             {networkMode === 'devnet' ? (
               <><FlaskConical className="w-3 h-3" />Devnet Mode</>
@@ -773,17 +773,17 @@ export function SetupPage() {
               <button
                 onClick={seedDemoNetwork}
                 disabled={seedingDemo}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 dark:bg-neutral-200 dark:hover:bg-neutral-300 dark:text-neutral-900 disabled:opacity-50 text-white text-sm font-mono rounded transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-transparent disabled:opacity-50 text-coda-text text-sm font-mono liquid-button"
               >
                 {seedingDemo ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating wallets...
+                    <span>Creating wallets...</span>
                   </>
                 ) : (
                   <>
                     <Users className="w-4 h-4" />
-                    Onboard Demo Banks
+                    <span>Onboard Demo Banks</span>
                   </>
                 )}
               </button>
@@ -805,8 +805,8 @@ export function SetupPage() {
           )}
 
           {seedError && (
-            <div className="mt-4 p-3 rounded-xl border border-red-200/60 dark:border-red-800 bg-red-50/50 dark:bg-red-950/30 text-left max-w-md mx-auto">
-              <div className="flex items-center gap-2 text-xs font-mono text-red-500 dark:text-red-400">
+            <div className="mt-4 p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-left max-w-md mx-auto">
+              <div className="flex items-center gap-2 text-xs font-mono text-red-400">
                 <XCircle className="w-3.5 h-3.5 shrink-0" />
                 {seedError}
               </div>
@@ -878,24 +878,24 @@ export function SetupPage() {
                     {step.status === 'pending' && <div className="w-3.5 h-3.5 rounded-full border border-coda-text-faint/30" />}
                     {step.status === 'running' && <Loader2 className="w-3.5 h-3.5 text-coda-brand animate-spin" />}
                     {step.status === 'complete' && <CheckCircle2 className="w-3.5 h-3.5 text-coda-brand" />}
-                    {step.status === 'error' && <XCircle className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />}
+                    {step.status === 'error' && <XCircle className="w-3.5 h-3.5 text-red-400" />}
                     <span className={
                       step.status === 'complete' ? 'text-coda-brand' :
                       step.status === 'running' ? 'text-coda-text' :
-                      step.status === 'error' ? 'text-red-500 dark:text-red-400' :
+                      step.status === 'error' ? 'text-red-400' :
                       'text-coda-text-muted/40'
                     }>
                       {step.label}
                     </span>
-                    {step.detail && <span className="text-red-500/60 dark:text-red-400/60 ml-2">({step.detail})</span>}
+                    {step.detail && <span className="text-red-400/60 ml-2">({step.detail})</span>}
                   </div>
                 ))}
               </div>
             )}
 
             {deployError && !deploying && (
-              <div className="p-3 rounded-xl border border-red-200/60 dark:border-red-800 bg-red-50/50 dark:bg-red-950/30">
-                <div className="flex items-center gap-2 text-xs font-mono text-red-500 dark:text-red-400">
+              <div className="p-3 rounded-xl border border-red-500/20 bg-red-500/5">
+                <div className="flex items-center gap-2 text-xs font-mono text-red-400">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                   {deployError}
                 </div>
@@ -906,17 +906,17 @@ export function SetupPage() {
               <button
                 type="submit"
                 disabled={deploying || !formName || !formCode}
-                className="flex items-center gap-1.5 px-4 py-2 bg-coda-brand hover:bg-coda-brand-dim disabled:opacity-50 disabled:cursor-not-allowed rounded text-xs font-mono text-white transition-colors"
+                className="flex items-center px-4 py-2 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-coda-text liquid-button"
               >
                 {deploying ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Onboarding...
+                    <span>Onboarding...</span>
                   </>
                 ) : (
                   <>
                     <Users className="w-3.5 h-3.5" />
-                    Onboard Bank
+                    <span>Onboard Bank</span>
                   </>
                 )}
               </button>
@@ -924,9 +924,9 @@ export function SetupPage() {
                 type="button"
                 onClick={() => { setShowForm(false); resetForm(); }}
                 disabled={deploying}
-                className="px-4 py-2 border border-coda-border rounded text-xs font-mono text-coda-text-secondary hover:text-coda-text hover:border-coda-text-muted disabled:opacity-50 transition-colors"
+                className="px-4 py-2 bg-transparent text-xs font-mono text-coda-text disabled:opacity-50 liquid-button"
               >
-                Cancel
+                <span>Cancel</span>
               </button>
             </div>
           </form>
@@ -988,10 +988,10 @@ export function SetupPage() {
           {custodian && (
             <button
               onClick={refreshInfraBalances}
-              className="flex items-center gap-1 px-2 py-1 dashboard-button text-[10px] text-coda-text-muted hover:text-coda-text"
+              className="flex items-center px-2 py-1 bg-transparent text-[10px] text-coda-text liquid-button"
             >
               <RefreshCw className="w-2.5 h-2.5" />
-              Refresh
+              <span>Refresh</span>
             </button>
           )}
         </div>
@@ -1004,8 +1004,8 @@ export function SetupPage() {
             /* Not yet created or changing — show setup prompt */
             <div className="text-center py-4">
               <div className="flex items-center justify-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                  <Landmark className="w-5 h-5 text-amber-500" />
+                <div className="w-10 h-10 rounded-xl bg-coda-brand/10 border border-coda-brand/20 flex items-center justify-center">
+                  <Landmark className="w-5 h-5 text-coda-brand" />
                 </div>
                 <div className="w-px h-6 bg-coda-border/20" />
                 <div className="w-10 h-10 rounded-xl bg-coda-brand/10 border border-coda-brand/20 flex items-center justify-center">
@@ -1054,34 +1054,34 @@ export function SetupPage() {
                     }
                   } : setupCustodian}
                   disabled={infraDeploying || activeBanks.length === 0}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-coda-brand hover:bg-coda-brand-dim disabled:opacity-50 text-white text-sm font-mono rounded-xl transition-colors liquid-button cursor-pointer disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 bg-transparent disabled:opacity-50 text-coda-text text-sm font-mono liquid-button cursor-pointer disabled:cursor-not-allowed"
                 >
                   {infraDeploying ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {changingCustodian ? 'Reassigning...' : 'Linking & creating...'}
+                      <span>{changingCustodian ? 'Reassigning...' : 'Linking & creating...'}</span>
                     </>
                   ) : (
                     <>
                       <Landmark className="w-4 h-4" />
-                      {changingCustodian ? `Assign ${selectedCustodianCode} as Custodian` : 'Setup Custodian & Fees Wallet'}
+                      <span>{changingCustodian ? `Assign ${selectedCustodianCode} as Custodian` : 'Setup Custodian & Fees Wallet'}</span>
                     </>
                   )}
                 </button>
                 {changingCustodian && (
                   <button
                     onClick={() => setChangingCustodian(false)}
-                    className="px-3 py-2 text-xs font-mono text-coda-text-muted hover:text-coda-text rounded-xl border border-coda-border/30 hover:bg-coda-surface-hover transition-colors cursor-pointer"
+                    className="px-3 py-2 bg-transparent text-xs font-mono text-coda-text liquid-button cursor-pointer"
                   >
-                    Cancel
+                    <span>Cancel</span>
                   </button>
                 )}
               </div>
               {activeBanks.length === 0 && (
-                <p className="text-[10px] font-mono text-amber-400 mt-2">No active banks — activate banks above first.</p>
+                <p className="text-[10px] font-mono text-coda-text-muted mt-2">No active banks — activate banks above first.</p>
               )}
               {infraError && (
-                <div className="mt-3 p-2.5 rounded-lg border border-red-800/50 bg-red-950/20 max-w-md mx-auto">
+                <div className="mt-3 p-2.5 rounded-lg border border-red-500/20 bg-red-500/5 max-w-md mx-auto">
                   <div className="flex items-center gap-2 text-xs font-mono text-red-400">
                     <XCircle className="w-3.5 h-3.5 shrink-0" />
                     <span className="flex-1">{infraError}</span>
@@ -1096,8 +1096,8 @@ export function SetupPage() {
               {custodian && (
                 <InfraWalletCard
                   icon={Landmark}
-                  iconColor="text-amber-500"
-                  iconBg="bg-amber-500/10 border-amber-500/20"
+                  iconColor="text-coda-brand"
+                  iconBg="bg-coda-brand/10 border-coda-brand/20"
                   label="Universal Custodian"
                   name={custodian.name}
                   code={custodian.code}
@@ -1134,10 +1134,10 @@ export function SetupPage() {
                   }}>
                     <AlertDialogTrigger asChild>
                       <button
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 text-xs font-mono text-amber-500 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                        className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text liquid-button cursor-pointer"
                       >
                         <Landmark className="w-3.5 h-3.5" />
-                        Reassign Custodian Bank
+                        <span>Reassign Custodian Bank</span>
                       </button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -1149,7 +1149,7 @@ export function SetupPage() {
                               Changing the universal custodian affects all settlement flows, lockup token operations, and custody chains across the network.
                             </p>
                             <p>
-                              Type <code className="px-1 py-0.5 rounded bg-coda-surface-hover text-amber-400 font-bold">REASSIGN</code> to continue.
+                              Type <code className="px-1 py-0.5 rounded bg-coda-surface-hover text-coda-brand font-bold">REASSIGN</code> to continue.
                             </p>
                           </div>
                         </AlertDialogDescription>
@@ -1166,7 +1166,7 @@ export function SetupPage() {
                               document.getElementById('confirm-reassign-btn')?.click();
                             }
                           }}
-                          className="w-full px-3 py-2 rounded-xl border border-coda-border/30 bg-coda-surface text-sm font-mono text-coda-text focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                          className="w-full px-3 py-2 rounded-xl border border-coda-border/30 bg-coda-surface text-sm font-mono text-coda-text focus:outline-none focus:ring-1 focus:ring-coda-brand/50"
                           autoFocus
                           spellCheck={false}
                           autoComplete="off"
@@ -1177,7 +1177,7 @@ export function SetupPage() {
                         <AlertDialogAction
                           id="confirm-reassign-btn"
                           disabled={confirmText !== 'REASSIGN'}
-                          className="text-xs font-mono bg-amber-500 hover:bg-amber-600 text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-xs font-mono bg-transparent text-coda-text cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed liquid-button"
                           onClick={() => {
                             setConfirmOpen(false);
                             setConfirmText('');
@@ -1206,7 +1206,7 @@ export function SetupPage() {
           {/* Soft Reset: Reset Tokens */}
           <div className="dashboard-card-subtle p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-amber-500 dark:text-amber-400">Reset Tokens</p>
+              <p className="text-xs font-medium text-coda-text-secondary">Reset Tokens</p>
               <p className="text-[11px] text-coda-text-muted mt-0.5">
                 Clear transactions and rebuild token mints. Preserves bank keypairs and {gasToken} balances.
               </p>
@@ -1215,17 +1215,17 @@ export function SetupPage() {
               <AlertDialogTrigger asChild>
                 <button
                   disabled={resettingTokens || resetting || seedingDemo || deploying}
-                  className="dashboard-button flex items-center gap-1.5 px-3 py-1.5 text-xs text-amber-400 hover:text-amber-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="flex items-center px-3 py-1.5 bg-transparent text-xs text-coda-text disabled:opacity-50 disabled:cursor-not-allowed liquid-button"
                 >
                   {resettingTokens ? (
                     <>
                       <Loader2 className="w-3 h-3 animate-spin" />
-                      Resetting tokens...
+                      <span>Resetting tokens...</span>
                     </>
                   ) : (
                     <>
                       <RotateCcw className="w-3 h-3" />
-                      Reset Tokens
+                      <span>Reset Tokens</span>
                     </>
                   )}
                 </button>
@@ -1256,7 +1256,7 @@ export function SetupPage() {
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={resetTokens}
-                    className="squircle-sm bg-amber-600 text-white text-xs hover:bg-amber-500 border-0"
+                    className="squircle-sm bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 text-xs border border-amber-500/20"
                   >
                     Reset Tokens
                   </AlertDialogAction>
@@ -1268,7 +1268,7 @@ export function SetupPage() {
           {/* Nuclear Reset: Reset Network */}
           <div className="dashboard-card-subtle p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-red-500 dark:text-red-400">Reset Network</p>
+              <p className="text-xs font-medium text-coda-text-secondary">Reset Network</p>
               <p className="text-[11px] text-coda-text-muted mt-0.5">
                 Delete everything including bank keypairs. Requires new wallet generation and {gasToken} funding.
               </p>
@@ -1277,17 +1277,17 @@ export function SetupPage() {
               <AlertDialogTrigger asChild>
                 <button
                   disabled={resetting || resettingTokens || seedingDemo || deploying}
-                  className="dashboard-button flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="flex items-center px-3 py-1.5 bg-transparent text-xs text-coda-text disabled:opacity-50 disabled:cursor-not-allowed liquid-button"
                 >
                   {resetting ? (
                     <>
                       <Loader2 className="w-3 h-3 animate-spin" />
-                      Resetting...
+                      <span>Resetting...</span>
                     </>
                   ) : (
                     <>
                       <Trash2 className="w-3 h-3" />
-                      Reset Network
+                      <span>Reset Network</span>
                     </>
                   )}
                 </button>
@@ -1308,7 +1308,7 @@ export function SetupPage() {
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={resetNetwork}
-                    className="squircle-sm bg-red-600 text-white text-xs hover:bg-red-500 border-0"
+                    className="squircle-sm bg-red-500/15 text-red-400 hover:bg-red-500/25 text-xs border border-red-500/20"
                   >
                     Reset Everything
                   </AlertDialogAction>
@@ -1431,14 +1431,14 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
       label: 'Queued',
     },
     wallet_created: {
-      icon: <Wallet className="w-4 h-4 text-blue-500 dark:text-blue-400" />,
-      color: 'text-blue-500 dark:text-blue-400',
+      icon: <Wallet className="w-4 h-4 text-coda-brand" />,
+      color: 'text-coda-brand',
       bg: NEUTRAL_CARD_BG,
       label: 'Wallet Ready',
     },
     awaiting_funding: {
-      icon: <Wallet className="w-4 h-4 text-amber-500 dark:text-amber-400" />,
-      color: 'text-amber-500 dark:text-amber-400',
+      icon: <Wallet className="w-4 h-4 text-coda-text-secondary" />,
+      color: 'text-coda-text-secondary',
       bg: NEUTRAL_CARD_BG,
       label: isFunded ? 'Funded' : `Awaiting ${gasToken}`,
     },
@@ -1455,8 +1455,8 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
       label: 'Active',
     },
     error: {
-      icon: <XCircle className="w-4 h-4 text-red-500 dark:text-red-400" />,
-      color: 'text-red-500 dark:text-red-400',
+      icon: <XCircle className="w-4 h-4 text-red-400" />,
+      color: 'text-red-400',
       bg: NEUTRAL_CARD_BG,
       label: 'Error',
     },
@@ -1478,7 +1478,7 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
         </div>
         <span className={`inline-flex items-center gap-1.5 text-xs font-mono ${isFunded && card.status === 'awaiting_funding' ? 'text-coda-brand' : cfg.color}`}>
           {card.status === 'awaiting_funding' && !isFunded && (
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-coda-text-muted" />
           )}
           {isFunded && card.status === 'awaiting_funding' ? 'Funded \u2014 Ready to activate' : cfg.label}
         </span>
@@ -1495,7 +1495,7 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
               href={explorerUrl(card.public_key, 'address')}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-500 dark:text-blue-400 hover:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1"
+              className="text-coda-brand hover:text-coda-brand-dim inline-flex items-center gap-1"
             >
               {truncateAddress(card.public_key, 6)}
               <ExternalLink className="w-2.5 h-2.5" />
@@ -1519,7 +1519,7 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
             href={explorerUrl(card.token_mint, 'address')}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-500 dark:text-blue-400 hover:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1"
+            className="text-coda-brand hover:text-coda-brand-dim inline-flex items-center gap-1"
           >
             {truncateAddress(card.token_mint, 6)}
             <ExternalLink className="w-2.5 h-2.5" />
@@ -1541,7 +1541,7 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
           <div className="flex items-center gap-2 text-xs font-mono">
             <span className="text-coda-text-muted">{gasToken} Balance:</span>
             {localSolBalance !== null ? (
-              <span className={isFunded ? 'text-coda-brand' : 'text-red-500 dark:text-red-400'}>
+              <span className={isFunded ? 'text-coda-brand' : 'text-red-400'}>
                 {localSolBalance.toFixed(4)} {gasToken} {isFunded ? '\u2713' : '\u2717'}
               </span>
             ) : (
@@ -1593,7 +1593,7 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
 
           {/* Fund error */}
           {fundError && (
-            <div className="bg-red-950/20 border border-red-800/50 rounded-lg p-2 flex items-center gap-2">
+            <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-2 flex items-center gap-2">
               <XCircle className="w-3 h-3 text-red-400 shrink-0" />
               <span className="text-[11px] font-mono text-red-400">{fundError}</span>
             </div>
@@ -1615,43 +1615,43 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
               <button
                 onClick={handleFundWallet}
                 disabled={funding || isFunded}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-mono text-amber-600 dark:text-amber-400 transition-colors"
+                className="inline-flex items-center px-3 py-1.5 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-coda-text liquid-button"
               >
                 {funding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Coins className="w-3 h-3" />}
-                {funding ? 'Funding...' : isFunded ? 'Funded' : `Fund Wallet (100 ${gasToken})`}
+                <span>{funding ? 'Funding...' : isFunded ? 'Funded' : `Fund Wallet (100 ${gasToken})`}</span>
               </button>
             ) : (
               <button
                 onClick={handleOpenFaucet}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-coda-border-subtle rounded-lg text-xs font-mono text-coda-text-secondary hover:text-coda-text hover:border-coda-text-muted transition-colors"
+                className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text liquid-button"
               >
                 <Globe className="w-3 h-3" />
-                Open Solana Faucet
+                <span>Open Solana Faucet</span>
                 <ExternalLink className="w-2.5 h-2.5" />
               </button>
             )}
             <button
               onClick={handleCheckBalance}
               disabled={checkingBalance}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-coda-border-subtle rounded-lg text-xs font-mono text-coda-text-muted hover:text-coda-text hover:border-coda-text-muted disabled:opacity-50 transition-colors"
+              className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text disabled:opacity-50 liquid-button"
             >
               {checkingBalance ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-              Check Balance
+              <span>Check Balance</span>
             </button>
             <button
               onClick={handleActivate}
               disabled={!isFunded || activating}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-coda-brand hover:bg-coda-brand-dim disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-xs font-mono text-white transition-colors"
+              className="inline-flex items-center px-3 py-1.5 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-coda-text liquid-button"
             >
               {activating ? (
                 <>
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  Activating...
+                  <span>Activating...</span>
                 </>
               ) : (
                 <>
                   <ArrowRight className="w-3 h-3" />
-                  Activate Bank
+                  <span>Activate Bank</span>
                 </>
               )}
             </button>
@@ -1671,14 +1671,14 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
       {card.status === 'error' && (
         <div className="mt-2 space-y-1">
           {card.detail && (
-            <div className="text-[11px] font-mono text-red-500/80 dark:text-red-400/80">{card.detail}</div>
+            <div className="text-[11px] font-mono text-red-400/80">{card.detail}</div>
           )}
           <button
             onClick={onActivate}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-red-300/50 dark:border-red-800/50 rounded-lg text-xs font-mono text-red-500 dark:text-red-400 hover:text-red-400 dark:hover:text-red-300 hover:border-red-400 dark:hover:border-red-700 transition-colors"
+            className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text liquid-button"
           >
             <RefreshCw className="w-3 h-3" />
-            Retry
+            <span>Retry</span>
           </button>
         </div>
       )}
@@ -1692,7 +1692,7 @@ function BankRow({ bank, wallet, solBalance }: { bank: Bank; wallet?: WalletType
 
   const statusStyles: Record<string, string> = {
     active: 'bg-coda-brand/20 text-coda-brand',
-    wallet_created: 'bg-blue-500/20 text-blue-400',
+    wallet_created: 'bg-coda-brand/20 text-coda-brand',
     activating: 'bg-yellow-500/20 text-yellow-400',
     awaiting_funding: 'bg-yellow-500/20 text-yellow-400',
     onboarding: 'bg-yellow-500/20 text-yellow-400',
@@ -1711,7 +1711,7 @@ function BankRow({ bank, wallet, solBalance }: { bank: Bank; wallet?: WalletType
         </td>
         <td className="px-4 py-3">
           {bank.swift_bic ? (
-            <span className="px-1.5 py-0.5 bg-coda-surface-hover rounded text-blue-400">{bank.swift_bic}</span>
+            <span className="px-1.5 py-0.5 bg-coda-surface-hover rounded text-coda-brand">{bank.swift_bic}</span>
           ) : (
             <span className="text-coda-text-muted">--</span>
           )}
@@ -1729,7 +1729,7 @@ function BankRow({ bank, wallet, solBalance }: { bank: Bank; wallet?: WalletType
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-blue-500 dark:text-blue-400 hover:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1"
+              className="text-coda-brand hover:text-coda-brand-dim inline-flex items-center gap-1"
             >
               {truncateAddress(bank.solana_wallet_pubkey)}
               <ExternalLink className="w-2.5 h-2.5" />
@@ -1748,7 +1748,7 @@ function BankRow({ bank, wallet, solBalance }: { bank: Bank; wallet?: WalletType
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-blue-500 dark:text-blue-400 hover:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1"
+              className="text-coda-brand hover:text-coda-brand-dim inline-flex items-center gap-1"
             >
               {truncateAddress(bank.token_mint_address)}
               <ExternalLink className="w-2.5 h-2.5" />
@@ -1773,15 +1773,15 @@ function BankRow({ bank, wallet, solBalance }: { bank: Bank; wallet?: WalletType
             <div className="grid grid-cols-2 gap-4 text-xs font-mono">
               <div>
                 <span className="text-coda-text-muted">Full Wallet Address:</span>
-                <div className="text-blue-500 dark:text-blue-400 break-all mt-0.5">{bank.solana_wallet_pubkey || '--'}</div>
+                <div className="text-coda-brand break-all mt-0.5">{bank.solana_wallet_pubkey || '--'}</div>
               </div>
               <div>
                 <span className="text-coda-text-muted">Full Token Mint:</span>
-                <div className="text-blue-500 dark:text-blue-400 break-all mt-0.5">{bank.token_mint_address || '--'}</div>
+                <div className="text-coda-brand break-all mt-0.5">{bank.token_mint_address || '--'}</div>
               </div>
               <div>
                 <span className="text-coda-text-muted">Token Account (ATA):</span>
-                <div className="text-blue-500 dark:text-blue-400 break-all mt-0.5">{wallet?.token_account_address || '--'}</div>
+                <div className="text-coda-brand break-all mt-0.5">{wallet?.token_account_address || '--'}</div>
               </div>
               <div>
                 <span className="text-coda-text-muted">{gasToken} Balance (live):</span>
@@ -1869,7 +1869,7 @@ function InfraWalletCard({
             <span className="font-mono text-sm font-bold text-coda-text">{name}</span>
             <span className="px-1.5 py-0.5 bg-coda-surface-hover rounded text-[10px] font-mono text-coda-text-muted">{code}</span>
             {linkedBank && (
-              <span className="px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[10px] font-mono text-blue-400">Linked</span>
+              <span className="px-1.5 py-0.5 bg-coda-brand/10 border border-coda-brand/20 rounded text-[10px] font-mono text-coda-brand">Linked</span>
             )}
           </div>
           <span className="text-[10px] font-mono text-coda-text-muted capitalize">{label}</span>
@@ -1881,7 +1881,7 @@ function InfraWalletCard({
       <div className="space-y-1">
         <span className="text-[10px] font-mono text-coda-text-muted">Wallet Address</span>
         <div className="flex items-center gap-2">
-          <code className="flex-1 text-xs font-mono text-blue-400 break-all leading-relaxed">
+          <code className="flex-1 text-xs font-mono text-coda-brand break-all leading-relaxed">
             {walletAddress}
           </code>
           <button
@@ -1912,7 +1912,7 @@ function InfraWalletCard({
         <div className="flex items-center gap-3">
           <div>
             <span className="text-[10px] font-mono text-coda-text-muted">{gasToken} Balance</span>
-            <div className={`text-xs font-mono font-medium ${isFunded ? 'text-coda-brand' : 'text-amber-400'}`}>
+            <div className={`text-xs font-mono font-medium ${isFunded ? 'text-coda-brand' : 'text-coda-text-secondary'}`}>
               {localBalance.toFixed(4)} {gasToken}
             </div>
           </div>
@@ -1921,20 +1921,20 @@ function InfraWalletCard({
               href={`${import.meta.env.VITE_SOLANA_FAUCET_URL || 'https://faucet.solana.com'}/?address=${walletAddress}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-[10px] font-mono text-amber-400 hover:bg-amber-500/20 transition-colors"
+              className="inline-flex items-center px-2 py-1 bg-transparent text-[10px] font-mono text-coda-text-secondary liquid-button"
             >
               <Wallet className="w-3 h-3" />
-              Fund via Faucet
+              <span>Fund via Faucet</span>
             </a>
           )}
           {!isFunded && isProductionCluster && (
             <button
               onClick={handleFund}
               disabled={funding}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-[10px] font-mono text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="inline-flex items-center px-2 py-1 bg-transparent text-[10px] font-mono text-coda-text-secondary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed liquid-button"
             >
               <Wallet className="w-3 h-3" />
-              {funding ? 'Funding...' : `Fund Wallet (100 ${gasToken})`}
+              <span>{funding ? 'Funding...' : `Fund Wallet (100 ${gasToken})`}</span>
             </button>
           )}
         </div>
@@ -1974,11 +1974,11 @@ function NetworkFeeProtocolCard() {
     <div className="dashboard-card overflow-hidden">
       <div className="px-4 py-3 border-b border-coda-border/30 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Coins className="w-3.5 h-3.5 text-amber-500" />
+          <Coins className="w-3.5 h-3.5 text-coda-text-muted" />
           <h2 className="text-sm font-medium dashboard-text">Network Fee Protocol</h2>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-red-500/15 text-red-400 border border-red-500/20">
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-transparent text-coda-text-secondary border border-black/[0.08] dark:border-white/[0.10]">
             <Shield className="w-3 h-3" />
             Mandatory &mdash; Enforced
           </span>
@@ -1993,7 +1993,7 @@ function NetworkFeeProtocolCard() {
           <>
             {/* Fee model + rate */}
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400">
+              <span className="text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-full bg-transparent text-coda-text-secondary">
                 {gasToken} Gas-Layer Fee
               </span>
               <span className="text-[10px] text-coda-text-muted font-mono">
@@ -2002,14 +2002,14 @@ function NetworkFeeProtocolCard() {
             </div>
 
             {/* Enforcement notice */}
-            <div className="flex items-start gap-2 bg-red-500/5 rounded-lg p-3 border border-red-500/15">
-              <Shield size={14} className="text-red-400 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2 bg-black/[0.03] dark:bg-white/[0.03] rounded-lg p-3 border border-coda-border/20">
+              <Shield size={14} className="text-coda-text-muted mt-0.5 shrink-0" />
               <div>
-                <p className="text-[11px] text-red-400 font-medium mb-1">
+                <p className="text-[11px] text-coda-text-secondary font-medium mb-1">
                   Network fees are mandatory and cannot be bypassed.
                 </p>
                 <p className="text-[11px] text-coda-text-secondary leading-relaxed">
-                  Every settlement transaction requires a <code className="text-amber-400/80 bg-amber-500/10 px-1 rounded">SystemProgram.transfer</code> of {feeInfo?.network_fee_sol ?? 0.001} {gasToken} from the sender bank to the Solstice Network Fees wallet. If fee collection fails, the settlement will be blocked and the transaction will not complete. No agent or user can override this protocol-level requirement.
+                  Every settlement transaction requires a <code className="text-coda-brand bg-coda-brand/10 px-1 rounded">SystemProgram.transfer</code> of {feeInfo?.network_fee_sol ?? 0.001} {gasToken} from the sender bank to the Solstice Network Fees wallet. If fee collection fails, the settlement will be blocked and the transaction will not complete. No agent or user can override this protocol-level requirement.
                 </p>
               </div>
             </div>
@@ -2019,9 +2019,9 @@ function NetworkFeeProtocolCard() {
               <label className="text-xs font-medium text-coda-text-secondary">Settlement Methods</label>
               <div className="grid grid-cols-3 gap-1.5 mt-2">
                 {[
-                  { method: 'pvp_burn_mint', label: 'PvP Burn-Mint', color: 'text-teal-400 bg-teal-500/10 border-teal-500/20' },
-                  { method: 'lockup_hard_finality', label: 'Lockup Finality', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-                  { method: 'lockup_reversal', label: 'Lockup Reversal', color: 'text-red-400 bg-red-500/10 border-red-500/20' },
+                  { method: 'pvp_burn_mint', label: 'PvP Burn-Mint', color: 'text-coda-brand bg-coda-brand/10 border-coda-brand/20' },
+                  { method: 'lockup_hard_finality', label: 'Lockup Finality', color: 'text-coda-brand bg-coda-brand/10 border-coda-brand/20' },
+                  { method: 'lockup_reversal', label: 'Lockup Reversal', color: 'text-coda-text-secondary bg-black/[0.04] dark:bg-white/[0.04] border-coda-border/20' },
                 ].map(({ method, label, color }) => (
                   <div key={method} className={`px-2 py-1.5 rounded-lg text-[10px] font-medium text-center border ${color}`}>
                     {label}
@@ -2035,7 +2035,7 @@ function NetworkFeeProtocolCard() {
               <div className="bg-black/[0.03] dark:bg-white/[0.04] rounded-lg p-3 border border-coda-border/50">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] uppercase tracking-wider text-coda-text-muted font-mono">Solstice Network Fees Wallet</span>
-                  <span className="text-[10px] font-mono text-amber-400">{feeInfo.fees_wallet.balance?.toFixed(6) ?? '0'} {gasToken} collected</span>
+                  <span className="text-[10px] font-mono text-coda-text-secondary">{feeInfo.fees_wallet.balance?.toFixed(6) ?? '0'} {gasToken} collected</span>
                 </div>
                 <div className="text-[11px] font-mono text-coda-text-muted truncate" title={feeInfo.fees_wallet.wallet_address}>
                   {feeInfo.fees_wallet.wallet_address}

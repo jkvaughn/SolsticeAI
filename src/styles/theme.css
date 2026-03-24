@@ -357,11 +357,51 @@ html { font-size: var(--font-size); }
   .scrollbar-thin::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.2); border-radius: 3px; }
   .dark .scrollbar-thin::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); }
 
-  .liquid-button { position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-  .liquid-button::before { content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.15); transform: translate(-50%, -50%); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-  .liquid-button:hover::before { width: 300px; height: 300px; }
-  .dark .liquid-button::before { background: rgba(255, 255, 255, 0.08); }
-  .liquid-button:active { transform: scale(0.98); }
+  .liquid-button {
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 6px !important;
+    gap: 16px;
+    transition: border-radius 0.3s ease,
+                background 0.3s ease,
+                color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease,
+                transform 0.3s ease !important;
+  }
+  .dark .liquid-button { border-color: rgba(255, 255, 255, 0.15); }
+  /* Children: slide inward on hover via transform only (no layout shift) */
+  .liquid-button > svg {
+    flex-shrink: 0;
+    transition: transform 0.3s ease !important;
+  }
+  .liquid-button > span,
+  .liquid-button > :not(svg) {
+    transition: transform 0.3s ease !important;
+  }
+  .liquid-button:hover {
+    background: #000;
+    border-color: #000;
+    border-radius: 50px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+    transform: translateY(1px);
+  }
+  .liquid-button:hover > svg { transform: translateX(5px); }
+  .liquid-button:hover > span,
+  .liquid-button:hover > :not(svg) { transform: translateX(-5px); }
+  .liquid-button:hover, .liquid-button:hover * { color: #fff !important; }
+  .dark .liquid-button:hover {
+    background: #fff;
+    border-color: #fff;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.10);
+  }
+  .dark .liquid-button:hover, .dark .liquid-button:hover * { color: #000 !important; }
+  .liquid-button:active { transform: translateY(0) scale(0.98); box-shadow: none; }
+
+  /* Add-button variant: + icon rotates 90° on hover */
+  .liquid-button-add:hover > svg {
+    transform: translateX(4px) rotate(90deg);
+  }
 
   .animate-shimmer { animation: shimmer 1.5s linear infinite; background-size: 200% 100%; }
   .animate-fade-slide-in { animation: fadeSlideIn 0.35s ease-out both; }

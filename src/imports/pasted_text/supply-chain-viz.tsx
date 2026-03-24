@@ -12,10 +12,10 @@
                   <div className="flex items-center gap-1.5 ml-2">
                     <button
                       onClick={() => setViewMode('network')}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 squircle transition-all text-xs ${
+                      className={`flex items-center px-2.5 py-1 text-xs rounded-md transition-colors ${
                         viewMode === 'network'
-                          ? 'bg-emerald-500/20 dark:bg-emerald-500/30 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
-                          : 'bg-white/40 dark:bg-black/40 dashboard-text-muted hover:bg-white/60 dark:hover:bg-black/50 border border-white/20 dark:border-white/10'
+                          ? 'bg-transparent text-emerald-700 dark:text-emerald-400'
+                          : 'bg-transparent dashboard-text-muted hover:text-coda-text'
                       }`}
                     >
                       <Network className="size-3" />
@@ -23,10 +23,10 @@
                     </button>
                     <button
                       onClick={() => setViewMode('tree')}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 squircle transition-all text-xs ${
+                      className={`flex items-center px-2.5 py-1 text-xs rounded-md transition-colors ${
                         viewMode === 'tree'
-                          ? 'bg-emerald-500/20 dark:bg-emerald-500/30 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
-                          : 'bg-white/40 dark:bg-black/40 dashboard-text-muted hover:bg-white/60 dark:hover:bg-black/50 border border-white/20 dark:border-white/10'
+                          ? 'bg-transparent text-emerald-700 dark:text-emerald-400'
+                          : 'bg-transparent dashboard-text-muted hover:text-coda-text'
                       }`}
                     >
                       <GitBranch className="size-3" />
@@ -34,10 +34,10 @@
                     </button>
                     <button
                       onClick={() => setViewMode('geographic')}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 squircle transition-all text-xs ${
+                      className={`flex items-center px-2.5 py-1 text-xs rounded-md transition-colors ${
                         viewMode === 'geographic'
-                          ? 'bg-emerald-500/20 dark:bg-emerald-500/30 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
-                          : 'bg-white/40 dark:bg-black/40 dashboard-text-muted hover:bg-white/60 dark:hover:bg-black/50 border border-white/20 dark:border-white/10'
+                          ? 'bg-transparent text-emerald-700 dark:text-emerald-400'
+                          : 'bg-transparent dashboard-text-muted hover:text-coda-text'
                       }`}
                     >
                       <Map className="size-3" />
@@ -55,11 +55,11 @@
                       <div className="relative">
                         <button
                           onClick={() => setShowProgramDropdown(!showProgramDropdown)}
-                          className="flex items-center gap-2 px-2.5 py-1.5 squircle bg-white/40 dark:bg-black/30 border border-white/20 dark:border-white/10 hover:bg-white/50 dark:hover:bg-black/40 transition-all"
+                          className="flex items-center px-2.5 py-1.5 bg-transparent hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer rounded-md"
                         >
-                          <div 
+                          <div
                             className="w-2 h-2 rounded-full"
-                            style={{ 
+                            style={{
                               background: selectedProgramData.color,
                               boxShadow: `0 0 8px ${selectedProgramData.color}`
                             }}
@@ -79,10 +79,10 @@
                                   setSelectedProgram(program.id);
                                   setShowProgramDropdown(false);
                                 }}
-                                className={`w-full flex items-center gap-2 px-3 py-2 squircle transition-all text-xs ${
+                                className={`w-full flex items-center px-3 py-2 text-xs rounded-md transition-colors ${
                                   selectedProgram === program.id
-                                    ? 'bg-emerald-500/20 dark:bg-emerald-500/30 text-emerald-700 dark:text-emerald-400'
-                                    : 'dashboard-text hover:bg-white/50 dark:hover:bg-white/5'
+                                    ? 'bg-transparent text-emerald-700 dark:text-emerald-400'
+                                    : 'bg-transparent dashboard-text hover:text-coda-text'
                                 }`}
                               >
                                 <div 
@@ -159,7 +159,7 @@
                   <div className="relative flex-shrink-0">
                     <button
                       onClick={() => setShowLegend(!showLegend)}
-                      className="flex items-center gap-2 px-2.5 py-1.5 squircle bg-white/40 dark:bg-black/30 border border-white/20 dark:border-white/10 hover:bg-white/50 dark:hover:bg-black/40 transition-all"
+                      className="flex items-center px-2.5 py-1.5 bg-transparent hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer rounded-md"
                     >
                       <Layers size={14} className="dashboard-text" />
                       <span className="dashboard-text text-xs font-medium">Tiers</span>

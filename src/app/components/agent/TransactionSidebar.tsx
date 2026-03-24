@@ -105,7 +105,7 @@ function SidebarLiveCard({
         </div>
         <button
           onClick={() => navigate(`/transactions/${pipeline.transactionId}`)}
-          className="shrink-0 text-[8px] text-coda-text-muted hover:text-blue-500 transition-colors font-mono flex items-center gap-0.5"
+          className="liquid-button shrink-0 text-[8px] text-coda-text-muted font-mono flex items-center"
           title="View details"
         >
           <ExternalLink className="w-2.5 h-2.5" />
@@ -138,7 +138,7 @@ function SidebarCompletedRow({
     }`}>
       <button
         onClick={onToggle}
-        className="w-full px-3 py-2 flex items-center gap-2 text-left"
+        className="w-full px-3 py-2 flex items-center gap-2 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
         {isRejected ? (
           <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
@@ -183,10 +183,10 @@ function SidebarCompletedRow({
           <StepProgressSidebar pipeline={pipeline} />
           <button
             onClick={() => navigate(`/transactions/${pipeline.transactionId}`)}
-            className="mt-2 w-full text-center text-[9px] text-coda-text-muted hover:text-blue-500 transition-colors font-mono flex items-center justify-center gap-1"
+            className="liquid-button mt-2 w-full text-center text-[9px] text-coda-text-muted font-mono flex items-center justify-center"
           >
             <ExternalLink className="w-2.5 h-2.5" />
-            View Details
+            <span>View Details</span>
           </button>
         </div>
       )}

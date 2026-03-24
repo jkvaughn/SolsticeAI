@@ -198,11 +198,11 @@ export function ProvingGroundSummaryView({ results, summary }: ProvingGroundSumm
       <div className="flex justify-end">
         <button
           disabled
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 text-coda-text-muted text-xs font-mono cursor-not-allowed"
+          className="liquid-button flex items-center px-3 py-1.5 text-coda-text-muted text-xs font-mono cursor-not-allowed"
           title="Coming soon"
         >
           <Download size={12} />
-          Export Report
+          <span>Export Report</span>
         </button>
       </div>
     </div>

@@ -261,7 +261,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-coda-text-muted hover:text-coda-text-secondary"
+      className="liquid-button p-1 cursor-pointer text-coda-text-muted"
       title="Copy"
     >
       {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
@@ -277,10 +277,10 @@ function FeedbackButton({ type }: { type: 'up' | 'down' }) {
   return (
     <button
       onClick={() => setActive(!active)}
-      className={`p-1 rounded-md transition-colors cursor-pointer ${
+      className={`liquid-button p-1 cursor-pointer ${
         active
-          ? 'text-coda-brand bg-coda-brand/10'
-          : 'text-coda-text-muted hover:text-coda-text-secondary hover:bg-black/5 dark:hover:bg-white/5'
+          ? 'text-coda-brand bg-transparent'
+          : 'text-coda-text-muted'
       }`}
       title={type === 'up' ? 'Helpful' : 'Not helpful'}
     >
@@ -297,8 +297,8 @@ function ThoughtSection({ reasoning }: { reasoning: string }) {
     <div className="mb-1.5">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 text-[11px] text-coda-text-muted hover:text-coda-text-secondary
-                   transition-colors cursor-pointer py-0.5"
+        className="liquid-button flex items-center text-[11px] text-coda-text-muted
+                   cursor-pointer py-0.5"
       >
         <ChevronRight
           size={12}
@@ -364,8 +364,8 @@ function ModeSwitcher({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10
-                   transition-colors cursor-pointer text-coda-text-muted hover:text-coda-text"
+        className="liquid-button p-1.5
+                   cursor-pointer text-coda-text-muted"
         title="Switch layout"
       >
         {currentMode === 'sidebar' ? <PanelRight size={15} /> : <MessageCircle size={15} />}
@@ -384,8 +384,8 @@ function ModeSwitcher({
           >
             <button
               onClick={() => { onSetMode('sidebar'); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-coda-text
-                         hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              className="w-full flex items-center px-3 py-2 text-xs text-coda-text
+                         rounded-md transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer"
             >
               <PanelRight size={14} className="text-coda-text-muted" />
               <span className="flex-1 text-left">Sidebar</span>
@@ -395,8 +395,8 @@ function ModeSwitcher({
             </button>
             <button
               onClick={() => { onSetMode('floating'); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-coda-text
-                         hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              className="w-full flex items-center px-3 py-2 text-xs text-coda-text
+                         rounded-md transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer"
             >
               <MessageCircle size={14} className="text-coda-text-muted" />
               <span className="flex-1 text-left">Floating</span>
@@ -556,15 +556,13 @@ export function GlobalInputBar({
         {/* Left actions */}
         <div className="flex items-center gap-0.5">
           <button
-            className="p-1.5 rounded-lg text-coda-text-muted hover:text-coda-text-secondary
-                       hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="liquid-button liquid-button-add p-1.5 text-coda-text-muted cursor-pointer"
             title="Add context"
           >
             <Plus size={16} />
           </button>
           <button
-            className="p-1.5 rounded-lg text-coda-text-muted hover:text-coda-text-secondary
-                       hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="liquid-button p-1.5 text-coda-text-muted cursor-pointer"
             title="Settings"
           >
             <SlidersHorizontal size={16} />
@@ -582,8 +580,7 @@ export function GlobalInputBar({
           )}
           <span className="text-xs text-coda-text-muted/60 font-medium mr-1 select-none">Auto</span>
           <button
-            className="p-1.5 rounded-lg text-coda-text-muted hover:text-coda-text-secondary
-                       hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="liquid-button p-1.5 text-coda-text-muted cursor-pointer"
             title="Voice input"
           >
             <Mic size={16} />
@@ -591,10 +588,10 @@ export function GlobalInputBar({
           <button
             onClick={() => { if (query.trim()) handleSubmit(query); }}
             disabled={!query.trim() || isLoading}
-            className={`p-1.5 rounded-full transition-all flex-shrink-0 cursor-pointer ${
+            className={`liquid-button p-1.5 flex-shrink-0 cursor-pointer ${
               query.trim() && !isLoading
-                ? 'bg-coda-text text-white dark:bg-white dark:text-neutral-900 hover:opacity-80'
-                : 'bg-black/[0.08] dark:bg-white/[0.08] text-coda-text-muted cursor-not-allowed'
+                ? 'bg-transparent text-coda-text'
+                : 'bg-transparent text-coda-text-muted cursor-not-allowed'
             }`}
           >
             <ArrowUp size={14} />
@@ -704,11 +701,11 @@ export function GlobalInputBar({
           <p className="text-[11px] text-coda-text-muted">Changes applied.</p>
           <button
             onClick={workflowContext.onViewResults}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium
-                       bg-coda-brand/10 border border-coda-brand/20 text-coda-brand
-                       hover:bg-coda-brand/20 cursor-pointer transition-colors"
+            className="liquid-button flex items-center px-3 py-1.5 text-xs font-medium
+                       bg-transparent text-coda-brand
+                       cursor-pointer"
           >
-            Show config <ArrowRight className="w-3 h-3" />
+            <span>Show config</span> <ArrowRight className="w-3 h-3" />
           </button>
         </div>
       ) : (
@@ -716,20 +713,19 @@ export function GlobalInputBar({
           {workflowContext.showApproval && workflowContext.onApprove && (
             <button
               onClick={workflowContext.onApprove}
-              className="px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all
-                         bg-coda-brand/10 border border-coda-brand/20 text-coda-brand hover:bg-coda-brand/20"
+              className="liquid-button px-3 py-1.5 text-xs font-medium cursor-pointer
+                         bg-transparent text-coda-brand"
             >
-              Apply Changes
+              <span>Apply Changes</span>
             </button>
           )}
           {workflowContext.onCancel && (
             <button
               onClick={workflowContext.onCancel}
-              className="px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all
-                         bg-black/5 dark:bg-white/5 text-coda-text-muted
-                         hover:bg-black/10 dark:hover:bg-white/10 hover:text-coda-text"
+              className="liquid-button px-3 py-1.5 text-xs cursor-pointer
+                         bg-transparent text-coda-text-muted"
             >
-              Reject
+              <span>Reject</span>
             </button>
           )}
         </div>
@@ -748,11 +744,10 @@ export function GlobalInputBar({
               if (s.action) s.action();
               else handleSubmit(s.text);
             }}
-            className="px-2 py-1 rounded-full text-[10px] transition-all cursor-pointer
-                       bg-black/5 dark:bg-white/5 text-coda-text-muted
-                       hover:bg-black/10 dark:hover:bg-white/10 hover:text-coda-text"
+            className="liquid-button px-2 py-1 text-[10px] cursor-pointer
+                       bg-transparent text-coda-text-muted"
           >
-            {s.text}
+            <span>{s.text}</span>
           </button>
         ))}
       </div>
@@ -780,8 +775,8 @@ export function GlobalInputBar({
       {/* Minimize to dot */}
       <button
         onClick={() => setAriaMode('dot')}
-        className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10
-                   transition-colors cursor-pointer"
+        className="liquid-button p-1.5
+                   cursor-pointer"
         title="Minimize"
       >
         <Minus size={15} className="text-coda-text-muted" />
@@ -789,8 +784,8 @@ export function GlobalInputBar({
       {/* Close */}
       <button
         onClick={() => setAriaMode('dot')}
-        className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10
-                   transition-colors cursor-pointer"
+        className="liquid-button p-1.5
+                   cursor-pointer"
         title="Close"
       >
         <X size={15} className="text-coda-text-muted" />
@@ -813,8 +808,7 @@ export function GlobalInputBar({
             exit={{ opacity: 0, scale: 0.5 }}
             transition={{ duration: 0.2, ease: EASE_OUT }}
             onClick={() => setAriaMode('floating')}
-            className="fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full
-                       bg-neutral-800 dark:bg-neutral-200
+            className="liquid-button fixed bottom-5 right-5 z-50 w-12 h-12
                        shadow-lg shadow-black/15 hover:shadow-xl hover:shadow-black/20
                        hover:scale-105 active:scale-95
                        flex items-center justify-center cursor-pointer

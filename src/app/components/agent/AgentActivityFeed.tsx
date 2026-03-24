@@ -600,7 +600,7 @@ export function AgentActivityFeed({
     <div className="border-t border-coda-border/15">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-coda-text-muted hover:text-coda-text-secondary transition-colors"
+        className="w-full px-3 py-1.5 flex items-center gap-2 text-[10px] text-coda-text-muted hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? 'bg-coda-brand animate-pulse' : 'bg-coda-brand'}`} />
         <span className="font-medium tracking-wider uppercase">

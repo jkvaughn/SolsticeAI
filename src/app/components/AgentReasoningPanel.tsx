@@ -729,10 +729,10 @@ export function AgentReasoningPanel({ isRunning, currentCycle }: AgentReasoningP
                   <button
                     key={tx.id}
                     onClick={() => handleTabClick(tx.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all whitespace-nowrap ${
+                    className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
                       isFocused
-                        ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text border border-black/[0.10] dark:border-white/[0.12]'
-                        : 'bg-transparent text-coda-text-muted hover:bg-coda-surface border border-transparent'
+                        ? 'text-coda-text'
+                        : 'bg-transparent text-coda-text-muted hover:text-coda-text'
                     }`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${phaseColor}`} />

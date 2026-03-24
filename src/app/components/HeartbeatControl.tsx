@@ -332,21 +332,21 @@ export default function HeartbeatControl() {
             <button
               onClick={startHeartbeat}
               disabled={cycleInFlight || !mandatesSeeded}
-              className="flex items-center gap-2 px-4 py-2 squircle-sm text-sm font-semibold text-white
-                bg-coda-brand hover:bg-coda-brand-dim transition-colors
+              className="liquid-button flex items-center px-4 py-2 text-sm font-semibold text-white
+                bg-transparent
                 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <Play size={14} />
-              Start Engine
+              <span>Start Engine</span>
             </button>
           ) : (
             <button
               onClick={stopHeartbeat}
-              className="flex items-center gap-2 px-4 py-2 squircle-sm text-sm font-semibold text-white
-                bg-red-600 hover:bg-red-500 transition-colors cursor-pointer"
+              className="liquid-button flex items-center px-4 py-2 text-sm font-semibold text-white
+                bg-transparent cursor-pointer"
             >
               <Square size={14} />
-              Stop
+              <span>Stop</span>
             </button>
           )}
 
@@ -354,12 +354,12 @@ export default function HeartbeatControl() {
           <button
             onClick={runSingleCycle}
             disabled={cycleInFlight || !mandatesSeeded}
-            className="flex items-center gap-2 px-4 py-2 squircle-sm text-sm font-semibold text-white
-              bg-coda-brand hover:bg-coda-brand/80 transition-colors
+            className="liquid-button flex items-center px-4 py-2 text-sm font-semibold text-white
+              bg-transparent
               disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {cycleInFlight ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-            Single Cycle
+            <span>Single Cycle</span>
           </button>
 
           {/* Network Command */}
@@ -377,11 +377,11 @@ export default function HeartbeatControl() {
             <button
               ref={speedBtnRef}
               onClick={() => setSpeedOpen((v) => !v)}
-              className="flex items-center gap-2 px-3 py-2 squircle-sm text-sm
-                dashboard-card-subtle text-coda-text-secondary hover:text-coda-text transition-colors cursor-pointer"
+              className="flex items-center px-3 py-2 text-sm
+                bg-transparent text-coda-text-secondary hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer rounded-md"
             >
               <Clock size={14} />
-              {SPEED_OPTIONS.find((o) => o.value === currentSpeed)?.label || 'Normal (15s)'}
+              <span>{SPEED_OPTIONS.find((o) => o.value === currentSpeed)?.label || 'Normal (15s)'}</span>
               <ChevronDown size={12} className={`transition-transform ${speedOpen ? 'rotate-180' : ''}`} />
             </button>
           </div>
@@ -404,13 +404,13 @@ export default function HeartbeatControl() {
                   key={opt.value}
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={() => { setCurrentSpeed(opt.value); setSpeedOpen(false); }}
-                  className={`w-full text-left px-3 py-2 text-sm transition-colors cursor-pointer
+                  className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors cursor-pointer
                     ${currentSpeed === opt.value
-                      ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text font-semibold'
-                      : 'text-coda-text-secondary hover:bg-white/10 dark:hover:bg-white/[0.08]'
+                      ? 'text-coda-text font-semibold'
+                      : 'text-coda-text-secondary hover:text-coda-text'
                     }`}
                 >
-                  {opt.label}
+                  <span>{opt.label}</span>
                 </button>
               ))}
             </div>,
@@ -425,12 +425,12 @@ export default function HeartbeatControl() {
             <button
               onClick={seedMandates}
               disabled={seedingInProgress}
-              className="flex items-center gap-2 px-3 py-2 squircle-sm text-sm
-                dashboard-button text-coda-text-secondary hover:text-coda-text transition-colors
+              className="liquid-button flex items-center px-3 py-2 text-sm
+                bg-transparent text-coda-text-secondary
                 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {seedingInProgress ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
-              Seed Mandates
+              <span>Seed Mandates</span>
             </button>
           ) : (
             <div className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-500">
@@ -442,11 +442,11 @@ export default function HeartbeatControl() {
           {/* Reset Cycles */}
           <button
             onClick={resetCycles}
-            className="flex items-center gap-2 px-3 py-2 squircle-sm text-sm
-              text-coda-text-muted hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer ml-auto"
+            className="liquid-button flex items-center px-3 py-2 text-sm
+              text-coda-text-muted cursor-pointer ml-auto"
           >
             <RotateCcw size={14} />
-            Reset Cycles
+            <span>Reset Cycles</span>
           </button>
         </div>
 
@@ -660,8 +660,8 @@ function CycleRow({ cycle, isNew, expanded, onToggle }: { cycle: HeartbeatCycle;
       {/* Summary row (clickable) */}
       <button
         onClick={onToggle}
-        className={`w-full flex items-center gap-3 px-3 py-2.5 dashboard-card rounded-[5px] cursor-pointer
-          hover:bg-coda-surface-hover/50 transition-colors text-left relative z-10 ${expanded ? 'rounded-b-none' : ''}`}
+        className={`w-full flex items-center gap-2 px-3 py-2.5 bg-transparent hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer
+          text-left relative z-10 ${expanded ? '' : ''}`}
       >
         <ChevronRight
           size={14}

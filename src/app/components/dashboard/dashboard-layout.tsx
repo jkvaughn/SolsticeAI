@@ -1,8 +1,4 @@
 import * as React from "react";
-import {
-  LayoutDashboard, Network, Radio,
-  Activity, Landmark, Settings, Sliders, FlaskConical, Shield, Globe, CircleUser
-} from "lucide-react";
 import { useNavigate, useLocation } from "react-router";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
@@ -10,7 +6,22 @@ import {
 import { motion } from "../motion-shim";
 import { useTheme } from "../ThemeProvider";
 import { AnimatedBackground } from "../AnimatedBackground";
-import { ArrowLeftIcon } from "../icons/ArrowLeftIcon";
+import { LottieIcon } from "../icons/LottieIcon";
+import {
+  dashboard as dashboardAnim,
+  aiNeuralNetworks as treasuryAnim,
+  networkWorldOpen as networkCmdAnim,
+  transfer as transferAnim,
+  eye3 as escalationsAnim,
+  blockchainExplorer as explorerAnim,
+  networkSquare as networkSetupAnim,
+  nodes as agentConfigAnim,
+  platform as platformAnim,
+  settings as settingsAnim,
+  userProfile as userProfileAnim,
+  sidebarOpen as sidebarOpenAnim,
+  sidebarClose as sidebarCloseAnim,
+} from "../icons/lottie";
 import { useAuth } from "../../contexts/AuthContext";
 import codaIcon from "../icons/coda-icon.svg";
 import { LayoutProvider } from "../../contexts/LayoutContext";
@@ -53,7 +64,10 @@ type TimeRange = '1H' | '24H' | '7D' | '30D';
 interface NavItem {
   id: string;
   label: string;
-  icon: React.ElementType;
+  icon?: React.ElementType;
+  lottieData?: object;
+  /** Per-icon visual scale to normalize sizes across different Lottie files */
+  lottieScale?: number;
   route: string;
 }
 
@@ -68,25 +82,26 @@ interface DashboardLayoutProps {
 // ============================================================
 
 // Operations — daily-use views: overview → operate → monitor → visualise
+// lottieScale normalises visual size across icons with different viewBox usage
 const opsNav: NavItem[] = [
-  { id: 'dashboard',    label: 'Dashboard',     icon: LayoutDashboard, route: '/' },
-  { id: 'treasury-ops', label: 'Treasury Ops',  icon: Landmark,        route: '/treasury-ops' },
-  { id: 'network-cmd',  label: 'Network Command', icon: Globe,         route: '/network-command' },
-  { id: 'transactions', label: 'Transactions',  icon: Activity,        route: '/transactions' },
-  { id: 'escalations',  label: 'Escalations',   icon: Shield,          route: '/escalations' },
-  { id: 'visualizer',   label: 'Visualizer',    icon: Radio,           route: '/visualizer' },
+  { id: 'dashboard',    label: 'Dashboard',       lottieData: dashboardAnim,     lottieScale: 1.05, route: '/' },
+  { id: 'treasury-ops', label: 'Treasury Ops',    lottieData: treasuryAnim,      lottieScale: 1.3,  route: '/treasury-ops' },
+  { id: 'network-cmd',  label: 'Network Command', lottieData: networkCmdAnim,    lottieScale: 1.1,  route: '/network-command' },
+  { id: 'transactions', label: 'Transactions',    lottieData: transferAnim,      lottieScale: 1.25, route: '/transactions' },
+  { id: 'escalations',  label: 'Escalations',     lottieData: escalationsAnim,   lottieScale: 1.35, route: '/escalations' },
+  { id: 'visualizer',   label: 'Visualizer',      lottieData: explorerAnim,      lottieScale: 1.2,  route: '/visualizer' },
 ];
 
 // Configuration & Testing — setup, tune, QA
 const configNav: NavItem[] = [
-  { id: 'network',        label: 'Network Setup',  icon: Network,         route: '/setup' },
-  { id: 'agent-config',   label: 'Agent Config',   icon: Sliders,         route: '/agent-config' },
-  { id: 'proving-ground', label: 'Proving Ground', icon: FlaskConical,    route: '/proving-ground' },
+  { id: 'network',        label: 'Network Setup',  lottieData: networkSetupAnim, lottieScale: 1.2,  route: '/setup' },
+  { id: 'agent-config',   label: 'Agent Config',   lottieData: agentConfigAnim,  lottieScale: 1.15, route: '/agent-config' },
+  { id: 'proving-ground', label: 'Proving Ground', lottieData: platformAnim,     lottieScale: 1.25, route: '/proving-ground' },
 ];
 
 // Bottom — utilities
 const bottomNav: NavItem[] = [
-  { id: 'settings', label: 'Settings', icon: Settings, route: '/settings' },
+  { id: 'settings', label: 'Settings', lottieData: settingsAnim, lottieScale: 1.25, route: '/settings' },
 ];
 
 // ============================================================
@@ -194,6 +209,12 @@ export function DashboardLayout({
     const showBadge = item.id === 'escalations' && escalationCount > 0;
     const dimmed = isNavDimmed(persona, item.id);
     if (dimmed) return null;
+
+    // Lottie icons are black strokes — invert when icon would be invisible against bg
+    // Light mode: inactive = dark text on light bg (no invert), active = white text on black bg (invert)
+    // Dark mode: inactive = light text on dark bg (invert), active = black text on white bg (no invert)
+    const invertIcon = isDark !== active;
+
     return (
       <div key={item.id}>
       <Tooltip open={sidebarExpanded ? false : undefined}>
@@ -201,11 +222,12 @@ export function DashboardLayout({
           <button
             onClick={() => handleNavigate(item.route)}
             className={`
-              w-full flex items-center gap-3 px-3 py-2.5 squircle-sm transition-all duration-500 ease-out relative cursor-pointer
+              squircle-sm w-full flex items-center gap-3 duration-500 ease-out relative cursor-pointer
+              ${sidebarExpanded ? 'px-3 py-2.5' : 'justify-center py-3'}
               ${active
                 ? isDark
-                  ? 'bg-white text-black hover:bg-black/[0.04] shadow-lg'
-                  : 'bg-black text-white hover:bg-white/10 shadow-lg'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'bg-black text-white shadow-lg'
                 : isDark
                   ? 'text-coda-text-secondary hover:bg-white/10 hover:text-white backdrop-blur-sm'
                   : 'text-coda-text-secondary hover:bg-black/10 hover:text-black backdrop-blur-sm'
@@ -213,22 +235,28 @@ export function DashboardLayout({
             `}
           >
             <div className="relative flex-shrink-0">
-              <Icon size={20} />
+              {item.lottieData ? (
+                <LottieIcon
+                  animationData={item.lottieData}
+                  size={20}
+                  trigger="hover"
+                  scale={item.lottieScale}
+                  className={`transition-[filter] duration-500 ${invertIcon ? 'invert' : ''}`}
+                />
+              ) : Icon ? (
+                <Icon size={20} />
+              ) : null}
               {showBadge && !sidebarExpanded && (
                 <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center shadow-md">
                   {escalationCount > 9 ? '9+' : escalationCount}
                 </span>
               )}
             </div>
-            <span
-              className={`whitespace-nowrap transition-all duration-500 flex-1 text-left ${
-                sidebarExpanded
-                  ? 'opacity-100 translate-x-0'
-                  : 'opacity-0 -translate-x-2 w-0'
-              }`}
-            >
-              {item.label}
-            </span>
+            {sidebarExpanded && (
+              <span className="whitespace-nowrap flex-1 text-left">
+                {item.label}
+              </span>
+            )}
             {showBadge && sidebarExpanded && (
               <span className="flex-shrink-0 min-w-[20px] h-5 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1.5 shadow-md tabular-nums">
                 {escalationCount}
@@ -280,10 +308,12 @@ export function DashboardLayout({
                 >
                   {!sidebarExpanded && isIconHovered === 'logo' ? (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <ArrowLeftIcon
-                        size={30}
-                        className="text-coda-text"
-                        isCollapsed={true}
+                      <LottieIcon
+                        animationData={sidebarOpenAnim}
+                        size={22}
+                        trigger="hover"
+                        scale={1.15}
+                        className={`transition-[filter] duration-500 opacity-40 ${isDark ? 'invert' : ''}`}
                       />
                     </div>
                   ) : (
@@ -297,12 +327,14 @@ export function DashboardLayout({
                 {sidebarExpanded && (
                   <button
                     onClick={() => setIsManuallyExpanded(false)}
-                    className="flex items-center justify-center cursor-pointer transition-all duration-300"
+                    className="flex items-center justify-center cursor-pointer duration-300 mr-3"
                   >
-                    <ArrowLeftIcon
-                      size={30}
-                      className="text-coda-text"
-                      isCollapsed={false}
+                    <LottieIcon
+                      animationData={sidebarCloseAnim}
+                      size={22}
+                      trigger="hover"
+                      scale={1.15}
+                      className={`transition-[filter] duration-500 opacity-40 ${isDark ? 'invert' : ''}`}
                     />
                   </button>
                 )}
@@ -311,9 +343,11 @@ export function DashboardLayout({
 
             {/* Primary Navigation */}
             <div className="px-3 py-[1.1rem] flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-              {sidebarExpanded && (
-                <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3 mb-2">Ops</p>
-              )}
+              <div className={`overflow-hidden transition-all duration-500 ease-out ${
+                sidebarExpanded ? 'max-h-6 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'
+              }`}>
+                <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3">Ops</p>
+              </div>
               <div className="space-y-1">
                 {opsNav.map(renderNavButton)}
               </div>
@@ -321,9 +355,11 @@ export function DashboardLayout({
               {/* Divider between ops and config */}
               <div className="my-3 mx-1 border-t border-black/[0.06] dark:border-white/[0.06]" />
 
-              {sidebarExpanded && (
-                <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3 mb-2">Config</p>
-              )}
+              <div className={`overflow-hidden transition-all duration-500 ease-out ${
+                sidebarExpanded ? 'max-h-6 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'
+              }`}>
+                <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3">Config</p>
+              </div>
               <div className="space-y-1">
                 {configNav.filter(item => isAdmin || item.id === 'agent-config').map(renderNavButton)}
               </div>
@@ -342,13 +378,19 @@ export function DashboardLayout({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => handleNavigate('/profile')}
-                      className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-xl transition-all duration-500 ease-out cursor-pointer ${
+                      className={`squircle-sm w-full flex items-center gap-3 py-2 duration-500 ease-out cursor-pointer ${
                         isDark
                           ? 'hover:bg-white/[0.06]'
                           : 'hover:bg-black/[0.04]'
-                      } ${sidebarExpanded ? '' : 'justify-center'}`}
+                      } ${sidebarExpanded ? 'px-3' : 'justify-center px-0'}`}
                     >
-                      <CircleUser size={20} className="text-coda-text-muted flex-shrink-0" />
+                      <LottieIcon
+                        animationData={userProfileAnim}
+                        size={20}
+                        trigger="hover"
+                        scale={1.2}
+                        className={`flex-shrink-0 transition-[filter] duration-500 ${isDark ? 'invert' : ''}`}
+                      />
                       {sidebarExpanded && (
                         <div className="flex-1 min-w-0 text-left">
                           <p className={`text-[12px] font-medium truncate text-coda-text`}>

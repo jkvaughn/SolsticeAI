@@ -825,7 +825,7 @@ export function TransactionDetail() {
           {error ? 'Failed to load transaction' : 'Transaction not found'}
         </p>
         {error && <p className="text-sm text-red-400/70 font-mono mt-2">{String(error.message || error)}</p>}
-        <button onClick={() => navigate(-1)} className="mt-4 text-sm text-blue-500 hover:underline">Go back</button>
+        <button onClick={() => navigate(-1)} className="liquid-button mt-4 text-sm text-blue-500"><span>Go back</span></button>
       </div>
     );
   }
@@ -870,10 +870,10 @@ export function TransactionDetail() {
       {/* Back button */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm text-coda-text-muted hover:text-coda-text-secondary transition-colors mb-5 font-mono"
+        className="liquid-button flex items-center text-sm text-coda-text-muted mb-5 font-mono"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back
+        <span>Back</span>
       </button>
 
       {/* ═══ Settlement Transition Banner ═══ */}
@@ -920,8 +920,8 @@ export function TransactionDetail() {
           <div>
             <div className="flex items-center gap-2.5 mb-2">
               <span className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono">Transaction</span>
-              <button onClick={() => copyText(tx.id, 'id')} className="flex items-center gap-1.5 text-xs font-mono text-coda-text-muted hover:text-coda-text-secondary transition-colors">
-                <Hash className="w-3.5 h-3.5" />{tx.id.slice(0, 12)}...
+              <button onClick={() => copyText(tx.id, 'id')} className="liquid-button flex items-center text-xs font-mono text-coda-text-muted">
+                <Hash className="w-3.5 h-3.5" /><span>{tx.id.slice(0, 12)}...</span>
                 {copied === 'id' ? <CheckCircle2 className="w-3.5 h-3.5 text-coda-brand" /> : <Copy className="w-3 h-3" />}
               </button>
             </div>
@@ -1288,9 +1288,9 @@ export function TransactionDetail() {
                       {/* Expand toggle */}
                       {isExpandable && (
                         <button onClick={() => setExpandedMsg(isExpanded ? null : msg.id)}
-                          className="flex items-center gap-1.5 mt-1.5 text-xs text-coda-text-muted hover:text-coda-text-secondary transition-colors">
+                          className="flex items-center gap-1 mt-1.5 text-xs text-coda-text-muted hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer rounded-md px-1 py-0.5">
                           {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                          {isExpanded ? 'Collapse' : 'Show full details'}
+                          <span>{isExpanded ? 'Collapse' : 'Show full details'}</span>
                         </button>
                       )}
 
@@ -1398,10 +1398,10 @@ export function TransactionDetail() {
           <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
             <button
               onClick={() => setShowMandates(!showMandates)}
-              className="w-full flex items-center gap-2 text-xs tracking-wider uppercase text-coda-text-secondary font-mono"
+              className="w-full flex items-center gap-3 p-0 text-xs tracking-wider uppercase text-coda-text-secondary font-mono hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
             >
               <FileText className="w-5 h-5" />
-              {receiverCode} Active Treasury Mandates ({mandates.length})
+              <span>{receiverCode} Active Treasury Mandates ({mandates.length})</span>
               <span className="ml-auto">
                 {showMandates ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </span>
@@ -1643,9 +1643,9 @@ export function TransactionDetail() {
                         <span className="text-[10px] text-coda-text-muted block">Mint</span>
                         <button
                           onClick={() => copyText(lockup.yb_token_mint, 'yb-mint')}
-                          className="flex items-center gap-1 text-[12px] font-mono text-coda-text-muted hover:text-coda-text-secondary transition-colors"
+                          className="liquid-button flex items-center text-[12px] font-mono text-coda-text-muted"
                         >
-                          {truncateAddress(lockup.yb_token_mint, 6)}
+                          <span>{truncateAddress(lockup.yb_token_mint, 6)}</span>
                           {copied === 'yb-mint' ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-3 h-3" />}
                         </button>
                       </div>
@@ -1653,9 +1653,9 @@ export function TransactionDetail() {
                         <span className="text-[10px] text-coda-text-muted block">Holder</span>
                         <button
                           onClick={() => copyText(lockup.yb_holder, 'yb-holder')}
-                          className="flex items-center gap-1 text-[12px] font-mono text-coda-text-muted hover:text-coda-text-secondary transition-colors"
+                          className="liquid-button flex items-center text-[12px] font-mono text-coda-text-muted"
                         >
-                          {truncateAddress(lockup.yb_holder, 6)}
+                          <span>{truncateAddress(lockup.yb_holder, 6)}</span>
                           {copied === 'yb-holder' ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-3 h-3" />}
                         </button>
                       </div>
@@ -1726,9 +1726,9 @@ export function TransactionDetail() {
                         <span className="text-[10px] text-coda-text-muted block">Mint</span>
                         <button
                           onClick={() => copyText(lockup.tb_token_mint, 'tb-mint')}
-                          className="flex items-center gap-1 text-[12px] font-mono text-coda-text-muted hover:text-coda-text-secondary transition-colors"
+                          className="liquid-button flex items-center text-[12px] font-mono text-coda-text-muted"
                         >
-                          {truncateAddress(lockup.tb_token_mint, 6)}
+                          <span>{truncateAddress(lockup.tb_token_mint, 6)}</span>
                           {copied === 'tb-mint' ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-3 h-3" />}
                         </button>
                       </div>
@@ -1736,9 +1736,9 @@ export function TransactionDetail() {
                         <span className="text-[10px] text-coda-text-muted block">Holder</span>
                         <button
                           onClick={() => copyText(lockup.tb_holder, 'tb-holder')}
-                          className="flex items-center gap-1 text-[12px] font-mono text-coda-text-muted hover:text-coda-text-secondary transition-colors"
+                          className="liquid-button flex items-center text-[12px] font-mono text-coda-text-muted"
                         >
-                          {truncateAddress(lockup.tb_holder, 6)}
+                          <span>{truncateAddress(lockup.tb_holder, 6)}</span>
                           {copied === 'tb-holder' ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-3 h-3" />}
                         </button>
                       </div>
@@ -1918,7 +1918,7 @@ export function TransactionDetail() {
                   <button
                     onClick={() => handleLockupAction('settle_now')}
                     disabled={!!lockupActionLoading}
-                    className="flex items-center gap-2.5 px-4 py-3 rounded-xl backdrop-blur-md bg-emerald-500/[0.07] hover:bg-emerald-500/[0.14] border border-emerald-500/25 hover:border-emerald-500/40 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:border-emerald-500/20 transition-all duration-200 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="liquid-button flex items-center px-4 py-3 backdrop-blur-md text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {lockupActionLoading === 'settle_now' ? (
                       <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
@@ -1935,7 +1935,7 @@ export function TransactionDetail() {
                   <button
                     onClick={() => setShowExtendModal(!showExtendModal)}
                     disabled={!!lockupActionLoading}
-                    className="flex items-center gap-2.5 px-4 py-3 rounded-xl backdrop-blur-md bg-blue-500/[0.07] hover:bg-blue-500/[0.14] border border-blue-500/25 hover:border-blue-500/40 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:border-blue-500/20 transition-all duration-200 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="liquid-button flex items-center px-4 py-3 backdrop-blur-md text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {lockupActionLoading === 'extend' ? (
                       <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
@@ -1952,7 +1952,7 @@ export function TransactionDetail() {
                   <button
                     onClick={() => setShowReverseConfirm(!showReverseConfirm)}
                     disabled={!!lockupActionLoading}
-                    className="flex items-center gap-2.5 px-4 py-3 rounded-xl backdrop-blur-md bg-red-500/[0.07] hover:bg-red-500/[0.14] border border-red-500/25 hover:border-red-500/40 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:border-red-500/20 transition-all duration-200 text-left group disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="liquid-button flex items-center px-4 py-3 backdrop-blur-md text-left group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {lockupActionLoading === 'reverse' ? (
                       <Loader2 className="w-5 h-5 text-red-400 animate-spin" />
@@ -1988,22 +1988,22 @@ export function TransactionDetail() {
                           <button
                             key={m}
                             onClick={() => setExtendMinutes(m)}
-                            className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition-colors ${
+                            className={`px-2.5 py-1 text-[11px] font-mono rounded-md transition-colors ${
                               extendMinutes === m
-                                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                : 'bg-coda-surface-hover/15 text-coda-text-muted hover:text-coda-text-secondary border border-coda-border/10'
+                                ? 'text-blue-400'
+                                : 'text-coda-text-muted hover:text-coda-text'
                             }`}
                           >
-                            {m}m
+                            <span>{m}m</span>
                           </button>
                         ))}
                       </div>
                       <button
                         onClick={() => handleLockupAction('extend', { extend_minutes: extendMinutes })}
                         disabled={!!lockupActionLoading}
-                        className="ml-auto px-4 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-[12px] font-semibold font-mono border border-blue-500/30 transition-colors disabled:opacity-50"
+                        className="liquid-button ml-auto px-4 py-1.5 text-blue-400 text-[12px] font-semibold font-mono disabled:opacity-50"
                       >
-                        {lockupActionLoading === 'extend' ? 'Extending...' : `Extend +${extendMinutes}m`}
+                        <span>{lockupActionLoading === 'extend' ? 'Extending...' : `Extend +${extendMinutes}m`}</span>
                       </button>
                     </div>
                     {(tx as any).lockup_until && (
@@ -2034,16 +2034,16 @@ export function TransactionDetail() {
                       />
                       <button
                         onClick={() => setShowReverseConfirm(false)}
-                        className="px-3 py-1.5 rounded-lg text-[12px] font-mono text-coda-text-muted hover:text-coda-text-secondary transition-colors"
+                        className="liquid-button px-3 py-1.5 text-[12px] font-mono text-coda-text-muted"
                       >
-                        Cancel
+                        <span>Cancel</span>
                       </button>
                       <button
                         onClick={() => handleLockupAction('reverse', { reason: reverseReason || undefined })}
                         disabled={!!lockupActionLoading}
-                        className="px-4 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-[12px] font-semibold font-mono border border-red-500/30 transition-colors disabled:opacity-50"
+                        className="liquid-button px-4 py-1.5 bg-red-500/15 text-red-400 text-[12px] font-semibold font-mono disabled:opacity-50"
                       >
-                        {lockupActionLoading === 'reverse' ? 'Reversing...' : 'Confirm Reverse'}
+                        <span>{lockupActionLoading === 'reverse' ? 'Reversing...' : 'Confirm Reverse'}</span>
                       </button>
                     </div>
                   </div>
@@ -2156,10 +2156,10 @@ export function TransactionDetail() {
                   {!briefing && !briefingLoading && (
                     <button
                       onClick={fetchBriefing}
-                      className="mb-4 px-4 py-2 rounded-lg text-[13px] font-mono font-medium bg-coda-brand/15 text-coda-brand border border-coda-brand/20 hover:bg-coda-brand/25 transition-colors"
+                      className="liquid-button mb-4 px-4 py-2 text-[13px] font-mono font-medium text-coda-brand"
                     >
                       <Brain className="w-4 h-4 inline mr-2" />
-                      Generate AI Briefing
+                      <span>Generate AI Briefing</span>
                     </button>
                   )}
                   {briefingLoading && (
@@ -2218,26 +2218,26 @@ export function TransactionDetail() {
                     <button
                       onClick={() => handleResolve('approve')}
                       disabled={resolveLoading !== null}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-mono font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-50 transition-colors"
+                      className="liquid-button flex items-center px-5 py-2.5 text-[13px] font-mono font-semibold text-emerald-400 disabled:opacity-50"
                     >
                       {resolveLoading === 'approve' ? (
                         <div className="w-4 h-4 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
                       ) : (
                         <UserCheck className="w-4 h-4" />
                       )}
-                      Approve Settlement
+                      <span>Approve Settlement</span>
                     </button>
                     <button
                       onClick={() => handleResolve('reverse')}
                       disabled={resolveLoading !== null}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13px] font-mono font-semibold bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25 disabled:opacity-50 transition-colors"
+                      className="liquid-button flex items-center px-5 py-2.5 text-[13px] font-mono font-semibold bg-red-500/15 text-red-400 disabled:opacity-50"
                     >
                       {resolveLoading === 'reverse' ? (
                         <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
                       ) : (
                         <RotateCcw className="w-4 h-4" />
                       )}
-                      Reverse Transaction
+                      <span>Reverse Transaction</span>
                     </button>
                   </div>
                 </div>
@@ -2340,10 +2340,10 @@ function TravelRuleSection({ payload }: { payload: any }) {
     <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 text-xs tracking-wider uppercase text-coda-text-secondary font-mono cursor-pointer"
+        className="w-full flex items-center gap-3 p-0 text-xs tracking-wider uppercase text-coda-text-secondary font-mono hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
         <UserCheck className="w-5 h-5" />
-        Travel Rule Compliance
+        <span>Travel Rule Compliance</span>
         <span className={`ml-2 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
           isTransmitted
             ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 dark:border-emerald-500/20'

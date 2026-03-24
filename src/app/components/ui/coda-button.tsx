@@ -10,7 +10,7 @@ interface CodaButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 export const CodaButton = React.forwardRef<HTMLButtonElement, CodaButtonProps>(
   ({ className, variant = 'default', size = 'md', children, disabled, ...props }, ref) => {
     const baseStyles =
-      "rounded-full transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed";
+      "flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed liquid-button";
 
     const sizeStyles = {
       sm: "h-9 px-4 text-sm",
@@ -19,13 +19,11 @@ export const CodaButton = React.forwardRef<HTMLButtonElement, CodaButtonProps>(
     };
 
     const variantStyles = {
-      primary: "bg-blue-500 hover:bg-blue-600 text-white",
-      default:
-        "bg-black/10 dark:bg-white/10 hover:bg-black hover:dark:bg-white text-black dark:text-white hover:text-white hover:dark:text-black",
-      success: "bg-green-600 hover:bg-green-700 text-white",
-      danger: "bg-red-600 hover:bg-red-700 text-white",
-      ghost:
-        "bg-transparent hover:bg-black/5 dark:hover:bg-white/5 text-black dark:text-white",
+      primary: "bg-transparent text-coda-text",
+      default: "bg-transparent text-coda-text",
+      success: "bg-transparent text-coda-text",
+      danger: "bg-red-500/15 text-red-400",
+      ghost: "bg-transparent text-coda-text",
     };
 
     return (

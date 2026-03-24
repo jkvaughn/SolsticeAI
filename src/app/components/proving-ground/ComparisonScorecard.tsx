@@ -64,7 +64,7 @@ function AgentRow({ ar, highlight }: { ar: AgentResult; highlight?: 'green' | 'r
           </span>
         </div>
       </div>
-      <button onClick={() => setExpanded(!expanded)} className="mt-1.5 w-full text-left flex items-start gap-1 cursor-pointer">
+      <button onClick={() => setExpanded(!expanded)} className="mt-1.5 w-full text-left flex items-start gap-1 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer rounded-md p-1">
         {expanded ? <ChevronDown size={10} className="text-coda-text-muted mt-0.5 flex-shrink-0" /> : <ChevronRight size={10} className="text-coda-text-muted mt-0.5 flex-shrink-0" />}
         <p className={`text-[11px] text-coda-text-muted leading-relaxed ${expanded ? '' : 'line-clamp-2'}`}>
           {ar.reasoning}

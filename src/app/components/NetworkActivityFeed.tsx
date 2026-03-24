@@ -515,8 +515,8 @@ function CompactEventCard({
       type="button"
       onClick={() => hasExpandable && setExpanded(e => !e)}
       className={`
-        w-full text-left rounded-lg px-3 py-2 transition-all duration-150
-        ${isNewest ? 'bg-white/[0.06] ring-1 ring-white/[0.08]' : 'bg-white/[0.03] hover:bg-white/[0.06]'}
+        liquid-button w-full text-left px-3 py-2
+        ${isNewest ? 'bg-transparent ring-1 ring-white/[0.08]' : 'bg-transparent'}
         ${isThinking ? 'ring-1 ring-blue-500/20' : ''}
         ${hasExpandable ? 'cursor-pointer' : 'cursor-default'}
       `}

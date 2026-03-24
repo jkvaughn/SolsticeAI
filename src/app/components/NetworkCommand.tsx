@@ -191,24 +191,24 @@ export function NetworkCommand() {
               <button
                 onClick={start}
                 disabled={!sim.metricsLoaded}
-                className="flex items-center gap-1.5 px-3 py-1.5 squircle-sm bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-semibold uppercase tracking-wider transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="liquid-button flex items-center px-3 py-1.5 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-semibold uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <Play size={12} fill="currentColor" />
-                {sim.metricsLoaded ? 'Start' : 'Loading\u2026'}
+                <span>{sim.metricsLoaded ? 'Start' : 'Loading\u2026'}</span>
               </button>
             ) : (
               <button
                 onClick={stop}
-                className="flex items-center gap-1.5 px-3 py-1.5 squircle-sm bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-600 dark:text-red-400 text-[10px] font-mono font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                className="liquid-button flex items-center px-3 py-1.5 text-red-600 dark:text-red-400 text-[10px] font-mono font-semibold uppercase tracking-wider cursor-pointer"
               >
                 <Square size={10} fill="currentColor" />
-                Stop
+                <span>Stop</span>
               </button>
             )}
             <button
               onClick={reset}
               disabled={sim.running}
-              className="flex items-center justify-center w-7 h-7 squircle-sm hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 text-black/40 dark:text-white/40 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              className="liquid-button flex items-center justify-center w-7 h-7 text-black/40 dark:text-white/40 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               title="Reset counters"
             >
               <RotateCcw size={12} />

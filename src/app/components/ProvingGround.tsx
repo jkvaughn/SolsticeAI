@@ -501,25 +501,25 @@ export function ProvingGround() {
         <div className="flex items-center bg-white/5 rounded-lg border border-white/10 p-0.5">
           <button
             onClick={() => handleModeToggle(false)}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md text-[11px] font-medium cursor-pointer transition-colors ${
               !compareMode
-                ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text border border-black/[0.10] dark:border-white/[0.12]'
-                : 'text-coda-text-muted hover:text-coda-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03]'
+                ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text'
+                : 'text-coda-text-muted hover:text-coda-text'
             }`}
           >
             <Building2 size={11} className="inline mr-1 -mt-0.5" />
-            Single Bank
+            <span>Single Bank</span>
           </button>
           <button
             onClick={() => handleModeToggle(true)}
-            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md text-[11px] font-medium cursor-pointer transition-colors ${
               compareMode
-                ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text border border-black/[0.10] dark:border-white/[0.12]'
-                : 'text-coda-text-muted hover:text-coda-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03]'
+                ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text'
+                : 'text-coda-text-muted hover:text-coda-text'
             }`}
           >
             <GitCompareArrows size={11} className="inline mr-1 -mt-0.5" />
-            Compare Banks
+            <span>Compare Banks</span>
           </button>
         </div>
 
@@ -584,12 +584,12 @@ export function ProvingGround() {
         <button
           onClick={runAll}
           disabled={isRunningAll || !canRun}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/[0.06] dark:bg-white/[0.08] text-coda-text text-xs font-medium hover:bg-black/[0.10] dark:hover:bg-white/[0.12] transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap flex-shrink-0"
+          className="liquid-button flex items-center px-3 py-1.5 text-coda-text text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap flex-shrink-0"
         >
           {isRunningAll ? (
-            <><Loader2 size={13} className="animate-spin" /> Running...</>
+            <><Loader2 size={13} className="animate-spin" /> <span>Running...</span></>
           ) : (
-            <><Play size={13} /> {compareMode ? 'Compare All' : 'Run All Scenarios'}</>
+            <><Play size={13} /> <span>{compareMode ? 'Compare All' : 'Run All Scenarios'}</span></>
           )}
         </button>
 
@@ -598,14 +598,14 @@ export function ProvingGround() {
           onClick={runCleanup}
           disabled={cleanupStatus === 'cleaning' || isRunningAll}
           title="Remove leftover pg_* test rows from database"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-coda-text-muted text-xs font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap flex-shrink-0"
+          className="liquid-button flex items-center px-2.5 py-1.5 text-coda-text-muted text-xs font-medium disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap flex-shrink-0"
         >
           {cleanupStatus === 'cleaning' ? (
-            <><Loader2 size={12} className="animate-spin" /> Cleaning...</>
+            <><Loader2 size={12} className="animate-spin" /> <span>Cleaning...</span></>
           ) : cleanupStatus ? (
-            <><Trash2 size={12} /> {cleanupStatus}</>
+            <><Trash2 size={12} /> <span>{cleanupStatus}</span></>
           ) : (
-            <><Trash2 size={12} /> Cleanup</>
+            <><Trash2 size={12} /> <span>Cleanup</span></>
           )}
         </button>
 
@@ -613,10 +613,10 @@ export function ProvingGround() {
         <button
           onClick={resetResults}
           disabled={activeResults.size === 0 && !isRunningAll}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-coda-text-muted text-xs font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap flex-shrink-0"
+          className="liquid-button flex items-center px-3 py-1.5 text-coda-text-muted text-xs font-medium disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap flex-shrink-0"
         >
           <RotateCcw size={13} />
-          Reset
+          <span>Reset</span>
         </button>
       </div>
 
@@ -645,7 +645,7 @@ export function ProvingGround() {
                   <div key={cat.key} className="dashboard-card-subtle overflow-hidden">
                     <button
                       onClick={() => toggleCategory(cat.key)}
-                      className="w-full flex items-center gap-2.5 p-3 cursor-pointer hover:bg-white/3 transition-colors"
+                      className="w-full flex items-center gap-3 p-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
                     >
                       <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
                         cat.key === 'dispute' ? 'bg-coda-brand/10' : 'bg-white/5'

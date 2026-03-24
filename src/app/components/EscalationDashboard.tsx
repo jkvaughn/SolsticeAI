@@ -357,7 +357,7 @@ function EscalationCard({
           <div className="px-5 border-t border-coda-border-subtle">
             <button
               onClick={() => setFlagsExpanded(!flagsExpanded)}
-              className="w-full flex items-center gap-2 py-2.5 text-xs text-coda-text-muted hover:text-coda-text transition-colors cursor-pointer"
+              className="w-full flex items-center gap-2 py-2.5 text-xs text-coda-text-muted hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
             >
               {flagsExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
               <span className="font-medium">Cadenza Flag Timeline ({item.flags.length})</span>
@@ -411,7 +411,7 @@ function EscalationCard({
           <button
             onClick={loadBriefing}
             disabled={briefingLoading}
-            className="w-full flex items-center gap-2 py-2.5 text-xs text-coda-text-muted hover:text-coda-text transition-colors cursor-pointer disabled:opacity-50"
+            className="w-full flex items-center gap-2 py-2.5 text-xs text-coda-text-muted hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer disabled:opacity-50"
           >
             {briefingLoading ? (
               <Loader2 size={13} className="animate-spin" />
@@ -516,7 +516,7 @@ function EscalationCard({
                 <div className="rounded-lg bg-amber-500/[0.08] border border-amber-500/20 overflow-hidden">
                   <button
                     onClick={() => setSarExpanded(!sarExpanded)}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs cursor-pointer"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
                   >
                     <AlertTriangle size={13} className="text-amber-500" />
                     <span className="font-semibold text-amber-500">SAR DRAFT</span>
@@ -588,10 +588,10 @@ function EscalationCard({
         <div className="px-5 py-4 border-t border-coda-border-subtle flex items-center gap-3">
           <button
             onClick={() => navigate(`/transactions/${item.transaction_id}`)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-coda-text-muted hover:text-coda-text hover:bg-coda-surface-hover transition-colors cursor-pointer"
+            className="liquid-button flex items-center px-3 py-2 text-xs font-medium text-coda-text-muted cursor-pointer"
           >
             <Eye size={13} />
-            View Details
+            <span>View Details</span>
           </button>
 
           <div className="flex-1" />
@@ -599,19 +599,19 @@ function EscalationCard({
           <button
             onClick={() => onReverse(item.lockup_id)}
             disabled={resolvingThis}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="liquid-button flex items-center px-4 py-2 text-xs font-medium bg-red-500/10 text-red-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {resolvingThis ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />}
-            Reverse
+            <span>Reverse</span>
           </button>
 
           <button
             onClick={() => onApprove(item.lockup_id)}
             disabled={resolvingThis}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="liquid-button flex items-center px-4 py-2 text-xs font-medium text-emerald-400 bg-transparent cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {resolvingThis ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
-            Approve
+            <span>Approve</span>
           </button>
         </div>
       </div>{/* end dimming wrapper */}
@@ -823,9 +823,9 @@ export function EscalationDashboard() {
             <p className="text-xs text-red-400 flex-1">{error}</p>
             <button
               onClick={() => setError(null)}
-              className="text-xs text-red-400 hover:text-red-300 cursor-pointer"
+              className="liquid-button text-xs text-red-400 cursor-pointer"
             >
-              Dismiss
+              <span>Dismiss</span>
             </button>
           </div>
         </div>
