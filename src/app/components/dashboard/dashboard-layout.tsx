@@ -365,11 +365,11 @@ export function DashboardLayout({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => handleNavigate('/profile')}
-                      className={`squircle-sm w-full flex items-center px-2 py-2 duration-500 ease-out cursor-pointer ${
+                      className={`squircle-sm w-full flex items-center gap-3 py-2 duration-500 ease-out cursor-pointer ${
                         isDark
                           ? 'hover:bg-white/[0.06]'
                           : 'hover:bg-black/[0.04]'
-                      } ${sidebarExpanded ? '' : 'justify-center'}`}
+                      } ${sidebarExpanded ? 'px-3' : 'justify-center px-0'}`}
                     >
                       <LottieIcon
                         animationData={userProfileAnim}
