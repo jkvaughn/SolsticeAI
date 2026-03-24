@@ -6,7 +6,6 @@ import {
 import { motion } from "../motion-shim";
 import { useTheme } from "../ThemeProvider";
 import { AnimatedBackground } from "../AnimatedBackground";
-import { ArrowLeftIcon } from "../icons/ArrowLeftIcon";
 import { LottieIcon } from "../icons/LottieIcon";
 import {
   dashboard as dashboardAnim,
@@ -20,6 +19,8 @@ import {
   platform as platformAnim,
   settings as settingsAnim,
   userProfile as userProfileAnim,
+  sidebarOpen as sidebarOpenAnim,
+  sidebarClose as sidebarCloseAnim,
 } from "../icons/lottie";
 import { useAuth } from "../../contexts/AuthContext";
 import codaIcon from "../icons/coda-icon.svg";
@@ -307,10 +308,12 @@ export function DashboardLayout({
                 >
                   {!sidebarExpanded && isIconHovered === 'logo' ? (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <ArrowLeftIcon
-                        size={30}
-                        className="text-coda-text"
-                        isCollapsed={true}
+                      <LottieIcon
+                        animationData={sidebarOpenAnim}
+                        size={22}
+                        trigger="hover"
+                        scale={1.15}
+                        className={`transition-[filter] duration-500 opacity-40 ${isDark ? 'invert' : ''}`}
                       />
                     </div>
                   ) : (
@@ -324,12 +327,14 @@ export function DashboardLayout({
                 {sidebarExpanded && (
                   <button
                     onClick={() => setIsManuallyExpanded(false)}
-                    className="flex items-center justify-center cursor-pointer duration-300"
+                    className="flex items-center justify-center cursor-pointer duration-300 mr-3"
                   >
-                    <ArrowLeftIcon
-                      size={30}
-                      className="text-coda-text"
-                      isCollapsed={false}
+                    <LottieIcon
+                      animationData={sidebarCloseAnim}
+                      size={22}
+                      trigger="hover"
+                      scale={1.15}
+                      className={`transition-[filter] duration-500 opacity-40 ${isDark ? 'invert' : ''}`}
                     />
                   </button>
                 )}
