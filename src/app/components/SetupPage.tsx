@@ -1056,6 +1056,7 @@ export function SetupPage() {
                   solBalance={custodian.sol_balance}
                   createdAt={custodian.created_at}
                   linkedBank={!!custodian.linked_bank_id}
+                  adminEmail={userEmail}
                 />
               )}
               {/* Solstice Fees Wallet Card */}
@@ -1071,6 +1072,7 @@ export function SetupPage() {
                   walletAddress={feesWallet.wallet_address}
                   solBalance={feesWallet.sol_balance}
                   createdAt={feesWallet.created_at}
+                  adminEmail={userEmail}
                 />
               )}
             </div>
@@ -1695,6 +1697,7 @@ function InfraWalletCard({
   solBalance,
   createdAt,
   linkedBank = false,
+  adminEmail,
 }: {
   icon: ComponentType<{ className?: string }>;
   iconColor: string;
@@ -1707,8 +1710,12 @@ function InfraWalletCard({
   solBalance: number;
   createdAt: string;
   linkedBank?: boolean;
+  adminEmail?: string | null;
 }) {
   const [copied, setCopied] = useState(false);
+  const [funding, setFunding] = useState(false);
+  const [fundError, setFundError] = useState<string | null>(null);
+  const [localBalance, setLocalBalance] = useState(solBalance);
 
   function handleCopy() {
     copyToClipboard(walletAddress);
@@ -1716,7 +1723,22 @@ function InfraWalletCard({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const isFunded = solBalance >= 0.05;
+  async function handleFund() {
+    setFunding(true);
+    setFundError(null);
+    try {
+      const res = await adminCallServer<{ status: string; balance_sol: number; tx_signature: string }>(
+        '/faucet', { wallet_address: walletAddress, amount: 100 }, 3, adminEmail
+      );
+      setLocalBalance(res.balance_sol);
+    } catch (err: any) {
+      setFundError(err.message || 'Faucet failed');
+    } finally {
+      setFunding(false);
+    }
+  }
+
+  const isFunded = localBalance >= 0.05;
 
   return (
     <div className="rounded-2xl border border-coda-border/30 bg-coda-surface-alt/20 p-4 space-y-3">
@@ -1768,13 +1790,13 @@ function InfraWalletCard({
         </div>
       </div>
 
-      {/* SOL Balance + Info */}
+      {/* SOL Balance + Fund */}
       <div className="flex items-center justify-between pt-1 border-t border-coda-border/20">
         <div className="flex items-center gap-3">
           <div>
             <span className="text-[10px] font-mono text-coda-text-muted">{gasToken} Balance</span>
             <div className={`text-xs font-mono font-medium ${isFunded ? 'text-coda-brand' : 'text-amber-400'}`}>
-              {solBalance.toFixed(4)} {gasToken}
+              {localBalance.toFixed(4)} {gasToken}
             </div>
           </div>
           {!isFunded && !isProductionCluster && (
@@ -1789,10 +1811,14 @@ function InfraWalletCard({
             </a>
           )}
           {!isFunded && isProductionCluster && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-[10px] font-mono text-amber-400">
+            <button
+              onClick={handleFund}
+              disabled={funding}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 text-[10px] font-mono text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
               <Wallet className="w-3 h-3" />
-              Fund via Solstice CLI
-            </span>
+              {funding ? 'Funding...' : `Fund Wallet (100 ${gasToken})`}
+            </button>
           )}
         </div>
         <div className="text-right">
@@ -1801,6 +1827,9 @@ function InfraWalletCard({
           </span>
         </div>
       </div>
+      {fundError && (
+        <div className="text-[10px] font-mono text-red-400 px-1">{fundError}</div>
+      )}
     </div>
   );
 }
