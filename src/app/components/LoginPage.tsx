@@ -93,7 +93,7 @@ export function LoginPage() {
       {/* Theme toggle — top right */}
       <button
         onClick={cycleTheme}
-        className="fixed top-5 right-5 z-50 w-10 h-10 rounded-xl backdrop-blur-xl bg-white/20 dark:bg-white/10 border border-white/30 dark:border-white/15 flex items-center justify-center text-coda-text-muted hover:text-coda-text transition-colors cursor-pointer"
+        className="liquid-button fixed top-5 right-5 z-50 w-10 h-10 backdrop-blur-xl bg-transparent flex items-center justify-center text-coda-text-muted cursor-pointer"
         title={currentTheme.label}
       >
         <ThemeIcon size={18} />
@@ -128,22 +128,18 @@ export function LoginPage() {
             <div className="px-8 pb-8 space-y-3">
               <button
                 onClick={() => { window.location.href = '/.auth/login/aad?post_login_redirect_uri=/'; }}
-                className={`w-full py-3.5 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
+                className={`liquid-button w-full py-3.5 text-sm font-medium cursor-pointer flex items-center justify-center ${
                   isDark
-                    ? 'bg-white text-black hover:bg-black/[0.04]'
-                    : 'bg-black text-white hover:bg-white/10'
+                    ? 'text-black'
+                    : 'text-white'
                 } shadow-lg`}
               >
                 <ShieldCheck size={18} />
-                Sign in with Microsoft
+                <span>Sign in with Microsoft</span>
               </button>
               <button
                 onClick={() => { window.location.href = '/.auth/login/google?post_login_redirect_uri=/'; }}
-                className={`w-full py-3 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 border ${
-                  isDark
-                    ? 'bg-white/[0.06] border-white/[0.12] text-coda-text hover:bg-white/[0.1]'
-                    : 'bg-white border-black/[0.08] text-coda-text hover:bg-black/[0.03]'
-                }`}
+                className={`liquid-button w-full py-3 text-sm font-medium cursor-pointer flex items-center justify-center bg-transparent text-coda-text`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -151,7 +147,7 @@ export function LoginPage() {
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                 </svg>
-                Sign in with Google
+                <span>Sign in with Google</span>
               </button>
               <p className="text-[10px] text-coda-text-muted text-center mt-2">
                 Use the same email with either provider for consistent access
@@ -165,11 +161,7 @@ export function LoginPage() {
           <div className="px-8 mb-4">
             <button
               onClick={() => signInWithGoogle()}
-              className={`w-full py-3 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 border ${
-                isDark
-                  ? 'bg-white/[0.06] border-white/[0.12] text-coda-text hover:bg-white/[0.1]'
-                  : 'bg-white border-black/[0.08] text-coda-text hover:bg-black/[0.03]'
-              }`}
+              className={`liquid-button w-full py-3 text-sm font-medium cursor-pointer flex items-center justify-center bg-transparent text-coda-text`}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -177,7 +169,7 @@ export function LoginPage() {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              Sign in with Google
+              <span>Sign in with Google</span>
             </button>
 
             {/* Divider */}
@@ -193,29 +185,29 @@ export function LoginPage() {
             <div className="flex p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/[0.06]">
               <button
                 onClick={() => { setMode('login'); setLocalError(''); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-300 cursor-pointer ${
+                className={`flex-1 flex items-center justify-center py-2.5 text-[13px] font-medium rounded-md transition-colors cursor-pointer ${
                   mode === 'login'
                     ? isDark
-                      ? 'bg-white text-black shadow-md'
-                      : 'bg-black text-white shadow-md'
+                      ? 'text-black shadow-md'
+                      : 'text-white shadow-md'
                     : 'text-coda-text-muted hover:text-coda-text'
                 }`}
               >
                 <LogIn size={15} />
-                Sign In
+                <span>Sign In</span>
               </button>
               <button
                 onClick={() => { setMode('signup'); setLocalError(''); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-300 cursor-pointer ${
+                className={`flex-1 flex items-center justify-center py-2.5 text-[13px] font-medium rounded-md transition-colors cursor-pointer ${
                   mode === 'signup'
                     ? isDark
-                      ? 'bg-white text-black shadow-md'
-                      : 'bg-black text-white shadow-md'
+                      ? 'text-black shadow-md'
+                      : 'text-white shadow-md'
                     : 'text-coda-text-muted hover:text-coda-text'
                 }`}
               >
                 <UserPlus size={15} />
-                Create Account
+                <span>Create Account</span>
               </button>
             </div>
           </div>
@@ -283,7 +275,7 @@ export function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-coda-text-muted hover:text-coda-text-secondary transition-colors cursor-pointer"
+                  className="liquid-button absolute right-3.5 top-1/2 -translate-y-1/2 text-coda-text-muted hover:text-coda-text-secondary cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -336,10 +328,10 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={submitting || loading}
-              className={`w-full py-3.5 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
+              className={`liquid-button w-full py-3.5 text-sm font-medium cursor-pointer flex items-center justify-center ${
                 isDark
-                  ? 'bg-white text-black hover:bg-black/[0.04] disabled:bg-white/30 disabled:text-white/40'
-                  : 'bg-black text-white hover:bg-white/10 disabled:bg-black/20 disabled:text-black/40'
+                  ? 'text-black disabled:bg-white/30 disabled:text-white/40'
+                  : 'text-white disabled:bg-black/20 disabled:text-black/40'
               } shadow-lg disabled:shadow-none`}
             >
               {submitting ? (
@@ -349,10 +341,10 @@ export function LoginPage() {
               ) : (
                 <UserPlus size={18} />
               )}
-              {submitting
+              <span>{submitting
                 ? (mode === 'login' ? 'Signing in...' : 'Creating account...')
                 : (mode === 'login' ? 'Sign In' : 'Create Account')
-              }
+              }</span>
             </button>
           </form>
           </>}

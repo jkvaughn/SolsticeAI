@@ -319,10 +319,10 @@ export function TransactionMonitor() {
       >
         <button
           onClick={() => { invalidateTxs(); invalidateMsgs(); }}
-          className="flex items-center gap-1.5 px-3 py-1.5 dashboard-button text-xs text-coda-text-secondary hover:text-coda-text"
+          className="liquid-button flex items-center px-3 py-1.5 bg-transparent text-xs text-coda-text-secondary"
         >
           <Activity className="w-3 h-3" />
-          Refresh
+          <span>Refresh</span>
         </button>
       </PageHeader>
 
@@ -398,15 +398,15 @@ export function TransactionMonitor() {
                 <button
                   key={f.key}
                   onClick={() => setStatusFilter(f.key)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold transition-colors ${
+                  className={`liquid-button px-2 py-0.5 text-[10px] font-mono font-semibold ${
                     statusFilter === f.key
                       ? f.key === 'locked'
-                        ? 'bg-amber-500/20 text-amber-400'
-                        : 'bg-coda-brand/20 text-coda-brand'
-                      : 'text-coda-text-muted hover:text-coda-text-secondary'
+                        ? 'text-amber-400'
+                        : 'text-coda-brand'
+                      : 'text-coda-text-muted'
                   }`}
                 >
-                  {f.label}{f.count > 0 && statusFilter !== f.key ? ` (${f.count})` : ''}
+                  <span>{f.label}{f.count > 0 && statusFilter !== f.key ? ` (${f.count})` : ''}</span>
                 </button>
               ))}
             </div>
@@ -696,18 +696,18 @@ function TransactionRow({ tx, lockup, expanded, onToggle, actionState, onRetry, 
               <button
                 onClick={(e) => { e.stopPropagation(); onRetry(); }}
                 disabled={!!actionState}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-coda-brand/20 text-coda-brand hover:bg-coda-brand/30 disabled:opacity-50 transition-colors"
+                className="liquid-button flex items-center px-3 py-1.5 text-xs font-semibold bg-transparent text-coda-brand disabled:opacity-50"
               >
                 {actionState === 'retrying' ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
-                Retry
+                <span>Retry</span>
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onExpire(); }}
                 disabled={!!actionState}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-600/20 text-red-500 dark:text-red-400 hover:bg-red-600/30 disabled:opacity-50 transition-colors"
+                className="liquid-button flex items-center px-3 py-1.5 text-xs font-semibold bg-transparent text-red-500 dark:text-red-400 disabled:opacity-50"
               >
                 {actionState === 'expiring' ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
-                Expire
+                <span>Expire</span>
               </button>
             </div>
           )}
@@ -715,9 +715,9 @@ function TransactionRow({ tx, lockup, expanded, onToggle, actionState, onRetry, 
           {/* Detail link */}
           <button
             onClick={() => navigate(`/transactions/${tx.id}`)}
-            className="flex items-center gap-1.5 text-xs text-blue-500 dark:text-blue-400 hover:underline"
+            className="liquid-button flex items-center text-xs text-blue-500 dark:text-blue-400"
           >
-            Open Full Detail
+            <span>Open Full Detail</span>
             <ExternalLink className="w-3 h-3" />
           </button>
 
@@ -728,10 +728,10 @@ function TransactionRow({ tx, lockup, expanded, onToggle, actionState, onRetry, 
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowReversalConfirm(true); }}
                   disabled={!!actionState}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-600/15 text-red-400 hover:bg-red-600/25 border border-red-500/20 disabled:opacity-50 transition-colors"
+                  className="liquid-button flex items-center px-3 py-1.5 text-xs font-semibold bg-transparent text-red-400 disabled:opacity-50"
                 >
                   <Undo2 className="w-3 h-3" />
-                  Request Reversal
+                  <span>Request Reversal</span>
                 </button>
               ) : (
                 <div className="flex items-center gap-2 p-2 rounded-lg border border-red-500/30 bg-red-500/5">
@@ -742,16 +742,16 @@ function TransactionRow({ tx, lockup, expanded, onToggle, actionState, onRetry, 
                   <button
                     onClick={(e) => { e.stopPropagation(); onRequestReversal(lockup.id); setShowReversalConfirm(false); }}
                     disabled={!!actionState}
-                    className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-red-600/30 text-red-300 hover:bg-red-600/50 disabled:opacity-50 transition-colors shrink-0"
+                    className="liquid-button flex items-center px-2 py-1 text-[10px] font-bold bg-red-500/15 text-red-300 disabled:opacity-50 shrink-0"
                   >
                     {actionState === 'reversing' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Undo2 className="w-3 h-3" />}
-                    Confirm
+                    <span>Confirm</span>
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowReversalConfirm(false); }}
-                    className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-coda-text-muted hover:text-coda-text transition-colors shrink-0"
+                    className="liquid-button flex items-center px-2 py-1 text-[10px] text-coda-text-muted shrink-0"
                   >
-                    Cancel
+                    <span>Cancel</span>
                   </button>
                 </div>
               )}

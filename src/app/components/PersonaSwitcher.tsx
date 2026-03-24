@@ -85,14 +85,12 @@ export function PersonaSwitcher() {
             <button
               key={opt.value ?? 'all'}
               onClick={() => handleSelect(opt)}
-              className={`relative flex flex-col items-start gap-3 p-4 rounded-xl border text-left transition-all duration-300 cursor-pointer ${
+              className={`relative flex flex-col items-start p-4 text-left rounded-md transition-colors cursor-pointer ${
                 active
                   ? isDark
-                    ? 'bg-white/10 border-white/25 shadow-lg'
-                    : 'bg-black/[0.04] border-black/15 shadow-lg'
-                  : isDark
-                    ? 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]'
-                    : 'bg-black/[0.02] border-black/[0.04] hover:bg-black/[0.04]'
+                    ? 'bg-transparent shadow-lg'
+                    : 'bg-transparent shadow-lg'
+                  : 'bg-transparent hover:text-coda-text'
               }`}
             >
               {active && (

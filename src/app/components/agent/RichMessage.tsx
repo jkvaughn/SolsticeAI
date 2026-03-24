@@ -428,19 +428,19 @@ function AgentMessage({ message, onQuickAction }: { message: ChatMessage; onQuic
             {isLongContent && !showFullText && hiddenCount > 0 && (
               <button
                 onClick={() => setShowFullText(true)}
-                className="mt-1 flex items-center gap-1 text-[10px] text-blue-500 dark:text-blue-400 hover:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                className="liquid-button mt-1 flex items-center text-[10px] text-blue-500 dark:text-blue-400"
               >
                 <ChevronDown className="w-3 h-3" />
-                Show {hiddenCount} more section{hiddenCount > 1 ? 's' : ''}
+                <span>Show {hiddenCount} more section{hiddenCount > 1 ? 's' : ''}</span>
               </button>
             )}
             {isLongContent && showFullText && (
               <button
                 onClick={() => setShowFullText(false)}
-                className="mt-1 flex items-center gap-1 text-[10px] text-coda-text-muted hover:text-coda-text-secondary transition-colors"
+                className="liquid-button mt-1 flex items-center text-[10px] text-coda-text-muted"
               >
                 <ChevronDown className="w-3 h-3 rotate-180" />
-                Show less
+                <span>Show less</span>
               </button>
             )}
           </div>
@@ -450,7 +450,7 @@ function AgentMessage({ message, onQuickAction }: { message: ChatMessage; onQuic
             <div className="border-t border-coda-border/30">
               <button
                 onClick={() => setShowReasoning(!showReasoning)}
-                className="w-full px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-coda-text-muted hover:text-coda-text-secondary transition-colors"
+                className="w-full px-3 py-1.5 flex items-center gap-2 text-[10px] text-coda-text-muted hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
               >
                 <Brain className="w-3 h-3" />
                 <span>Internal Reasoning</span>
@@ -485,7 +485,7 @@ function AgentMessage({ message, onQuickAction }: { message: ChatMessage; onQuic
             <div className="ml-auto flex items-center gap-1">
               <button
                 onClick={copyContent}
-                className="p-1 rounded hover:bg-coda-surface-hover transition-colors"
+                className="liquid-button p-1"
                 title="Copy response"
               >
                 {copied ? (
@@ -583,12 +583,12 @@ function CounterpartyMessage({ message }: { message: ChatMessage }) {
               {hasMore && (
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="mt-1 text-[10px] text-coda-brand hover:text-coda-brand transition-colors flex items-center gap-0.5"
+                  className="liquid-button mt-1 text-[10px] text-coda-brand flex items-center"
                 >
                   {expanded ? (
-                    <><ChevronDown className="w-3 h-3 rotate-180" /> Show less</>
+                    <><ChevronDown className="w-3 h-3 rotate-180" /> <span>Show less</span></>
                   ) : (
-                    <><ChevronDown className="w-3 h-3" /> Show full message</>
+                    <><ChevronDown className="w-3 h-3" /> <span>Show full message</span></>
                   )}
                 </button>
               )}
@@ -1013,17 +1013,17 @@ function ContentSection({ section, onQuickAction }: { section: ContentPart; onQu
             <div className="px-3 pb-3 pt-1 flex items-center gap-2">
               <button
                 onClick={() => onQuickAction('Accept this payment')}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-coda-brand hover:bg-coda-brand/80 text-white text-[12px] font-medium transition-colors"
+                className="liquid-button flex items-center px-4 py-2 text-white text-[12px] font-medium"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Accept
+                <span>Accept</span>
               </button>
               <button
                 onClick={() => onQuickAction('Reject this payment')}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-[12px] font-medium transition-colors"
+                className="liquid-button flex items-center px-4 py-2 bg-red-500/15 text-red-400 text-[12px] font-medium"
               >
                 <XCircle className="w-3.5 h-3.5" />
-                Reject
+                <span>Reject</span>
               </button>
             </div>
           )}

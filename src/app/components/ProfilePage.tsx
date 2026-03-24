@@ -222,7 +222,7 @@ export function ProfilePage() {
                   />
                   <button
                     onClick={commitName}
-                    className="p-1 rounded-lg hover:bg-coda-brand/10 transition-colors cursor-pointer"
+                    className="liquid-button p-1 cursor-pointer"
                   >
                     <Check size={16} className="text-coda-brand" />
                   </button>
@@ -230,7 +230,7 @@ export function ProfilePage() {
               ) : (
                 <button
                   onClick={() => { setEditBuffer(name); setIsEditingName(true); }}
-                  className="group relative cursor-pointer bg-transparent border-none"
+                  className="liquid-button group relative cursor-pointer bg-transparent border-none"
                 >
                   <h3 className="text-xl font-semibold font-sans text-coda-text text-center">
                     {name}
@@ -287,7 +287,7 @@ export function ProfilePage() {
                   </span>
                   <button
                     onClick={copyUserId}
-                    className="p-0.5 rounded hover:bg-coda-brand/10 transition-colors cursor-pointer"
+                    className="liquid-button p-0.5 cursor-pointer"
                     title="Copy account ID"
                   >
                     {copied ? (
@@ -405,25 +405,25 @@ export function ProfilePage() {
         {!signOutConfirm ? (
           <button
             onClick={() => setSignOutConfirm(true)}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-coda-text-muted hover:text-red-500 hover:bg-red-500/8 transition-all duration-300 cursor-pointer"
+            className="liquid-button flex items-center px-6 py-2.5 text-sm font-medium text-coda-text-muted cursor-pointer"
           >
             <LogOut size={15} />
-            Sign Out
+            <span>Sign Out</span>
           </button>
         ) : (
           <div className="flex items-center gap-3">
             <span className="text-xs text-red-500">End session?</span>
             <button
               onClick={() => setSignOutConfirm(false)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium text-coda-text-secondary hover:bg-coda-surface/60 cursor-pointer transition-colors"
+              className="liquid-button px-3 py-1.5 text-xs font-medium text-coda-text-secondary cursor-pointer"
             >
-              Cancel
+              <span>Cancel</span>
             </button>
             <button
               onClick={handleSignOut}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500 text-white hover:bg-red-600 cursor-pointer transition-colors"
+              className="liquid-button px-3 py-1.5 text-xs font-medium bg-red-500/15 text-red-400 cursor-pointer"
             >
-              Sign Out
+              <span>Sign Out</span>
             </button>
           </div>
         )}

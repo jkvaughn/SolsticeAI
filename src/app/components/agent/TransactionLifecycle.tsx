@@ -352,7 +352,7 @@ export function TransactionRow({
     }`}>
       <button
         onClick={onToggle}
-        className="w-full px-3 py-2.5 flex items-center gap-3 text-left"
+        className="w-full px-3 py-2.5 flex items-center gap-2 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
         {/* Status dot */}
         <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${

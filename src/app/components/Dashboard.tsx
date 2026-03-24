@@ -311,9 +311,9 @@ export function Dashboard() {
           <p className="text-sm dashboard-text-muted mb-4">No banks deployed yet</p>
           <Link
             to="/setup"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 dark:bg-neutral-200 dark:hover:bg-neutral-300 dark:text-neutral-900 text-white text-sm rounded-xl transition-colors liquid-button"
+            className="inline-flex items-center px-5 py-2.5 bg-transparent text-sm liquid-button"
           >
-            Go to Setup
+            <span>Go to Setup</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

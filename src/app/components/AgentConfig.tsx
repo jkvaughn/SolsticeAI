@@ -92,7 +92,7 @@ function AgentCard({
     <div className="dashboard-card-subtle overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+        className="w-full flex items-center gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
         <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-black/[0.06] dark:bg-white/[0.08]">
           <Icon size={15} className="text-coda-text-secondary" />
@@ -144,7 +144,7 @@ function DollarInput({
         {isDefault ? (
           <span className="text-[10px] text-coda-text-muted font-mono">(network default)</span>
         ) : (
-          <button onClick={onReset} className="text-[10px] text-coda-text-muted hover:text-coda-text hover:underline">Reset</button>
+          <button onClick={onReset} className="liquid-button text-[10px] text-coda-text-muted"><span>Reset</span></button>
         )}
       </div>
       <div className="relative">
@@ -771,27 +771,27 @@ export function AgentConfig() {
       <div className="dashboard-card-subtle p-2 flex items-center gap-1 overflow-x-auto">
         <button
           onClick={() => setSelectedBankId(null)}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+          className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap rounded-md transition-colors ${
             isDefaultsTab
-              ? 'bg-coda-surface text-coda-text shadow-sm border border-coda-border'
-              : 'text-coda-text-muted hover:text-coda-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03]'
+              ? 'bg-coda-surface text-coda-text shadow-sm'
+              : 'text-coda-text-muted hover:text-coda-text'
           }`}
         >
           <span className="inline-block w-2 h-2 rounded-full bg-coda-text-faint mr-1.5 align-middle" />
-          Network Defaults
+          <span>Network Defaults</span>
         </button>
         {activeBanks.map((bank) => (
           <button
             key={bank.id}
             onClick={() => setSelectedBankId(bank.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap rounded-md transition-colors ${
               selectedBankId === bank.id
-                ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text border border-black/[0.10] dark:border-white/[0.12]'
-                : 'text-coda-text-muted hover:text-coda-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03]'
+                ? 'text-coda-text'
+                : 'text-coda-text-muted hover:text-coda-text'
             }`}
           >
             <span className="inline-block w-2 h-2 rounded-full bg-coda-text-secondary mr-1.5 align-middle" />
-            {bank.short_code}
+            <span>{bank.short_code}</span>
           </button>
         ))}
 
@@ -861,9 +861,9 @@ export function AgentConfig() {
                     <button
                       onClick={savePersonality}
                       disabled={saving || !personalityDirty}
-                      className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-black/[0.06] dark:bg-white/[0.08] text-coda-text hover:bg-black/[0.10] dark:hover:bg-white/[0.12] disabled:opacity-40 transition-colors"
+                      className="liquid-button flex items-center px-3 py-1 text-xs font-medium text-coda-text disabled:opacity-40"
                     >
-                      {saveFlash === 'personality' ? <><Check size={12} /> Saved</> : <><Save size={12} /> Save</>}
+                      {saveFlash === 'personality' ? <><Check size={12} /> <span>Saved</span></> : <><Save size={12} /> <span>Save</span></>}
                     </button>
                   </div>
                 </div>
@@ -890,7 +890,7 @@ export function AgentConfig() {
                   {isDefaultsTab ? null : isFieldDefault('default_lockup_duration_minutes') ? (
                     <span className="text-[10px] text-coda-text-muted font-mono">(network default)</span>
                   ) : (
-                    <button onClick={() => resetField('default_lockup_duration_minutes')} className="text-[10px] text-coda-text-muted hover:text-coda-text hover:underline">Reset</button>
+                    <button onClick={() => resetField('default_lockup_duration_minutes')} className="liquid-button text-[10px] text-coda-text-muted"><span>Reset</span></button>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -927,9 +927,9 @@ export function AgentConfig() {
                       default_lockup_duration_minutes: config.default_lockup_duration_minutes,
                     })}
                     disabled={saving}
-                    className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-black/[0.06] dark:bg-white/[0.08] text-coda-text hover:bg-black/[0.10] dark:hover:bg-white/[0.12] disabled:opacity-40 transition-colors"
+                    className="liquid-button flex items-center px-3 py-1 text-xs font-medium text-coda-text disabled:opacity-40"
                   >
-                    {saveFlash === 'config' ? <><Check size={12} /> Saved</> : <><Save size={12} /> Save Maestro</>}
+                    {saveFlash === 'config' ? <><Check size={12} /> <span>Saved</span></> : <><Save size={12} /> <span>Save Maestro</span></>}
                   </button>
                 </div>
               )}
@@ -978,7 +978,7 @@ export function AgentConfig() {
                   {isFieldDefault('escalation_velocity_count') ? (
                     <span className="text-[10px] text-coda-text-muted font-mono">(network default)</span>
                   ) : (
-                    <button onClick={() => resetField('escalation_velocity_count')} className="text-[10px] text-coda-text-muted hover:text-coda-text hover:underline">Reset</button>
+                    <button onClick={() => resetField('escalation_velocity_count')} className="liquid-button text-[10px] text-coda-text-muted"><span>Reset</span></button>
                   )}
                 </div>
                 <input
@@ -1031,9 +1031,9 @@ export function AgentConfig() {
                       escalation_velocity_count: config.escalation_velocity_count,
                     })}
                     disabled={saving}
-                    className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-black/[0.06] dark:bg-white/[0.08] text-coda-text hover:bg-black/[0.10] dark:hover:bg-white/[0.12] disabled:opacity-40 transition-colors"
+                    className="liquid-button flex items-center px-3 py-1 text-xs font-medium text-coda-text disabled:opacity-40"
                   >
-                    {saveFlash === 'config' ? <><Check size={12} /> Saved</> : <><Save size={12} /> Save Concord</>}
+                    {saveFlash === 'config' ? <><Check size={12} /> <span>Saved</span></> : <><Save size={12} /> <span>Save Concord</span></>}
                   </button>
                 </div>
               )}
@@ -1105,9 +1105,9 @@ export function AgentConfig() {
                       updateField('risk_deferred_24h_ceiling', defaults.risk_deferred_24h_ceiling);
                       updateField('risk_deferred_72h_ceiling', defaults.risk_deferred_72h_ceiling);
                     }}
-                    className="text-[10px] text-coda-text-muted hover:text-coda-text hover:underline"
+                    className="liquid-button text-[10px] text-coda-text-muted"
                   >
-                    Reset to Network Defaults
+                    <span>Reset to Network Defaults</span>
                   </button>
                   <button
                     onClick={() => {
@@ -1123,9 +1123,9 @@ export function AgentConfig() {
                       });
                     }}
                     disabled={saving || !weightsValid}
-                    className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-black/[0.06] dark:bg-white/[0.08] text-coda-text hover:bg-black/[0.10] dark:hover:bg-white/[0.12] disabled:opacity-40 transition-colors"
+                    className="liquid-button flex items-center px-3 py-1 text-xs font-medium text-coda-text disabled:opacity-40"
                   >
-                    {saveFlash === 'config' ? <><Check size={12} /> Saved</> : <><Save size={12} /> Save Fermata</>}
+                    {saveFlash === 'config' ? <><Check size={12} /> <span>Saved</span></> : <><Save size={12} /> <span>Save Fermata</span></>}
                   </button>
                 </div>
               )}
@@ -1169,7 +1169,7 @@ export function AgentConfig() {
                 <button
                   onClick={() => { if (!isDefaultsTab && config) updateField('heartbeat_participation', !config.heartbeat_participation); }}
                   disabled={isDefaultsTab}
-                  className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${
+                  className={`relative rounded-full w-11 h-6 transition-colors ${
                     (isDefaultsTab ? (defaults?.heartbeat_participation ?? true) : (config?.heartbeat_participation ?? true))
                       ? 'bg-neutral-800 dark:bg-neutral-300' : 'bg-coda-text-faint/40'
                   } ${isDefaultsTab ? 'opacity-50' : 'cursor-pointer'}`}
@@ -1195,10 +1195,10 @@ export function AgentConfig() {
                     <button
                       onClick={regenerateMandates}
                       disabled={regenerating}
-                      className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-coda-text-muted hover:text-coda-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors disabled:opacity-40"
+                      className="liquid-button flex items-center px-2 py-1 text-[10px] font-medium text-coda-text-muted disabled:opacity-40"
                     >
                       <RefreshCw size={10} className={regenerating ? 'animate-spin' : ''} />
-                      {regenerating ? 'Regenerating...' : 'Regenerate via Gemini'}
+                      <span>{regenerating ? 'Regenerating...' : 'Regenerate via Gemini'}</span>
                     </button>
                   </div>
                   <p className="text-[10px] text-coda-text-muted">Mandates are generated by Gemini based on bank personality and network context.</p>
@@ -1230,7 +1230,7 @@ export function AgentConfig() {
                             </div>
                             <button
                               onClick={() => toggleMandate(m.id, !m.is_active)}
-                              className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 mt-1 ${
+                              className={`relative rounded-full w-9 h-5 flex-shrink-0 mt-1 transition-colors ${
                                 m.is_active ? 'bg-neutral-800 dark:bg-neutral-300' : 'bg-coda-text-faint/40'
                               } cursor-pointer`}
                             >
@@ -1255,9 +1255,9 @@ export function AgentConfig() {
                       heartbeat_participation: config.heartbeat_participation,
                     })}
                     disabled={saving}
-                    className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-black/[0.06] dark:bg-white/[0.08] text-coda-text hover:bg-black/[0.10] dark:hover:bg-white/[0.12] disabled:opacity-40 transition-colors"
+                    className="liquid-button flex items-center px-3 py-1 text-xs font-medium text-coda-text disabled:opacity-40"
                   >
-                    {saveFlash === 'config' ? <><Check size={12} /> Saved</> : <><Save size={12} /> Save Treasury</>}
+                    {saveFlash === 'config' ? <><Check size={12} /> <span>Saved</span></> : <><Save size={12} /> <span>Save Treasury</span></>}
                   </button>
                 </div>
               )}
@@ -1289,13 +1289,13 @@ export function AgentConfig() {
                         key={mode}
                         onClick={() => { if (!isDefaultsTab) updateField('cadenza_monitoring_sensitivity', mode); }}
                         disabled={isDefaultsTab}
-                        className={`px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all border ${
+                        className={`px-2 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
                           isActive
-                            ? 'bg-black/[0.08] dark:bg-white/[0.10] border-black/[0.12] dark:border-white/[0.15] text-coda-text'
-                            : 'bg-black/[0.02] dark:bg-white/[0.03] border-coda-border text-coda-text-muted hover:text-coda-text'
+                            ? 'text-coda-text'
+                            : 'text-coda-text-muted hover:text-coda-text'
                         } disabled:opacity-50`}
                       >
-                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                        <span>{mode.charAt(0).toUpperCase() + mode.slice(1)}</span>
                       </button>
                     );
                   })}
@@ -1320,7 +1320,7 @@ export function AgentConfig() {
                 <button
                   onClick={() => { if (!isDefaultsTab && config) updateField('cadenza_auto_reverse_enabled', !config.cadenza_auto_reverse_enabled); }}
                   disabled={isDefaultsTab}
-                  className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${
+                  className={`relative rounded-full w-11 h-6 transition-colors ${
                     (isDefaultsTab ? (defaults?.cadenza_auto_reverse_enabled ?? true) : (config?.cadenza_auto_reverse_enabled ?? true))
                       ? 'bg-neutral-800 dark:bg-neutral-300' : 'bg-coda-text-faint/40'
                   } ${isDefaultsTab ? 'opacity-50' : 'cursor-pointer'}`}
@@ -1406,9 +1406,9 @@ export function AgentConfig() {
                       cadenza_max_lockup_hours: config.cadenza_max_lockup_hours,
                     })}
                     disabled={saving}
-                    className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-black/[0.06] dark:bg-white/[0.08] text-coda-text hover:bg-black/[0.10] dark:hover:bg-white/[0.12] disabled:opacity-40 transition-colors"
+                    className="liquid-button flex items-center px-3 py-1 text-xs font-medium text-coda-text disabled:opacity-40"
                   >
-                    {saveFlash === 'config' ? <><Check size={12} /> Saved</> : <><Save size={12} /> Save Cadenza</>}
+                    {saveFlash === 'config' ? <><Check size={12} /> <span>Saved</span></> : <><Save size={12} /> <span>Save Cadenza</span></>}
                   </button>
                 </div>
               )}

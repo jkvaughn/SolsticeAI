@@ -189,14 +189,14 @@ export function SettingsPage() {
                   <button
                     key={opt.pref}
                     onClick={() => setTheme(opt.pref)}
-                    className={`relative flex flex-col items-center gap-2.5 p-4 rounded-xl border transition-all duration-300 cursor-pointer ${
+                    className={`relative flex flex-col items-center p-4 rounded-md transition-colors cursor-pointer ${
                       active
                         ? isDark
-                          ? 'bg-white/10 border-white/25 shadow-lg shadow-coda-brand/5'
-                          : 'bg-black/[0.04] border-black/15 shadow-lg shadow-coda-brand/5'
+                          ? 'bg-white/10 shadow-lg shadow-coda-brand/5'
+                          : 'bg-black/[0.04] shadow-lg shadow-coda-brand/5'
                         : isDark
-                          ? 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]'
-                          : 'bg-black/[0.02] border-black/[0.04] hover:bg-black/[0.04]'
+                          ? 'bg-transparent hover:text-coda-text'
+                          : 'bg-transparent hover:text-coda-text'
                     }`}
                   >
                     {active && (
@@ -235,14 +235,14 @@ export function SettingsPage() {
                   <button
                     key={opt.value}
                     onClick={() => setDensity(opt.value)}
-                    className={`relative flex items-center gap-3 p-4 rounded-xl border text-left transition-all duration-300 cursor-pointer ${
+                    className={`relative flex items-center p-4 text-left rounded-md transition-colors cursor-pointer ${
                       active
                         ? isDark
-                          ? 'bg-white/10 border-white/25 shadow-lg'
-                          : 'bg-black/[0.04] border-black/15 shadow-lg'
+                          ? 'bg-white/10 shadow-lg'
+                          : 'bg-black/[0.04] shadow-lg'
                         : isDark
-                          ? 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06]'
-                          : 'bg-black/[0.02] border-black/[0.04] hover:bg-black/[0.04]'
+                          ? 'bg-transparent hover:text-coda-text'
+                          : 'bg-transparent hover:text-coda-text'
                     }`}
                   >
                     {active && (
@@ -339,18 +339,18 @@ export function SettingsPage() {
                   <button
                     key={opt.value}
                     onClick={() => handleRefreshInterval(opt.value)}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border text-[13px] font-medium transition-all duration-300 cursor-pointer ${
+                    className={`flex items-center justify-center px-3 py-2.5 text-[13px] font-medium rounded-md transition-colors cursor-pointer ${
                       active
                         ? isDark
-                          ? 'bg-white/10 border-white/25 text-coda-text shadow-lg'
-                          : 'bg-black/[0.04] border-black/15 text-coda-text shadow-lg'
+                          ? 'bg-white/10 text-coda-text shadow-lg'
+                          : 'bg-black/[0.04] text-coda-text shadow-lg'
                         : isDark
-                          ? 'bg-white/[0.03] border-white/[0.06] text-coda-text-secondary hover:bg-white/[0.06]'
-                          : 'bg-black/[0.02] border-black/[0.04] text-coda-text-secondary hover:bg-black/[0.04]'
+                          ? 'bg-transparent text-coda-text-secondary hover:text-coda-text'
+                          : 'bg-transparent text-coda-text-secondary hover:text-coda-text'
                     }`}
                   >
                     {opt.value !== 'off' && <Timer size={13} className="opacity-60" />}
-                    {opt.label}
+                    <span>{opt.label}</span>
                   </button>
                 );
               })}
@@ -444,7 +444,7 @@ function CollapsibleCard({
     <div className="dashboard-card-subtle overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+        className="w-full flex items-center gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconBg}`}>
           <Icon size={15} />
@@ -487,11 +487,7 @@ function NotificationToggle({
   return (
     <button
       onClick={onToggle}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all duration-300 cursor-pointer ${
-        isDark
-          ? 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05]'
-          : 'bg-black/[0.02] border-black/[0.04] hover:bg-black/[0.04]'
-      }`}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer bg-transparent`}
     >
       <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
         enabled
@@ -553,17 +549,17 @@ function DangerAction({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`flex-shrink-0 px-3.5 py-1.5 rounded-xl text-[12px] font-medium transition-all duration-300 cursor-pointer ${
+        className={`liquid-button flex-shrink-0 px-3.5 py-1.5 text-[12px] font-medium cursor-pointer ${
           disabled
             ? 'opacity-50 cursor-not-allowed'
             : ''
         } ${
           isDark
-            ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/20'
-            : 'bg-red-500/10 text-red-600 hover:bg-red-500/20 border border-red-500/15'
+            ? 'bg-red-500/15 text-red-400'
+            : 'bg-red-500/10 text-red-600'
         }`}
       >
-        {buttonLabel}
+        <span>{buttonLabel}</span>
       </button>
     </div>
   );

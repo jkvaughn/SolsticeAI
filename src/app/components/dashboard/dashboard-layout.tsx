@@ -1,8 +1,4 @@
 import * as React from "react";
-import {
-  LayoutDashboard, Network, Radio,
-  Activity, Landmark, Settings, Sliders, FlaskConical, Shield, Globe, CircleUser
-} from "lucide-react";
 import { useNavigate, useLocation } from "react-router";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
@@ -11,6 +7,20 @@ import { motion } from "../motion-shim";
 import { useTheme } from "../ThemeProvider";
 import { AnimatedBackground } from "../AnimatedBackground";
 import { ArrowLeftIcon } from "../icons/ArrowLeftIcon";
+import { LottieIcon } from "../icons/LottieIcon";
+import {
+  dashboard as dashboardAnim,
+  aiNeuralNetworks as treasuryAnim,
+  networkWorld as networkCmdAnim,
+  transfer as transferAnim,
+  searchSecurity as escalationsAnim,
+  blockchainExplorer as explorerAnim,
+  networkSquare as networkSetupAnim,
+  nodes as agentConfigAnim,
+  platform as platformAnim,
+  settings as settingsAnim,
+  userProfile as userProfileAnim,
+} from "../icons/lottie";
 import { useAuth } from "../../contexts/AuthContext";
 import codaIcon from "../icons/coda-icon.svg";
 import { LayoutProvider } from "../../contexts/LayoutContext";
@@ -53,7 +63,8 @@ type TimeRange = '1H' | '24H' | '7D' | '30D';
 interface NavItem {
   id: string;
   label: string;
-  icon: React.ElementType;
+  icon?: React.ElementType;
+  lottieData?: object;
   route: string;
 }
 
@@ -69,24 +80,24 @@ interface DashboardLayoutProps {
 
 // Operations — daily-use views: overview → operate → monitor → visualise
 const opsNav: NavItem[] = [
-  { id: 'dashboard',    label: 'Dashboard',     icon: LayoutDashboard, route: '/' },
-  { id: 'treasury-ops', label: 'Treasury Ops',  icon: Landmark,        route: '/treasury-ops' },
-  { id: 'network-cmd',  label: 'Network Command', icon: Globe,         route: '/network-command' },
-  { id: 'transactions', label: 'Transactions',  icon: Activity,        route: '/transactions' },
-  { id: 'escalations',  label: 'Escalations',   icon: Shield,          route: '/escalations' },
-  { id: 'visualizer',   label: 'Visualizer',    icon: Radio,           route: '/visualizer' },
+  { id: 'dashboard',    label: 'Dashboard',       lottieData: dashboardAnim,      route: '/' },
+  { id: 'treasury-ops', label: 'Treasury Ops',    lottieData: treasuryAnim,       route: '/treasury-ops' },
+  { id: 'network-cmd',  label: 'Network Command', lottieData: networkCmdAnim,     route: '/network-command' },
+  { id: 'transactions', label: 'Transactions',    lottieData: transferAnim,       route: '/transactions' },
+  { id: 'escalations',  label: 'Escalations',     lottieData: escalationsAnim,    route: '/escalations' },
+  { id: 'visualizer',   label: 'Visualizer',      lottieData: explorerAnim,       route: '/visualizer' },
 ];
 
 // Configuration & Testing — setup, tune, QA
 const configNav: NavItem[] = [
-  { id: 'network',        label: 'Network Setup',  icon: Network,         route: '/setup' },
-  { id: 'agent-config',   label: 'Agent Config',   icon: Sliders,         route: '/agent-config' },
-  { id: 'proving-ground', label: 'Proving Ground', icon: FlaskConical,    route: '/proving-ground' },
+  { id: 'network',        label: 'Network Setup',  lottieData: networkSetupAnim, route: '/setup' },
+  { id: 'agent-config',   label: 'Agent Config',   lottieData: agentConfigAnim, route: '/agent-config' },
+  { id: 'proving-ground', label: 'Proving Ground', lottieData: platformAnim,   route: '/proving-ground' },
 ];
 
 // Bottom — utilities
 const bottomNav: NavItem[] = [
-  { id: 'settings', label: 'Settings', icon: Settings, route: '/settings' },
+  { id: 'settings', label: 'Settings', lottieData: settingsAnim, route: '/settings' },
 ];
 
 // ============================================================
@@ -194,6 +205,12 @@ export function DashboardLayout({
     const showBadge = item.id === 'escalations' && escalationCount > 0;
     const dimmed = isNavDimmed(persona, item.id);
     if (dimmed) return null;
+
+    // Lottie icons are black strokes — invert when icon would be invisible against bg
+    // Light mode: inactive = dark text on light bg (no invert), active = white text on black bg (invert)
+    // Dark mode: inactive = light text on dark bg (invert), active = black text on white bg (no invert)
+    const invertIcon = isDark !== active;
+
     return (
       <div key={item.id}>
       <Tooltip open={sidebarExpanded ? false : undefined}>
@@ -201,11 +218,11 @@ export function DashboardLayout({
           <button
             onClick={() => handleNavigate(item.route)}
             className={`
-              w-full flex items-center gap-3 px-3 py-2.5 squircle-sm transition-all duration-500 ease-out relative cursor-pointer
+              squircle-sm w-full flex items-center px-3 py-2.5 duration-500 ease-out relative cursor-pointer
               ${active
                 ? isDark
-                  ? 'bg-white text-black hover:bg-black/[0.04] shadow-lg'
-                  : 'bg-black text-white hover:bg-white/10 shadow-lg'
+                  ? 'bg-white text-black shadow-lg'
+                  : 'bg-black text-white shadow-lg'
                 : isDark
                   ? 'text-coda-text-secondary hover:bg-white/10 hover:text-white backdrop-blur-sm'
                   : 'text-coda-text-secondary hover:bg-black/10 hover:text-black backdrop-blur-sm'
@@ -213,7 +230,16 @@ export function DashboardLayout({
             `}
           >
             <div className="relative flex-shrink-0">
-              <Icon size={20} />
+              {item.lottieData ? (
+                <LottieIcon
+                  animationData={item.lottieData}
+                  size={20}
+                  trigger="hover"
+                  className={`transition-[filter] duration-500 ${invertIcon ? 'invert' : ''}`}
+                />
+              ) : Icon ? (
+                <Icon size={20} />
+              ) : null}
               {showBadge && !sidebarExpanded && (
                 <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center shadow-md">
                   {escalationCount > 9 ? '9+' : escalationCount}
@@ -297,7 +323,7 @@ export function DashboardLayout({
                 {sidebarExpanded && (
                   <button
                     onClick={() => setIsManuallyExpanded(false)}
-                    className="flex items-center justify-center cursor-pointer transition-all duration-300"
+                    className="flex items-center justify-center cursor-pointer duration-300"
                   >
                     <ArrowLeftIcon
                       size={30}
@@ -342,13 +368,18 @@ export function DashboardLayout({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => handleNavigate('/profile')}
-                      className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-xl transition-all duration-500 ease-out cursor-pointer ${
+                      className={`squircle-sm w-full flex items-center px-2 py-2 duration-500 ease-out cursor-pointer ${
                         isDark
                           ? 'hover:bg-white/[0.06]'
                           : 'hover:bg-black/[0.04]'
                       } ${sidebarExpanded ? '' : 'justify-center'}`}
                     >
-                      <CircleUser size={20} className="text-coda-text-muted flex-shrink-0" />
+                      <LottieIcon
+                        animationData={userProfileAnim}
+                        size={20}
+                        trigger="hover"
+                        className={`flex-shrink-0 transition-[filter] duration-500 ${isDark ? 'invert' : ''}`}
+                      />
                       {sidebarExpanded && (
                         <div className="flex-1 min-w-0 text-left">
                           <p className={`text-[12px] font-medium truncate text-coda-text`}>

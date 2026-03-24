@@ -260,7 +260,7 @@ function PaymentEvaluationCard({ eval: ev, ts, txId, fullText }: {
           {/* Expand full text */}
           <button
             onClick={() => setExpanded(!expanded)}
-            className="w-full px-3 py-1.5 flex items-center justify-center gap-1 text-[9px] text-coda-text-muted hover:text-coda-text-secondary transition-colors border-t border-coda-border-subtle/50"
+            className="w-full px-3 py-1.5 flex items-center justify-center text-[9px] text-coda-text-muted border-t border-coda-border-subtle/50 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
           >
             <span className="font-mono">{expanded ? 'Hide' : 'Show'} full reasoning</span>
             <ChevronDown className={`w-2.5 h-2.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
@@ -458,7 +458,7 @@ function TreasuryCycleCard({ parsed, ts, fullText }: {
           {/* Expand */}
           <button
             onClick={() => setExpanded(!expanded)}
-            className="w-full px-3 py-1.5 flex items-center justify-center gap-1 text-[9px] text-coda-text-muted hover:text-coda-text-secondary transition-colors border-t border-coda-border-subtle/50"
+            className="w-full px-3 py-1.5 flex items-center justify-center text-[9px] text-coda-text-muted border-t border-coda-border-subtle/50 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
           >
             <span className="font-mono">{expanded ? 'Hide' : 'Show'} full context</span>
             <ChevronDown className={`w-2.5 h-2.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />

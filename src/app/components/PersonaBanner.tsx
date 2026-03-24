@@ -71,9 +71,9 @@ export function PersonaBanner() {
       <div className="flex-1" />
       {isAdmin && <button
         onClick={() => setPersona(null)}
-        className={`text-[10px] font-medium ${config.text} hover:underline cursor-pointer`}
+        className={`liquid-button text-[10px] font-medium ${config.text} cursor-pointer`}
       >
-        Exit View
+        <span>Exit View</span>
       </button>}
     </div>
   );

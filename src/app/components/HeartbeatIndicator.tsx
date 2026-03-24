@@ -20,12 +20,11 @@ export function HeartbeatIndicator() {
   return (
     <button
       onClick={() => navigate('/treasury-ops')}
-      className="fixed bottom-5 right-5 z-[9999] flex items-center gap-2.5 px-4 py-2.5
-        rounded-full cursor-pointer
-        backdrop-blur-2xl bg-white/60 dark:bg-white/10
-        border border-white/30 dark:border-white/15
-        shadow-lg hover:shadow-xl
-        transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]
+      className="liquid-button fixed bottom-5 right-5 z-[9999] flex items-center px-4 py-2.5
+        cursor-pointer
+        backdrop-blur-2xl
+        shadow-lg
+        duration-300 active:scale-[0.97]
         group"
       aria-label="Heartbeat active — click to view Treasury Operations"
     >

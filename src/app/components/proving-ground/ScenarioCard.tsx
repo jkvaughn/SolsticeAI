@@ -199,12 +199,12 @@ export function ScenarioCard({
             onClick={(e) => { e.stopPropagation(); onRun(); }}
             disabled={disabled || isRunning}
             className={`
-              w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer
+              liquid-button w-7 h-7 flex items-center justify-center cursor-pointer
               ${isRunning
-                ? 'bg-coda-brand/20 text-coda-brand'
+                ? 'text-coda-brand'
                 : disabled
-                  ? 'bg-white/5 text-coda-text-muted cursor-not-allowed'
-                  : 'bg-white/5 text-coda-text-muted hover:bg-coda-brand/15 hover:text-coda-brand'
+                  ? 'text-coda-text-muted cursor-not-allowed'
+                  : 'text-coda-text-muted'
               }
             `}
           >
