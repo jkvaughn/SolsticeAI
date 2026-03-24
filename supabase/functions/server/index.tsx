@@ -1112,38 +1112,48 @@ app.post("/make-server-49d15288/setup-custodian", async (c) => {
 });
 
 // ============================================================
-// 1c. CUSTODIAN-STATUS — Get current BNY + Solstice wallet status
+// 1c. CUSTODIAN-STATUS — Get current custodian + Solstice wallet status
+//     Dynamically scans infra:custodian:* KV keys (supports any bank code).
 // ============================================================
 app.post("/make-server-49d15288/custodian-status", async (c) => {
   try {
-    let rawCustodian = await kv.get("infra:custodian:BNY");
+    // Find custodian dynamically — scan all infra:custodian:* keys
+    const custodianEntries = await kv.scan("infra:custodian:");
+    let rawCustodian: string | null = null;
+    let custodianKvKey = "";
+    if (custodianEntries.length > 0) {
+      const entry = custodianEntries[0];
+      rawCustodian = typeof entry.value === 'string' ? entry.value : JSON.stringify(entry.value);
+      custodianKvKey = entry.key;
+      console.log(`[custodian-status] Found custodian at key: ${custodianKvKey}`);
+    }
 
-    // Auto-fix stale custodian records: if BNY record exists but has no linked_bank_id,
-    // re-link it to the actual BNY bank entity from the banks table.
+    // Auto-fix stale custodian records: if record exists but has no linked_bank_id
     if (rawCustodian) {
-      const parsed = JSON.parse(rawCustodian as string);
+      const parsed = typeof rawCustodian === 'string' ? JSON.parse(rawCustodian) : rawCustodian;
       if (!parsed.linked_bank_id) {
-        console.log(`[custodian-status] Stale BNY custodian record detected (no linked_bank_id) — auto-re-linking to BNY bank`);
-        let bnyBank: any = null;
-        let bnyErr: any = null;
-        try { [bnyBank] = await sql`SELECT id, name, short_code, solana_wallet_pubkey, solana_wallet_keypair_encrypted, status, created_at FROM banks WHERE short_code = ${"BNY"}` } catch (e) { bnyErr = e; }
+        const bankCode = parsed.code || custodianKvKey.replace('infra:custodian:', '');
+        console.log(`[custodian-status] Stale custodian record (no linked_bank_id) — auto-re-linking to ${bankCode}`);
+        let bank: any = null;
+        let bankErr: any = null;
+        try { [bank] = await sql`SELECT id, name, short_code, solana_wallet_pubkey, solana_wallet_keypair_encrypted, status, created_at FROM banks WHERE short_code = ${bankCode}` } catch (e) { bankErr = e; }
 
-        if (!bnyErr && bnyBank && bnyBank.solana_wallet_pubkey) {
-          const bnyRecord = {
-            id: bnyBank.id,
-            name: "BNY Mellon",
-            code: "BNY",
-            wallet_address: bnyBank.solana_wallet_pubkey,
-            keypair_encrypted: bnyBank.solana_wallet_keypair_encrypted,
+        if (!bankErr && bank && bank.solana_wallet_pubkey) {
+          const record = {
+            id: bank.id,
+            name: bank.name,
+            code: bankCode,
+            wallet_address: bank.solana_wallet_pubkey,
+            keypair_encrypted: bank.solana_wallet_keypair_encrypted,
             role: "universal_custodian",
-            linked_bank_id: bnyBank.id,
-            created_at: bnyBank.created_at || new Date().toISOString(),
+            linked_bank_id: bank.id,
+            created_at: bank.created_at || new Date().toISOString(),
           };
-          await kv.set("infra:custodian:BNY", JSON.stringify(bnyRecord));
-          rawCustodian = JSON.stringify(bnyRecord);
-          console.log(`[custodian-status] ✓ BNY custodian auto-re-linked to bank wallet: ${bnyBank.solana_wallet_pubkey}`);
+          await kv.set(custodianKvKey, JSON.stringify(record));
+          rawCustodian = JSON.stringify(record);
+          console.log(`[custodian-status] ✓ Custodian auto-re-linked to ${bankCode} wallet: ${bank.solana_wallet_pubkey}`);
         } else {
-          console.log(`[custodian-status] Could not auto-re-link BNY: bank not found or query error`);
+          console.log(`[custodian-status] Could not auto-re-link ${bankCode}: bank not found or query error`);
         }
       }
     }
@@ -1218,6 +1228,63 @@ app.post("/make-server-49d15288/custodian-status", async (c) => {
     const errObj = err as Error;
     console.log(`[custodian-status] ✗ Error: ${errObj.message}`);
     return c.json({ error: `Custodian status error: ${errObj.message}` }, 500);
+  }
+});
+
+// ============================================================
+// 1d. REASSIGN-CUSTODIAN — Change which bank serves as universal custodian
+//     Removes old custodian KV entry, creates new one linked to the specified bank.
+//     Preserves the existing Solstice fees wallet.
+// ============================================================
+app.post("/make-server-49d15288/reassign-custodian", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+  try {
+    const body = await c.req.json();
+    const newCode = (body.custodian_code || "").toUpperCase();
+    if (!newCode) return c.json({ error: "custodian_code is required" }, 400);
+
+    console.log(`[reassign-custodian] ▶ Reassigning custodian to ${newCode}`);
+
+    // Find the new bank
+    let [bank]: any[] = [null];
+    try { [bank] = await sql`SELECT id, name, short_code, solana_wallet_pubkey, solana_wallet_keypair_encrypted, status, created_at FROM banks WHERE short_code = ${newCode}` } catch (_e) { /* handled below */ }
+    if (!bank || !bank.solana_wallet_pubkey) {
+      return c.json({ error: `Bank '${newCode}' not found or has no wallet. Activate it first.` }, 400);
+    }
+
+    // Remove all existing custodian entries
+    const existing = await kv.scan("infra:custodian:");
+    for (const entry of existing) {
+      console.log(`[reassign-custodian] Removing old custodian: ${entry.key}`);
+      await kv.del(entry.key);
+    }
+
+    // Create new custodian entry
+    const record = {
+      id: bank.id,
+      name: bank.name,
+      code: newCode,
+      wallet_address: bank.solana_wallet_pubkey,
+      keypair_encrypted: bank.solana_wallet_keypair_encrypted,
+      role: "universal_custodian",
+      linked_bank_id: bank.id,
+      created_at: bank.created_at || new Date().toISOString(),
+    };
+    await kv.set(`infra:custodian:${newCode}`, JSON.stringify(record));
+    console.log(`[reassign-custodian] ✓ Custodian reassigned to ${newCode} (${bank.name})`);
+
+    // Get SOL balance
+    let solBalance = 0;
+    try { solBalance = await getSolBalance(bank.solana_wallet_pubkey); } catch (_e) { /* non-blocking */ }
+
+    return c.json({
+      status: "reassigned",
+      custodian: { ...record, keypair_encrypted: undefined, sol_balance: solBalance / 1e9 },
+    });
+  } catch (err) {
+    console.log(`[reassign-custodian] ✗ Error: ${(err as Error).message}`);
+    return c.json({ error: `Reassign custodian error: ${(err as Error).message}` }, 500);
   }
 });
 
