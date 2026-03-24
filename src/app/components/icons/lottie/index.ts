@@ -65,6 +65,7 @@ export { default as chevronDown } from './Chevron Down.json';
 export { default as chevronRight } from './Chevron Right.json';
 
 // ─── Visibility & Security ───────────────────────────────
+export { default as eye3 } from './Eye 3.json';
 export { default as eyeShow } from './Eye : Show.json';
 export { default as eyeHide } from './Eye Off : Hide.json';
 export { default as shield } from './Shield : Security.json';

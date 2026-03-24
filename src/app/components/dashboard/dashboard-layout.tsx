@@ -13,7 +13,7 @@ import {
   aiNeuralNetworks as treasuryAnim,
   networkWorldOpen as networkCmdAnim,
   transfer as transferAnim,
-  searchSecurity as escalationsAnim,
+  eye3 as escalationsAnim,
   blockchainExplorer as explorerAnim,
   networkSquare as networkSetupAnim,
   nodes as agentConfigAnim,
