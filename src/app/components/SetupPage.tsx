@@ -259,11 +259,8 @@ export function SetupPage() {
   const [infraDeploying, setInfraDeploying] = useState(false);
   const [infraError, setInfraError] = useState<string | null>(null);
   const [changingCustodian, setChangingCustodian] = useState(false);
-  const [reAuthOpen, setReAuthOpen] = useState(false);
-  const [reAuthPassword, setReAuthPassword] = useState('');
-  const [reAuthError, setReAuthError] = useState<string | null>(null);
-  const [reAuthLoading, setReAuthLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
 
   // Custodian bank selector — defaults based on environment
   const defaultCustodianCode = isProductionCluster ? 'TBD' : 'BNY';
@@ -1131,9 +1128,9 @@ export function SetupPage() {
               {/* Change Custodian action */}
               {custodian && activeBanks.length > 1 && (
                 <div className="col-span-full pt-2 border-t border-coda-border/20">
-                  <AlertDialog open={reAuthOpen} onOpenChange={(open) => {
-                    setReAuthOpen(open);
-                    if (!open) { setReAuthPassword(''); setReAuthError(null); }
+                  <AlertDialog open={confirmOpen} onOpenChange={(open) => {
+                    setConfirmOpen(open);
+                    if (!open) setConfirmText('');
                   }}>
                     <AlertDialogTrigger asChild>
                       <button
@@ -1145,59 +1142,50 @@ export function SetupPage() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle className="font-mono text-sm">Re-authenticate to continue</AlertDialogTitle>
-                        <AlertDialogDescription className="text-xs font-mono text-coda-text-muted">
-                          Changing the universal custodian affects all settlement flows. Enter your password to confirm.
+                        <AlertDialogTitle className="font-mono text-sm">Confirm custodian reassignment</AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                          <div className="text-xs font-mono text-coda-text-muted space-y-2">
+                            <p>
+                              Changing the universal custodian affects all settlement flows, lockup token operations, and custody chains across the network.
+                            </p>
+                            <p>
+                              Type <code className="px-1 py-0.5 rounded bg-coda-surface-hover text-amber-400 font-bold">REASSIGN</code> to continue.
+                            </p>
+                          </div>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <div className="py-2">
                         <input
-                          type="password"
-                          placeholder="Password"
-                          value={reAuthPassword}
-                          onChange={(e) => { setReAuthPassword(e.target.value); setReAuthError(null); }}
+                          type="text"
+                          placeholder="Type REASSIGN to confirm"
+                          value={confirmText}
+                          onChange={(e) => setConfirmText(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && reAuthPassword.length >= 6) {
+                            if (e.key === 'Enter' && confirmText === 'REASSIGN') {
                               e.preventDefault();
-                              document.getElementById('reauth-confirm-btn')?.click();
+                              document.getElementById('confirm-reassign-btn')?.click();
                             }
                           }}
-                          className="w-full px-3 py-2 rounded-xl border border-coda-border/30 bg-coda-surface text-sm font-mono text-coda-text focus:outline-none focus:ring-1 focus:ring-coda-brand/50"
+                          className="w-full px-3 py-2 rounded-xl border border-coda-border/30 bg-coda-surface text-sm font-mono text-coda-text focus:outline-none focus:ring-1 focus:ring-amber-500/50"
                           autoFocus
+                          spellCheck={false}
+                          autoComplete="off"
                         />
-                        {reAuthError && (
-                          <p className="text-[10px] font-mono text-red-400 mt-1.5">{reAuthError}</p>
-                        )}
                       </div>
                       <AlertDialogFooter>
                         <AlertDialogCancel className="text-xs font-mono cursor-pointer">Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                          id="reauth-confirm-btn"
-                          disabled={reAuthLoading || reAuthPassword.length < 6}
+                          id="confirm-reassign-btn"
+                          disabled={confirmText !== 'REASSIGN'}
                           className="text-xs font-mono bg-amber-500 hover:bg-amber-600 text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            setReAuthLoading(true);
-                            setReAuthError(null);
-                            try {
-                              const result = await signIn(userEmail || '', reAuthPassword);
-                              if (result.error) {
-                                setReAuthError(result.error);
-                                setReAuthLoading(false);
-                                return;
-                              }
-                              setReAuthOpen(false);
-                              setReAuthPassword('');
-                              setSelectedCustodianCode(custodian.code || defaultCustodianCode);
-                              setChangingCustodian(true);
-                            } catch (err: any) {
-                              setReAuthError(err.message || 'Authentication failed');
-                            } finally {
-                              setReAuthLoading(false);
-                            }
+                          onClick={() => {
+                            setConfirmOpen(false);
+                            setConfirmText('');
+                            setSelectedCustodianCode(custodian.code || defaultCustodianCode);
+                            setChangingCustodian(true);
                           }}
                         >
-                          {reAuthLoading ? 'Verifying...' : 'Confirm & Continue'}
+                          Confirm & Continue
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
