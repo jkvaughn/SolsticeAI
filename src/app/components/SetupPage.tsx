@@ -259,6 +259,11 @@ export function SetupPage() {
   const [infraDeploying, setInfraDeploying] = useState(false);
   const [infraError, setInfraError] = useState<string | null>(null);
   const [changingCustodian, setChangingCustodian] = useState(false);
+  const [reAuthOpen, setReAuthOpen] = useState(false);
+  const [reAuthPassword, setReAuthPassword] = useState('');
+  const [reAuthError, setReAuthError] = useState<string | null>(null);
+  const [reAuthLoading, setReAuthLoading] = useState(false);
+  const { signIn } = useAuth();
 
   // Custodian bank selector — defaults based on environment
   const defaultCustodianCode = isProductionCluster ? 'TBD' : 'BNY';
@@ -1125,16 +1130,78 @@ export function SetupPage() {
               )}
               {/* Change Custodian action */}
               {custodian && activeBanks.length > 1 && (
-                <div className="col-span-full flex justify-end">
-                  <button
-                    onClick={() => {
-                      setSelectedCustodianCode(custodian.code || defaultCustodianCode);
-                      setChangingCustodian(true);
-                    }}
-                    className="text-[10px] font-mono text-coda-text-muted hover:text-coda-text transition-colors cursor-pointer"
-                  >
-                    Change custodian bank...
-                  </button>
+                <div className="col-span-full pt-2 border-t border-coda-border/20">
+                  <AlertDialog open={reAuthOpen} onOpenChange={(open) => {
+                    setReAuthOpen(open);
+                    if (!open) { setReAuthPassword(''); setReAuthError(null); }
+                  }}>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 text-xs font-mono text-amber-500 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                      >
+                        <Landmark className="w-3.5 h-3.5" />
+                        Reassign Custodian Bank
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="font-mono text-sm">Re-authenticate to continue</AlertDialogTitle>
+                        <AlertDialogDescription className="text-xs font-mono text-coda-text-muted">
+                          Changing the universal custodian affects all settlement flows. Enter your password to confirm.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="py-2">
+                        <input
+                          type="password"
+                          placeholder="Password"
+                          value={reAuthPassword}
+                          onChange={(e) => { setReAuthPassword(e.target.value); setReAuthError(null); }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && reAuthPassword.length >= 6) {
+                              e.preventDefault();
+                              document.getElementById('reauth-confirm-btn')?.click();
+                            }
+                          }}
+                          className="w-full px-3 py-2 rounded-xl border border-coda-border/30 bg-coda-surface text-sm font-mono text-coda-text focus:outline-none focus:ring-1 focus:ring-coda-brand/50"
+                          autoFocus
+                        />
+                        {reAuthError && (
+                          <p className="text-[10px] font-mono text-red-400 mt-1.5">{reAuthError}</p>
+                        )}
+                      </div>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="text-xs font-mono cursor-pointer">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          id="reauth-confirm-btn"
+                          disabled={reAuthLoading || reAuthPassword.length < 6}
+                          className="text-xs font-mono bg-amber-500 hover:bg-amber-600 text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            setReAuthLoading(true);
+                            setReAuthError(null);
+                            try {
+                              const result = await signIn(userEmail || '', reAuthPassword);
+                              if (result.error) {
+                                setReAuthError(result.error);
+                                setReAuthLoading(false);
+                                return;
+                              }
+                              setReAuthOpen(false);
+                              setReAuthPassword('');
+                              setSelectedCustodianCode(custodian.code || defaultCustodianCode);
+                              setChangingCustodian(true);
+                            } catch (err: any) {
+                              setReAuthError(err.message || 'Authentication failed');
+                            } finally {
+                              setReAuthLoading(false);
+                            }
+                          }}
+                        >
+                          {reAuthLoading ? 'Verifying...' : 'Confirm & Continue'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
             </div>
