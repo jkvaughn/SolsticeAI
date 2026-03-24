@@ -85,7 +85,7 @@ interface DashboardLayoutProps {
 const opsNav: NavItem[] = [
   { id: 'dashboard',    label: 'Dashboard',       lottieData: dashboardAnim,     lottieScale: 1.05, route: '/' },
   { id: 'treasury-ops', label: 'Treasury Ops',    lottieData: treasuryAnim,      lottieScale: 1.15, route: '/treasury-ops' },
-  { id: 'network-cmd',  label: 'Network Command', lottieData: networkCmdAnim,    lottieScale: 0.9,  route: '/network-command' },
+  { id: 'network-cmd',  label: 'Network Command', lottieData: networkCmdAnim,    lottieScale: 1.1,  route: '/network-command' },
   { id: 'transactions', label: 'Transactions',    lottieData: transferAnim,      lottieScale: 1.1,  route: '/transactions' },
   { id: 'escalations',  label: 'Escalations',     lottieData: escalationsAnim,   lottieScale: 1.2,  route: '/escalations' },
   { id: 'visualizer',   label: 'Visualizer',      lottieData: explorerAnim,      lottieScale: 1.3,  route: '/visualizer' },
