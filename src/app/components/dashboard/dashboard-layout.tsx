@@ -65,6 +65,8 @@ interface NavItem {
   label: string;
   icon?: React.ElementType;
   lottieData?: object;
+  /** Per-icon visual scale to normalize sizes across different Lottie files */
+  lottieScale?: number;
   route: string;
 }
 
@@ -79,25 +81,26 @@ interface DashboardLayoutProps {
 // ============================================================
 
 // Operations — daily-use views: overview → operate → monitor → visualise
+// lottieScale normalises visual size across icons with different viewBox usage
 const opsNav: NavItem[] = [
-  { id: 'dashboard',    label: 'Dashboard',       lottieData: dashboardAnim,      route: '/' },
-  { id: 'treasury-ops', label: 'Treasury Ops',    lottieData: treasuryAnim,       route: '/treasury-ops' },
-  { id: 'network-cmd',  label: 'Network Command', lottieData: networkCmdAnim,     route: '/network-command' },
-  { id: 'transactions', label: 'Transactions',    lottieData: transferAnim,       route: '/transactions' },
-  { id: 'escalations',  label: 'Escalations',     lottieData: escalationsAnim,    route: '/escalations' },
-  { id: 'visualizer',   label: 'Visualizer',      lottieData: explorerAnim,       route: '/visualizer' },
+  { id: 'dashboard',    label: 'Dashboard',       lottieData: dashboardAnim,     lottieScale: 1.05, route: '/' },
+  { id: 'treasury-ops', label: 'Treasury Ops',    lottieData: treasuryAnim,      lottieScale: 1.15, route: '/treasury-ops' },
+  { id: 'network-cmd',  label: 'Network Command', lottieData: networkCmdAnim,    lottieScale: 0.9,  route: '/network-command' },
+  { id: 'transactions', label: 'Transactions',    lottieData: transferAnim,      lottieScale: 1.1,  route: '/transactions' },
+  { id: 'escalations',  label: 'Escalations',     lottieData: escalationsAnim,   lottieScale: 1.2,  route: '/escalations' },
+  { id: 'visualizer',   label: 'Visualizer',      lottieData: explorerAnim,      lottieScale: 1.6,  route: '/visualizer' },
 ];
 
 // Configuration & Testing — setup, tune, QA
 const configNav: NavItem[] = [
-  { id: 'network',        label: 'Network Setup',  lottieData: networkSetupAnim, route: '/setup' },
-  { id: 'agent-config',   label: 'Agent Config',   lottieData: agentConfigAnim, route: '/agent-config' },
-  { id: 'proving-ground', label: 'Proving Ground', lottieData: platformAnim,   route: '/proving-ground' },
+  { id: 'network',        label: 'Network Setup',  lottieData: networkSetupAnim, lottieScale: 1.2,  route: '/setup' },
+  { id: 'agent-config',   label: 'Agent Config',   lottieData: agentConfigAnim,  lottieScale: 1.15, route: '/agent-config' },
+  { id: 'proving-ground', label: 'Proving Ground', lottieData: platformAnim,     lottieScale: 1.25, route: '/proving-ground' },
 ];
 
 // Bottom — utilities
 const bottomNav: NavItem[] = [
-  { id: 'settings', label: 'Settings', lottieData: settingsAnim, route: '/settings' },
+  { id: 'settings', label: 'Settings', lottieData: settingsAnim, lottieScale: 1.25, route: '/settings' },
 ];
 
 // ============================================================
@@ -236,6 +239,7 @@ export function DashboardLayout({
                   animationData={item.lottieData}
                   size={20}
                   trigger="hover"
+                  scale={item.lottieScale}
                   className={`transition-[filter] duration-500 ${invertIcon ? 'invert' : ''}`}
                 />
               ) : Icon ? (
@@ -379,6 +383,7 @@ export function DashboardLayout({
                         animationData={userProfileAnim}
                         size={20}
                         trigger="hover"
+                        scale={1.2}
                         className={`flex-shrink-0 transition-[filter] duration-500 ${isDark ? 'invert' : ''}`}
                       />
                       {sidebarExpanded && (

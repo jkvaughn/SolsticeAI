@@ -20,6 +20,8 @@ interface LottieIconProps {
   className?: string;
   /** Override stroke/fill color (applies CSS filter) */
   color?: string;
+  /** Visual scale multiplier to normalize icon sizes (default 1.15 for Iconly viewBox padding) */
+  scale?: number;
 }
 
 /**
@@ -39,6 +41,7 @@ export function LottieIcon({
   trigger = 'hover',
   speed = 1,
   className = '',
+  scale = 1.15,
 }: LottieIconProps) {
   const lottieRef = useRef<LottieRefCurrentProps>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,8 +103,6 @@ export function LottieIcon({
     return () => button.removeEventListener('click', onClick);
   }, [trigger]);
 
-  // Iconly Pro Lottie files have ~13% internal padding in their 512x512 viewBox.
-  // Use CSS transform to scale up visually without affecting layout dimensions.
   return (
     <div
       ref={containerRef}
@@ -113,7 +114,7 @@ export function LottieIcon({
         animationData={animationData}
         loop={trigger === 'loop'}
         autoplay={trigger === 'loop' || trigger === 'auto'}
-        style={{ width: w, height: h, transform: 'scale(1.15)' }}
+        style={{ width: w, height: h, transform: `scale(${scale})` }}
       />
     </div>
   );
