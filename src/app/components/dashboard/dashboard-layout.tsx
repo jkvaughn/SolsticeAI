@@ -88,7 +88,7 @@ const opsNav: NavItem[] = [
   { id: 'network-cmd',  label: 'Network Command', lottieData: networkCmdAnim,    lottieScale: 0.9,  route: '/network-command' },
   { id: 'transactions', label: 'Transactions',    lottieData: transferAnim,      lottieScale: 1.1,  route: '/transactions' },
   { id: 'escalations',  label: 'Escalations',     lottieData: escalationsAnim,   lottieScale: 1.2,  route: '/escalations' },
-  { id: 'visualizer',   label: 'Visualizer',      lottieData: explorerAnim,      lottieScale: 1.6,  route: '/visualizer' },
+  { id: 'visualizer',   label: 'Visualizer',      lottieData: explorerAnim,      lottieScale: 1.3,  route: '/visualizer' },
 ];
 
 // Configuration & Testing — setup, tune, QA
