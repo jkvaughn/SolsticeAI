@@ -334,9 +334,11 @@ export function DashboardLayout({
 
             {/* Primary Navigation */}
             <div className="px-3 py-[1.1rem] flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-              {sidebarExpanded && (
-                <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3 mb-2">Ops</p>
-              )}
+              <div className={`overflow-hidden transition-all duration-500 ease-out ${
+                sidebarExpanded ? 'max-h-6 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'
+              }`}>
+                <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3">Ops</p>
+              </div>
               <div className="space-y-1">
                 {opsNav.map(renderNavButton)}
               </div>
@@ -344,9 +346,11 @@ export function DashboardLayout({
               {/* Divider between ops and config */}
               <div className="my-3 mx-1 border-t border-black/[0.06] dark:border-white/[0.06]" />
 
-              {sidebarExpanded && (
-                <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3 mb-2">Config</p>
-              )}
+              <div className={`overflow-hidden transition-all duration-500 ease-out ${
+                sidebarExpanded ? 'max-h-6 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'
+              }`}>
+                <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3">Config</p>
+              </div>
               <div className="space-y-1">
                 {configNav.filter(item => isAdmin || item.id === 'agent-config').map(renderNavButton)}
               </div>
