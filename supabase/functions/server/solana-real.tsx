@@ -10,7 +10,7 @@ import {
   PublicKey,
   Transaction,
   SystemProgram,
-  sendAndConfirmTransaction,
+  sendAndConfirmTransaction as _sendAndConfirmTransaction,
   LAMPORTS_PER_SOL,
 } from "npm:@solana/web3.js@1.98.0";
 
@@ -45,6 +45,40 @@ const NETWORK_FEE_LAMPORTS = Math.round(NETWORK_FEE_SOL * LAMPORTS_PER_SOL);
 
 function getConnection(): Connection {
   return new Connection(DEVNET_RPC, "confirmed");
+}
+
+// ── Polling-based send+confirm ────────────────────────────────
+// Replaces sendAndConfirmTransaction which uses lastValidBlockHeight
+// and fails on Solstice Network due to fast block production.
+async function sendAndPollTransaction(
+  connection: Connection,
+  tx: Transaction,
+  signers: Keypair[],
+  _opts?: { commitment?: string },
+): Promise<string> {
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+  tx.recentBlockhash = blockhash;
+  tx.lastValidBlockHeight = lastValidBlockHeight;
+  tx.feePayer = signers[0].publicKey;
+  tx.sign(...signers);
+
+  const rawTx = tx.serialize();
+  const signature = await connection.sendRawTransaction(rawTx, { skipPreflight: false });
+  console.log(`[tx] Sent: ${signature} — polling for confirmation...`);
+
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const status = await connection.getSignatureStatuses([signature]);
+    const val = status?.value?.[0];
+    if (val?.err) {
+      throw new Error(`Transaction failed: ${JSON.stringify(val.err)}`);
+    }
+    if (val?.confirmationStatus === "confirmed" || val?.confirmationStatus === "finalized") {
+      console.log(`[tx] Confirmed: ${signature} (${val.confirmationStatus})`);
+      return signature;
+    }
+  }
+  throw new Error(`Transaction confirmation timeout after 60s: ${signature}`);
 }
 
 export function encodeKeypair(keypair: Keypair): string {
@@ -232,7 +266,7 @@ export async function activateBank(
     )
   );
 
-  const mintSignature = await sendAndConfirmTransaction(connection, createMintTx, [bankKeypair, mintKeypair]);
+  const mintSignature = await sendAndPollTransaction(connection, createMintTx, [bankKeypair, mintKeypair]);
   console.log(`[activate-bank] ${shortCode} mint created: ${mintKeypair.publicKey.toBase58()}`);
 
   // Step 3: Create ATA with MemoTransfer enabled
@@ -247,7 +281,7 @@ export async function activateBank(
       TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID
     )
   );
-  await sendAndConfirmTransaction(connection, createAtaTx, [bankKeypair]);
+  await sendAndPollTransaction(connection, createAtaTx, [bankKeypair]);
   console.log(`[activate-bank] ${shortCode} ATA created: ${ata.toBase58()}`);
 
   // Reallocate ATA to add space for MemoTransfer extension, then enable it
@@ -259,7 +293,7 @@ export async function activateBank(
       ata, pubkey, [], TOKEN_2022_PROGRAM_ID
     )
   );
-  await sendAndConfirmTransaction(connection, memoSetupTx, [bankKeypair]);
+  await sendAndPollTransaction(connection, memoSetupTx, [bankKeypair]);
   console.log(`[activate-bank] ${shortCode} MemoTransfer enabled on ATA: ${ata.toBase58()}`);
 
   // Step 4: Mint initial supply
@@ -273,7 +307,7 @@ export async function activateBank(
       supplyBaseUnits, [], TOKEN_2022_PROGRAM_ID
     )
   );
-  const supplySignature = await sendAndConfirmTransaction(connection, mintToTx, [bankKeypair]);
+  const supplySignature = await sendAndPollTransaction(connection, mintToTx, [bankKeypair]);
   console.log(`[activate-bank] ${shortCode} minted $${initialSupply.toLocaleString()} (${supplyBaseUnits.toString()} raw)`);
 
   // Final balance
@@ -424,7 +458,7 @@ export async function executeTransfer(
   );
 
   // Sign with BOTH keypairs — sender signs burn + memo, receiver signs mint
-  const signature = await sendAndConfirmTransaction(
+  const signature = await sendAndPollTransaction(
     connection, tx,
     [senderKeypair, receiverKeypair],
     { commitment: "confirmed" }
@@ -514,7 +548,7 @@ export async function burnDepositToken(
     ),
   );
 
-  const signature = await sendAndConfirmTransaction(connection, tx, [bankKp], { commitment: "confirmed" });
+  const signature = await sendAndPollTransaction(connection, tx, [bankKp], { commitment: "confirmed" });
   const txInfo = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
 
   console.log(`[burn-deposit] Burned ${rawAmount.toString()} raw from ${ata.toBase58().slice(0, 16)}... — sig: ${signature.slice(0, 20)}...`);
@@ -559,7 +593,7 @@ export async function mintDepositToken(
     ),
   );
 
-  const signature = await sendAndConfirmTransaction(connection, tx, [bankKp], { commitment: "confirmed" });
+  const signature = await sendAndPollTransaction(connection, tx, [bankKp], { commitment: "confirmed" });
   const txInfo = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
 
   console.log(`[mint-deposit] Minted ${rawAmount.toString()} raw to ${ata.toBase58().slice(0, 16)}... — sig: ${signature.slice(0, 20)}...`);
@@ -614,7 +648,7 @@ export async function createLockupMint(
     ),
   );
 
-  const mintSignature = await sendAndConfirmTransaction(
+  const mintSignature = await sendAndPollTransaction(
     connection, createMintTx, [custodianKp, mintKeypair],
   );
   console.log(`[lockup-mint] ${LOCKUP_TOKEN_SYMBOL} mint created: ${mintKeypair.publicKey.toBase58()}`);
@@ -630,7 +664,7 @@ export async function createLockupMint(
       TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
     ),
   );
-  await sendAndConfirmTransaction(connection, createAtaTx, [custodianKp]);
+  await sendAndPollTransaction(connection, createAtaTx, [custodianKp]);
   console.log(`[lockup-mint] ${LOCKUP_TOKEN_SYMBOL} ATA created for BNY: ${ata.toBase58()}`);
 
   return {
@@ -677,7 +711,7 @@ export async function mintLockupToEscrow(
     ),
   );
 
-  const signature = await sendAndConfirmTransaction(connection, tx, [custodianKp], { commitment: "confirmed" });
+  const signature = await sendAndPollTransaction(connection, tx, [custodianKp], { commitment: "confirmed" });
   const txInfo = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
 
   console.log(`[lockup-escrow] Minted ${rawAmount.toString()} ${LOCKUP_TOKEN_SYMBOL} to escrow — sig: ${signature.slice(0, 20)}...`);
@@ -721,7 +755,7 @@ export async function burnLockupFromEscrow(
     ),
   );
 
-  const signature = await sendAndConfirmTransaction(connection, tx, [custodianKp], { commitment: "confirmed" });
+  const signature = await sendAndPollTransaction(connection, tx, [custodianKp], { commitment: "confirmed" });
   const txInfo = await connection.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
 
   console.log(`[lockup-escrow] Burned ${rawAmount.toString()} ${LOCKUP_TOKEN_SYMBOL} from escrow — sig: ${signature.slice(0, 20)}...`);
@@ -777,7 +811,7 @@ export async function sendNetworkFee(
   });
 
   const tx = new Transaction().add(feeInstruction);
-  const signature = await sendAndConfirmTransaction(
+  const signature = await sendAndPollTransaction(
     connection, tx, [senderKp],
     { commitment: "confirmed" },
   );
