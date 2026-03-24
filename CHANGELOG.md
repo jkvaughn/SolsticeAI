@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-03-24 — Animated Lottie Sidebar Icons
+
+- **LottieIcon component** (`LottieIcon.tsx`) — Reusable wrapper with hover delegation, configurable triggers (hover/click/loop/auto/none), per-icon `scale` prop for visual normalization
+- **61+ Lottie JSON icons** from Iconly Pro added to `src/app/components/icons/lottie/` with semantic registry (`index.ts`)
+- **Sidebar nav fully animated** — All 11 nav items (Dashboard, Treasury Ops, Network Command, Transactions, Escalations, Visualizer, Network Setup, Agent Config, Proving Ground, Settings, User Profile) replaced from static lucide-react to animated Lottie icons with hover-triggered playback
+- **Sidebar collapse/expand arrows** — Replaced custom `ArrowLeftIcon` component with `LottieIcon` using `sidebarOpen`/`sidebarClose` animations from registry, 40% opacity, reduced stroke weight (32→24)
+- **Icon normalization** — All sidebar icons solid monochrome (no two-tone), consistent stroke weight 32, per-icon CSS `transform: scale()` for visual consistency
+- **Smooth section heading transitions** — `max-h` + `opacity` + `mb` CSS transitions for sidebar expand/collapse
+- **Dark mode inversion** — `filter: invert(1)` via Tailwind class, XOR logic (`isDark !== active`)
+
 ## 2026-03-24 — Custodian Reassignment + Infra Wallet Faucet
 
 - **Custodian dropdown selector** — pick any active bank as universal custodian (replaces hardcoded BNY/TBD)

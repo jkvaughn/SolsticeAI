@@ -1,7 +1,7 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-03-19T22:00:00Z
-> Phase: Phase C production stack on Azure complete (Tasks 133-135, 137)
+> Last updated: 2026-03-24T12:00:00Z
+> Phase: Lottie icon system integrated (Task 143), Phase C production stack on Azure (Tasks 133-137)
 > Server version: v7 Task-125 (lockup-route-dedup-iso20022-fix)
 > History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-143)
 
@@ -638,5 +638,51 @@ Completed full Phase C production stack on Azure:
 | `staticwebapp.config.json` | Entra ID + Google providers, route protection |
 | `src/app/contexts/AuthContext.tsx` | Dual-provider support (Azure/Supabase) |
 | `src/app/components/LoginPage.tsx` | Azure (Microsoft + Google) and Supabase login flows |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 143 — Animated Lottie Icon System + Sidebar Integration
+Timestamp: 2026-03-24T12:00:00Z
+Status: DONE
+
+### Summary:
+Built a reusable `LottieIcon` component and integrated 61+ animated Iconly Pro Lottie icons into the codebase. Replaced all 11 static lucide-react sidebar nav icons with animated Lottie equivalents featuring hover-triggered playback, per-icon scale normalization, dark mode inversion (CSS filter), and smooth section heading transitions. Replaced the custom `ArrowLeftIcon` component (which had its own MutationObserver-based color logic) with `LottieIcon` using `sidebarOpen`/`sidebarClose` registry animations. Normalized all sidebar icon JSON files: solid monochrome colors (removed red two-tone accents), consistent stroke width 32, and reduced sidebar arrow stroke to 24 for visual balance.
+
+### Files created:
+| File | Purpose |
+|------|---------|
+| `src/app/components/icons/LottieIcon.tsx` | Reusable Lottie icon wrapper with hover/click/loop triggers, per-icon scale, dark mode inversion |
+| `src/app/components/icons/lottie/index.ts` | Semantic registry exporting 61+ Lottie JSON files |
+| `src/app/components/icons/lottie/*.json` | 61+ Iconly Pro animated icon JSON files |
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `src/app/components/dashboard/dashboard-layout.tsx` | Replaced lucide-react icons + ArrowLeftIcon with LottieIcon, added per-icon lottieScale, smooth section heading transitions |
+| `src/app/components/icons/lottie/Network World Open.json` | Red fill → black (monochrome) |
+| `src/app/components/icons/lottie/Platform-Animated.json` | Red fills → black (monochrome) |
+| `src/app/components/icons/lottie/Ai Neural Networks.json` | Stroke width 30.72 → 32 |
+| `src/app/components/icons/lottie/Transfer-Animated.json` | Stroke width 30.72 → 32 |
+| `src/app/components/icons/lottie/Eye 3.json` | Stroke width 30.72 → 32 |
+| `src/app/components/icons/lottie/Blockchain Explorer Icon Animation.json` | Stroke width 30.72 → 32 |
+| `src/app/components/icons/lottie/Nodes-Animated.json` | Stroke width 30.72 → 32 |
+| `src/app/components/icons/lottie/Sidebar Open.json` | Stroke width 32 → 24 |
+| `src/app/components/icons/lottie/Sidebar Close.json` | Stroke width 32 → 24 |
+
+### Sidebar icon assignments:
+| Nav Item | Lottie Animation | Scale |
+|----------|-----------------|-------|
+| Dashboard | Dashboard Icon Animation | 1.05 |
+| Treasury Ops | Ai Neural Networks | 1.3 |
+| Network Command | Network World Open | 1.1 |
+| Transactions | Transfer-Animated | 1.25 |
+| Escalations | Eye 3 | 1.35 |
+| Visualizer | Blockchain Explorer Icon Animation | 1.2 |
+| Network Setup | Network Square | 1.2 |
+| Agent Config | Nodes-Animated | 1.15 |
+| Proving Ground | Platform-Animated | 1.25 |
+| Settings | Settings Icon Animation | 1.25 |
+| Collapse/Expand | Sidebar Open / Sidebar Close | 1.15 |
 
 ---END_TASK---
