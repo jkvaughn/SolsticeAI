@@ -113,7 +113,7 @@ export function LottieIcon({
         animationData={animationData}
         loop={trigger === 'loop'}
         autoplay={trigger === 'loop' || trigger === 'auto'}
-        style={{ width: w, height: h, transform: 'scale(1.28)' }}
+        style={{ width: w, height: h, transform: 'scale(1.15)' }}
       />
     </div>
   );

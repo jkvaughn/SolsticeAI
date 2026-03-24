@@ -218,8 +218,8 @@ export function DashboardLayout({
           <button
             onClick={() => handleNavigate(item.route)}
             className={`
-              squircle-sm w-full flex items-center gap-3 py-2.5 duration-500 ease-out relative cursor-pointer
-              ${sidebarExpanded ? 'px-3' : 'justify-center px-0'}
+              squircle-sm w-full flex items-center gap-3 duration-500 ease-out relative cursor-pointer
+              ${sidebarExpanded ? 'px-3 py-2.5' : 'justify-center py-3'}
               ${active
                 ? isDark
                   ? 'bg-white text-black shadow-lg'
