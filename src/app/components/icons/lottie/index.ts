@@ -33,6 +33,7 @@ export { default as loans } from './Loans.json';
 
 // ─── Network ─────────────────────────────────────────────
 export { default as networkWorld } from './Network World.json';
+export { default as networkWorldOpen } from './Network World Open.json';
 export { default as networkSquare } from './Network Square.json';
 export { default as aiNeuralNetworks } from './Ai Neural Networks.json';
 export { default as searchSecurity } from './Search Security.json';

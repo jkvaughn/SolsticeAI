@@ -11,7 +11,7 @@ import { LottieIcon } from "../icons/LottieIcon";
 import {
   dashboard as dashboardAnim,
   aiNeuralNetworks as treasuryAnim,
-  networkWorld as networkCmdAnim,
+  networkWorldOpen as networkCmdAnim,
   transfer as transferAnim,
   searchSecurity as escalationsAnim,
   blockchainExplorer as explorerAnim,
