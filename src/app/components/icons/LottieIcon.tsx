@@ -101,15 +101,11 @@ export function LottieIcon({
   }, [trigger]);
 
   // Iconly Pro Lottie files have ~13% internal padding in their 512x512 viewBox.
-  // Scale up the inner Lottie to compensate and clip overflow so the icon
-  // fills its container without extra whitespace.
-  const scale = 1.28;
-  const innerSize = Math.round(w * scale);
-
+  // Use CSS transform to scale up visually without affecting layout dimensions.
   return (
     <div
       ref={containerRef}
-      className={`inline-flex items-center justify-center flex-shrink-0 overflow-hidden ${className}`}
+      className={`flex items-center justify-center flex-shrink-0 ${className}`}
       style={{ width: w, height: h }}
     >
       <Lottie
@@ -117,7 +113,7 @@ export function LottieIcon({
         animationData={animationData}
         loop={trigger === 'loop'}
         autoplay={trigger === 'loop' || trigger === 'auto'}
-        style={{ width: innerSize, height: innerSize }}
+        style={{ width: w, height: h, transform: 'scale(1.28)' }}
       />
     </div>
   );
