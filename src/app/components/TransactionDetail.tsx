@@ -10,13 +10,12 @@ import {
   ArrowDownUp, CircleDollarSign, Coins, Hourglass,
   UserCheck, RotateCcw, FastForward, Plus, Lock, Loader2,
 } from 'lucide-react';
-import { callServer } from '../supabaseClient';
+import { supabase, callServer } from '../supabaseClient';
 import {
   fetchRiskScore, fetchComplianceLogs, fetchWallets, fetchLockupToken,
   fetchCadenzaFlags, fetchCorridorTransactions, fetchCorridorTransactionCount,
   fetchHeartbeatCycles, fetchTreasuryMandates,
 } from '../dataClient';
-import { PageTransition } from './PageTransition';
 import { SettlementLifecycle } from './SettlementLifecycle';
 import type { Transaction, AgentMessage, Wallet as WalletType } from '../types';
 import {
@@ -397,7 +396,7 @@ function BankProfileCard({ bank, wallet, role }: { bank: any; wallet: WalletType
   const solBalance = wallet ? (wallet.balance_lamports / 1e9) : null;
 
   return (
-    <div className="liquid-glass-subtle squircle-sm p-5">
+    <div className="liquid-glass-card squircle p-5">
       <div className="flex items-center gap-3 mb-4">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[13px] font-bold font-mono ${
           role === 'Sender' ? 'bg-blue-500/10 text-blue-500' : 'bg-coda-brand/10 text-coda-brand'
@@ -417,7 +416,7 @@ function BankProfileCard({ bank, wallet, role }: { bank: any; wallet: WalletType
           { label: 'SOL Balance', value: solBalance != null ? `${solBalance.toFixed(4)} SOL` : '\u2014' },
         ].map(item => (
           <div key={item.label}>
-            <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1">{item.label}</div>
+            <div className="text-[11px] text-coda-text-muted mb-1">{item.label}</div>
             <div className="text-[14px] font-mono text-coda-text-secondary">{item.value}</div>
           </div>
         ))}
@@ -489,6 +488,7 @@ export function TransactionDetail() {
   const [copied, setCopied] = useState<string | null>(null);
   const [expandedMsg, setExpandedMsg] = useState<string | null>(null);
   const [showMandates, setShowMandates] = useState(false);
+  const [detailTab, setDetailTab] = useState<'overview' | 'settlement' | 'intelligence' | 'counterparties'>('overview');
 
   // ── Cadenza escalation state ──
   const [resolveLoading, setResolveLoading] = useState<string | null>(null);
@@ -740,11 +740,11 @@ export function TransactionDetail() {
 
   if (isLoading && !primaryData) {
     return (
-      <div className="w-full max-w-6xl mx-auto px-6 pb-10 animate-pulse">
+      <div className="w-full px-6 pb-10 animate-pulse">
         {/* Back button skeleton */}
         <div className="h-5 w-16 rounded bg-coda-surface-hover/30 mb-5" />
         {/* Header card skeleton */}
-        <div className="liquid-glass-subtle squircle-sm p-7 mb-5">
+        <div className="liquid-glass-card squircle p-7 mb-4">
           <div className="flex items-start justify-between mb-5">
             <div>
               <div className="h-4 w-40 rounded bg-coda-surface-hover/30 mb-3" />
@@ -783,7 +783,7 @@ export function TransactionDetail() {
           </div>
         </div>
         {/* Pipeline skeleton */}
-        <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
+        <div className="liquid-glass-card squircle p-6 mb-4">
           <div className="h-4 w-40 rounded bg-coda-surface-hover/30 mb-5" />
           <div className="flex items-center justify-between">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -798,7 +798,7 @@ export function TransactionDetail() {
         {/* Risk + Compliance skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
           {[0, 1].map(i => (
-            <div key={i} className="liquid-glass-subtle squircle-sm p-6">
+            <div key={i} className="liquid-glass-card squircle p-6">
               <div className="h-4 w-36 rounded bg-coda-surface-hover/30 mb-5" />
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, j) => (
@@ -866,11 +866,11 @@ export function TransactionDetail() {
   // ── Render ─────────────────────────────────────────────────
 
   return (
-    <PageTransition className="w-full max-w-6xl mx-auto px-6 pb-10">
+    <div className="w-full px-6 pb-10">
       {/* Back button */}
       <button
         onClick={() => navigate(-1)}
-        className="liquid-button flex items-center text-sm text-coda-text-muted mb-5 font-mono"
+        className="flex items-center gap-1.5 text-sm text-coda-text-muted mb-4 hover:text-coda-text transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>Back</span>
@@ -911,144 +911,125 @@ export function TransactionDetail() {
         </div>
       )}
 
-      {/* ═══ Section 1: Header Card ═══ */}
-      <div className={`liquid-glass-elevated squircle-sm p-7 mb-5 transition-all duration-700 ${
+      {/* ═══ Section 1: Header Card — Fill / Outline two-zone ═══ */}
+      <div className={`squircle overflow-hidden mb-4 transition-all duration-700 ${
         justTransitioned === 'settled' ? 'ring-1 ring-emerald-500/20' :
         justTransitioned === 'reversed' ? 'ring-1 ring-red-500/20' : ''
       }`}>
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <div className="flex items-center gap-2.5 mb-2">
-              <span className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono">Transaction</span>
-              <button onClick={() => copyText(tx.id, 'id')} className="liquid-button flex items-center text-xs font-mono text-coda-text-muted">
-                <Hash className="w-3.5 h-3.5" /><span>{tx.id.slice(0, 12)}...</span>
-                {copied === 'id' ? <CheckCircle2 className="w-3.5 h-3.5 text-coda-brand" /> : <Copy className="w-3 h-3" />}
-              </button>
-            </div>
-            <div className="text-4xl font-bold font-mono text-coda-text tracking-tight">
-              {tx.amount_display != null ? `$${tx.amount_display.toLocaleString()}` : formatTokenAmount(tx.amount)}
-            </div>
-          </div>
-          <div className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all duration-700 ${statusCfg.color} ${statusCfg.bg} ${
-            justTransitioned === 'settled' ? 'ring-2 ring-emerald-400/60 shadow-[0_0_20px_rgba(52,211,153,0.3)] scale-105' :
-            justTransitioned === 'reversed' ? 'ring-2 ring-red-400/60 shadow-[0_0_20px_rgba(248,113,113,0.3)] scale-105' : ''
-          }`}>
-            {statusCfg.label.toUpperCase()}
-          </div>
-        </div>
-
-        {/* Route */}
-        <div className="flex items-center gap-4 mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-sm font-bold font-mono text-blue-500">{senderCode.slice(0, 2)}</div>
+        {/* ── Title zone (LiquidGlass fill) ── */}
+        <div className="liquid-glass-card p-7 pb-5">
+          <div className="flex items-start justify-between mb-5">
             <div>
-              <div className="text-[15px] font-medium text-coda-text">{senderBank?.name || senderCode}</div>
-              <div className="text-xs text-coda-text-muted font-mono">{senderCode}{senderBank?.jurisdiction ? ` \u00B7 ${senderBank.jurisdiction}` : ''}</div>
-            </div>
-          </div>
-          <div className="flex-1 flex items-center justify-center">
-            <div className="h-px flex-1 bg-coda-border/20" />
-            <span className="px-3 text-xs text-coda-text-muted font-mono">&rarr;</span>
-            <div className="h-px flex-1 bg-coda-border/20" />
-          </div>
-          <div className="flex items-center gap-3">
-            <div>
-              <div className="text-[15px] font-medium text-coda-text text-right">{receiverBank?.name || receiverCode}</div>
-              <div className="text-xs text-coda-text-muted font-mono text-right">{receiverCode}{receiverBank?.jurisdiction ? ` \u00B7 ${receiverBank.jurisdiction}` : ''}</div>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-coda-brand/10 flex items-center justify-center text-sm font-bold font-mono text-coda-brand">{receiverCode.slice(0, 2)}</div>
-          </div>
-        </div>
-
-        {/* Timeline stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          {[
-            { label: 'Initiated', value: fmtDate(tx.initiated_at || tx.created_at), icon: Clock },
-            { label: 'Duration', value: elapsed(tx.initiated_at || tx.created_at, isTerminal ? tx.settled_at || tx.updated_at : null), icon: Zap },
-            { label: 'Purpose', value: tx.purpose_code || '\u2014', icon: Landmark },
-            { label: 'Risk Score', value: riskScore?.composite_score != null ? `${riskScore.composite_score}/100` : (tx as any).risk_score != null ? `${(tx as any).risk_score}/100` : '\u2014', icon: Gauge },
-            { label: 'Messages', value: `${messages.length} events`, icon: Radio },
-          ].map(s => {
-            const shouldFlash = justTransitioned && s.label === 'Duration';
-            return (
-              <div key={s.label} className={`bg-coda-surface-hover/10 rounded-lg p-3.5 transition-all duration-500 ${
-                shouldFlash ? (justTransitioned === 'settled' ? 'bg-emerald-500/10 ring-1 ring-emerald-500/20' : 'bg-red-500/10 ring-1 ring-red-500/20') : ''
-              }`}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <s.icon className="w-4 h-4 text-coda-text-muted" />
-                  <span className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono">
-                    {s.label === 'Duration' && tx.status === 'locked' && (tx as any).lockup_until ? 'Countdown' : s.label}
-                  </span>
-                </div>
-                <div className="text-[15px] font-medium font-mono text-coda-text-secondary">
-                  {s.label === 'Duration' ? (
-                    <LiveDuration
-                      from={tx.initiated_at || tx.created_at}
-                      to={isTerminal ? tx.settled_at || tx.updated_at : null}
-                      lockupUntil={tx.status === 'locked' ? (tx as any).lockup_until : null}
-                      isTerminal={isTerminal}
-                    />
-                  ) : s.value}
-                </div>
+              <div className="flex items-center gap-2.5 mb-2">
+                <span className="text-xs text-coda-text-muted">Transaction</span>
+                <button onClick={() => copyText(tx.id, 'id')} className="flex items-center gap-1 text-xs font-mono text-coda-text-muted hover:text-coda-text transition-colors cursor-pointer">
+                  <Hash className="w-3.5 h-3.5" /><span>{tx.id.slice(0, 12)}...</span>
+                  {copied === 'id' ? <CheckCircle2 className="w-3.5 h-3.5 text-coda-brand" /> : <Copy className="w-3 h-3" />}
+                </button>
               </div>
-            );
-          })}
+              <div className="text-4xl font-bold font-mono text-coda-text tracking-tight">
+                {tx.amount_display != null ? `$${tx.amount_display.toLocaleString()}` : formatTokenAmount(tx.amount)}
+              </div>
+            </div>
+            <div className={`px-4 py-2 rounded-lg text-sm font-semibold font-mono transition-all duration-700 ${statusCfg.color} ${statusCfg.bg} ${
+              justTransitioned === 'settled' ? 'ring-2 ring-emerald-400/60 shadow-[0_0_20px_rgba(52,211,153,0.3)] scale-105' :
+              justTransitioned === 'reversed' ? 'ring-2 ring-red-400/60 shadow-[0_0_20px_rgba(248,113,113,0.3)] scale-105' : ''
+            }`}>
+              {statusCfg.label.toUpperCase()}
+            </div>
+          </div>
+
+          {/* Route */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-sm font-bold font-mono text-blue-500">{senderCode.slice(0, 2)}</div>
+              <div>
+                <div className="text-[15px] font-medium text-coda-text">{senderBank?.name || senderCode}</div>
+                <div className="text-xs text-coda-text-muted font-mono">{senderCode}{senderBank?.jurisdiction ? ` \u00B7 ${senderBank.jurisdiction}` : ''}</div>
+              </div>
+            </div>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="h-px flex-1 bg-coda-border/20" />
+              <span className="px-3 text-xs text-coda-text-muted font-mono">&rarr;</span>
+              <div className="h-px flex-1 bg-coda-border/20" />
+            </div>
+            <div className="flex items-center gap-3">
+              <div>
+                <div className="text-[15px] font-medium text-coda-text text-right">{receiverBank?.name || receiverCode}</div>
+                <div className="text-xs text-coda-text-muted font-mono text-right">{receiverCode}{receiverBank?.jurisdiction ? ` \u00B7 ${receiverBank.jurisdiction}` : ''}</div>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-coda-brand/10 flex items-center justify-center text-sm font-bold font-mono text-coda-brand">{receiverCode.slice(0, 2)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Stats zone (outline only) ── */}
+        <div className="border border-white/[0.7] dark:border-white/[0.1] border-t-0 rounded-b-[20px] px-7 py-5">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
+            {[
+              { label: 'Initiated', value: fmtDate(tx.initiated_at || tx.created_at), icon: Clock },
+              { label: 'Duration', value: elapsed(tx.initiated_at || tx.created_at, isTerminal ? tx.settled_at || tx.updated_at : null), icon: Zap },
+              { label: 'Purpose', value: tx.purpose_code || '\u2014', icon: Landmark },
+              { label: 'Risk Score', value: riskScore?.composite_score != null ? `${riskScore.composite_score}/100` : (tx as any).risk_score != null ? `${(tx as any).risk_score}/100` : '\u2014', icon: Gauge },
+              { label: 'Messages', value: `${messages.length} events`, icon: Radio },
+            ].map(s => {
+              const shouldFlash = justTransitioned && s.label === 'Duration';
+              return (
+                <div key={s.label} className={`transition-all duration-500 ${
+                  shouldFlash ? (justTransitioned === 'settled' ? 'bg-emerald-500/10 ring-1 ring-emerald-500/20 rounded-lg p-2 -m-2' : 'bg-red-500/10 ring-1 ring-red-500/20 rounded-lg p-2 -m-2') : ''
+                }`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <s.icon className="w-3.5 h-3.5 text-coda-text-muted" />
+                    <span className="text-[11px] text-coda-text-muted">
+                      {s.label === 'Duration' && tx.status === 'locked' && (tx as any).lockup_until ? 'Countdown' : s.label}
+                    </span>
+                  </div>
+                  <div className="text-[15px] font-medium font-mono text-coda-text">
+                    {s.label === 'Duration' ? (
+                      <LiveDuration
+                        from={tx.initiated_at || tx.created_at}
+                        to={isTerminal ? tx.settled_at || tx.updated_at : null}
+                        lockupUntil={tx.status === 'locked' ? (tx as any).lockup_until : null}
+                        isTerminal={isTerminal}
+                      />
+                    ) : s.value}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <div>
-        {/* ═══ Section 2: Treasury Cycle Context ═══ */}
-        {cycle && (
-          <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
-            <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Treasury Cycle Origin
-              <span className="ml-auto px-2.5 py-1 rounded-full text-xs font-semibold bg-coda-brand/15 text-coda-brand border border-coda-brand/20">
-                Cycle #{cycle.cycle_number}
-              </span>
-            </h3>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              <div className="lg:col-span-2">
-                <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1.5">Market Event</div>
-                {cycle.market_event?.cycle_narrative ? (
-                  <p className="text-[14px] text-coda-text-secondary leading-relaxed">{cycle.market_event.cycle_narrative}</p>
-                ) : (
-                  <p className="text-[14px] text-coda-text-muted italic">No market event narrative</p>
-                )}
-                {cycle.market_event?.event_type && (
-                  <span className="inline-flex items-center mt-2 px-2.5 py-1 rounded text-xs font-mono bg-coda-surface-hover/30 text-coda-text-muted">
-                    {cycle.market_event.event_type.replace(/_/g, ' ')}
-                  </span>
-                )}
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1">Cycle Window</div>
-                  <div className="text-[13px] font-mono text-coda-text-secondary">
-                    {fmtDate(cycle.started_at)}{cycle.completed_at ? ` \u2192 ${fmtDate(cycle.completed_at)}` : ' \u2192 Running...'}
-                  </div>
-                </div>
-                <div className="flex gap-5">
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1">Banks Evaluated</div>
-                    <div className="text-[13px] font-mono text-coda-text-secondary">{cycle.banks_evaluated}</div>
-                  </div>
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1">Transactions</div>
-                    <div className="text-[13px] font-mono text-coda-text-secondary">{cycleTxCount} in cycle</div>
-                  </div>
-                </div>
-                <Link to="/treasury-ops" className="flex items-center gap-1.5 text-[13px] text-blue-400 hover:text-blue-300 font-mono transition-colors">
-                  View in Treasury Ops <ExternalLink className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+      {/* ═══ Detail Tabs ═══ */}
+      <div className="flex items-center gap-1 mb-4">
+        {([
+          { id: 'overview', label: 'Overview' },
+          { id: 'settlement', label: 'Settlement' },
+          { id: 'intelligence', label: 'Intelligence' },
+          { id: 'counterparties', label: 'Counterparties' },
+        ] as const).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setDetailTab(tab.id)}
+            className={`px-4 py-1.5 rounded-full text-sm transition-all duration-300 cursor-pointer ${
+              detailTab === tab.id
+                ? 'bg-coda-text text-white dark:bg-white dark:text-black font-medium'
+                : 'text-coda-text-muted hover:text-coda-text hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
+      <div>
+        {/* ═══ OVERVIEW TAB ═══ */}
+        {detailTab === 'overview' && (
+          <>
         {/* ═══ Section 3: Inter-Agent Pipeline Flow ═══ */}
-        <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
-          <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-5 flex items-center gap-2">
+        <div className="liquid-glass-card squircle p-6 mb-4">
+          <h3 className="text-base font-light text-coda-text mb-5 flex items-center gap-2">
             <ArrowRightLeft className="w-5 h-5" />
             Agent Pipeline Flow
           </h3>
@@ -1077,11 +1058,11 @@ export function TransactionDetail() {
         </div>
 
         {/* ═══ Section 4: Risk Assessment + Compliance ═══ */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
 
           {/* Risk Assessment */}
-          <div className="liquid-glass-subtle squircle-sm p-6">
-            <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-4 flex items-center gap-2">
+          <div className="liquid-glass-card squircle p-6">
+            <h3 className="text-base font-light text-coda-text mb-4 flex items-center gap-2">
               <Gauge className="w-5 h-5" />
               Risk Assessment
               {riskScore?.risk_level && (
@@ -1093,18 +1074,18 @@ export function TransactionDetail() {
 
             {riskScore ? (
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="relative w-[72px] h-[72px]">
-                    <svg viewBox="0 0 72 72" className="w-[72px] h-[72px] -rotate-90">
-                      <circle cx="36" cy="36" r="30" fill="none" stroke="currentColor" strokeWidth="4" className="text-coda-surface-hover/30" />
-                      <circle cx="36" cy="36" r="30" fill="none" strokeWidth="4" strokeLinecap="round"
-                        strokeDasharray={`${(riskScore.composite_score / 100) * 188.5} 188.5`}
+                {/* Score + Finality row */}
+                <div className="flex items-center gap-5">
+                  <div className="relative w-[64px] h-[64px] shrink-0">
+                    <svg viewBox="0 0 64 64" className="w-[64px] h-[64px] -rotate-90">
+                      <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" strokeWidth="4" className="text-coda-surface-hover/30" />
+                      <circle cx="32" cy="32" r="26" fill="none" strokeWidth="4" strokeLinecap="round"
+                        strokeDasharray={`${(riskScore.composite_score / 100) * 163.4} 163.4`}
                         className={riskScore.composite_score >= 70 ? 'text-emerald-500' : riskScore.composite_score >= 40 ? 'text-amber-500' : 'text-red-500'} />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-base font-bold font-mono text-coda-text">{riskScore.composite_score}</span>
+                    <span className="absolute inset-0 flex items-center justify-center text-lg font-bold font-mono text-coda-text">{riskScore.composite_score}</span>
                   </div>
-                  <div className="flex-1">
-                    <div className="text-[14px] text-coda-text-secondary font-medium mb-1">Composite Score</div>
+                  <div className="flex-1 space-y-2">
                     {riskScore.finality_recommendation && (
                       <div className="text-[13px] text-coda-text-muted">
                         Finality: <span className={`font-medium ${riskScore.finality_recommendation === 'immediate' ? 'text-emerald-400' : 'text-amber-400'}`}>
@@ -1114,16 +1095,41 @@ export function TransactionDetail() {
                     )}
                   </div>
                 </div>
-                <div className="space-y-2.5">
+
+                {/* Score bars — compact */}
+                <div className="space-y-2">
                   <ScoreBar label="Counterparty" score={riskScore.counterparty_score ?? 0} icon={Landmark} />
                   <ScoreBar label="Jurisdiction" score={riskScore.jurisdiction_score ?? 0} icon={Globe} />
                   <ScoreBar label="Asset Type" score={riskScore.asset_type_score ?? 0} icon={Scale} />
                   <ScoreBar label="Behavioral" score={riskScore.behavioral_score ?? 0} icon={Activity} />
                 </div>
+
+                {/* AI Reasoning */}
                 {riskScore.reasoning && (
-                  <div className="pt-3 border-t border-coda-border/20">
-                    <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1.5">AI Reasoning</div>
-                    <p className="text-[14px] text-coda-text-muted leading-relaxed">{riskScore.reasoning}</p>
+                  <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
+                    <p className="text-[11px] text-coda-text-muted mb-2">AI Reasoning</p>
+                    <div className="text-[12px] text-coda-text-secondary leading-[1.6]">
+                      {(() => {
+                        // Split on newlines first, then on sentences for long blocks
+                        const lines = riskScore.reasoning.split('\n').filter((l: string) => l.trim());
+                        const segments = lines.length > 1 ? lines : riskScore.reasoning.split(/(?<=\.)\s+/);
+                        return segments.filter((s: string) => s.trim()).map((seg: string, i: number) => {
+                          const trimmed = seg.trim().replace(/\*\*(.*?)\*\*/g, '$1').replace(/^#+\s*/, '');
+                          // Format ALL_CAPS_TERMS as code badges
+                          const parts = trimmed.split(/(\b[A-Z][A-Z0-9_]{2,}\b)/g);
+                          return (
+                            <span key={i}>
+                              {i > 0 && ' '}
+                              {parts.map((part: string, j: number) =>
+                                /^[A-Z][A-Z0-9_]{2,}$/.test(part)
+                                  ? <code key={j} className="px-1 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.06] text-[11px] font-mono text-coda-text">{part}</code>
+                                  : part
+                              )}
+                            </span>
+                          );
+                        });
+                      })()}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1136,8 +1142,8 @@ export function TransactionDetail() {
           </div>
 
           {/* Compliance Checks */}
-          <div className="liquid-glass-subtle squircle-sm p-6">
-            <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-4 flex items-center gap-2">
+          <div className="liquid-glass-card squircle p-6">
+            <h3 className="text-base font-light text-coda-text mb-4 flex items-center gap-2">
               <Shield className="w-5 h-5" />
               Compliance Checks
               {compChecks.length > 0 && (
@@ -1150,16 +1156,14 @@ export function TransactionDetail() {
             </h3>
 
             {compChecks.length > 0 ? (
-              <div className="space-y-3.5">
+              <div>
                 {compChecks.map((check: any, i: number) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${check.passed ? 'bg-emerald-500/15' : 'bg-red-500/15'}`}>
-                      {check.passed ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <AlertTriangle className="w-3.5 h-3.5 text-red-500" />}
-                    </div>
+                  <div key={i} className={`flex items-center gap-3 py-3 ${i > 0 ? 'border-t border-black/[0.06] dark:border-white/[0.06]' : ''}`}>
+                    {check.passed ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
                     <div className="flex-1 min-w-0">
-                      <div className="text-[14px] font-medium text-coda-text capitalize">{(check.type || '').replace(/_/g, ' ')}</div>
-                      <div className="text-[13px] text-coda-text-muted">{check.detail || '\u2014'}</div>
+                      <span className="text-[13px] font-medium text-coda-text capitalize">{(check.type || '').replace(/_/g, ' ')}</span>
                     </div>
+                    <span className="text-[12px] text-coda-text-muted text-right max-w-[60%] truncate" title={check.detail || '\u2014'}>{check.detail || '\u2014'}</span>
                   </div>
                 ))}
               </div>
@@ -1171,20 +1175,19 @@ export function TransactionDetail() {
             )}
 
             {tx.memo && (
-              <div className="mt-4 pt-4 border-t border-coda-border/20">
-                <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1.5">Transaction Memo</div>
-                <p className="text-[13px] text-coda-text-muted font-mono leading-relaxed whitespace-pre-wrap break-all">{tx.memo}</p>
+              <div className="mt-3 pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
+                <div className="text-[11px] text-coda-text-muted mb-1">Memo</div>
+                <p className="text-[13px] text-coda-text-muted font-mono truncate" title={tx.memo}>{tx.memo}</p>
               </div>
             )}
           </div>
         </div>
+          </>
+        )}
 
-        {/* ═══ Section 5: Bank Counterparty Profiles ═══ */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-          <BankProfileCard bank={senderBank} wallet={senderWallet} role="Sender" />
-          <BankProfileCard bank={receiverBank} wallet={receiverWallet} role="Receiver" />
-        </div>
-
+        {/* ═══ SETTLEMENT TAB ═══ */}
+        {detailTab === 'settlement' && (
+          <>
         {/* ═══ Section 6: Settlement Lifecycle ═══ */}
         <SettlementLifecycle
           tx={tx}
@@ -1201,10 +1204,64 @@ export function TransactionDetail() {
         {tx.travel_rule_payload && (
           <TravelRuleSection payload={tx.travel_rule_payload} />
         )}
+          </>
+        )}
+
+        {/* ═══ INTELLIGENCE TAB ═══ */}
+        {detailTab === 'intelligence' && (
+          <>
+        {/* ═══ Section 2: Treasury Cycle Context ═══ */}
+        {cycle && (
+          <div className="liquid-glass-card squircle p-6 mb-4">
+            <h3 className="text-base font-light text-coda-text mb-4 flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Treasury Cycle Origin
+              <span className="ml-auto px-2.5 py-1 rounded-full text-xs font-semibold bg-coda-brand/15 text-coda-brand border border-coda-brand/20">
+                Cycle #{cycle.cycle_number}
+              </span>
+            </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <div className="lg:col-span-2">
+                <div className="text-[11px] text-coda-text-muted mb-1.5">Market Event</div>
+                {cycle.market_event?.cycle_narrative ? (
+                  <p className="text-[14px] text-coda-text-secondary leading-relaxed">{cycle.market_event.cycle_narrative}</p>
+                ) : (
+                  <p className="text-[14px] text-coda-text-muted italic">No market event narrative</p>
+                )}
+                {cycle.market_event?.event_type && (
+                  <span className="inline-flex items-center mt-2 px-2.5 py-1 rounded text-xs font-mono bg-coda-surface-hover/30 text-coda-text-muted">
+                    {cycle.market_event.event_type.replace(/_/g, ' ')}
+                  </span>
+                )}
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <div className="text-[11px] text-coda-text-muted mb-1">Cycle Window</div>
+                  <div className="text-[13px] font-mono text-coda-text-secondary">
+                    {fmtDate(cycle.started_at)}{cycle.completed_at ? ` \u2192 ${fmtDate(cycle.completed_at)}` : ' \u2192 Running...'}
+                  </div>
+                </div>
+                <div className="flex gap-5">
+                  <div>
+                    <div className="text-[11px] text-coda-text-muted mb-1">Banks Evaluated</div>
+                    <div className="text-[13px] font-mono text-coda-text-secondary">{cycle.banks_evaluated}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-coda-text-muted mb-1">Transactions</div>
+                    <div className="text-[13px] font-mono text-coda-text-secondary">{cycleTxCount} in cycle</div>
+                  </div>
+                </div>
+                <Link to="/treasury-ops" className="flex items-center gap-1.5 text-[13px] text-blue-400 hover:text-blue-300 font-mono transition-colors">
+                  View in Treasury Ops <ExternalLink className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ═══ Section 7: Agent Communication Log ═══ */}
-        <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
-          <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-5 flex items-center gap-2">
+        <div className="liquid-glass-card squircle p-6 mb-4">
+          <h3 className="text-base font-light text-coda-text mb-5 flex items-center gap-2">
             <Zap className="w-5 h-5" />
             Agent Communication Log
             <span className="ml-auto text-[13px] text-coda-text-muted">{messages.length} messages</span>
@@ -1300,7 +1357,7 @@ export function TransactionDetail() {
                           {/* Compliance checks detail */}
                           {content?.checks && Array.isArray(content.checks) && (
                             <div>
-                              <div className="text-xs text-coda-text-muted font-mono uppercase tracking-wider mb-2">Individual Checks</div>
+                              <div className="text-[11px] text-coda-text-muted mb-2">Individual Checks</div>
                               <div className="space-y-1.5">
                                 {content.checks.map((ch: any, ci: number) => (
                                   <div key={ci} className="flex items-start gap-2.5 text-[13px]">
@@ -1318,7 +1375,7 @@ export function TransactionDetail() {
                           {/* Risk sub-scores */}
                           {content?.composite_score != null && (
                             <div>
-                              <div className="text-xs text-coda-text-muted font-mono uppercase tracking-wider mb-2">Risk Sub-scores</div>
+                              <div className="text-[11px] text-coda-text-muted mb-2">Risk Sub-scores</div>
                               <div className="grid grid-cols-2 gap-x-5 gap-y-2">
                                 {[
                                   { label: 'Counterparty', val: content.counterparty_score },
@@ -1348,7 +1405,7 @@ export function TransactionDetail() {
                           {/* Agent decision context */}
                           {content?.risk_context && (
                             <div>
-                              <div className="text-xs text-coda-text-muted font-mono uppercase tracking-wider mb-1.5">Decision Context</div>
+                              <div className="text-[11px] text-coda-text-muted mb-1.5">Decision Context</div>
                               <div className="text-[13px]">
                                 <span className="text-coda-text-muted">Decision: </span>
                                 <span className={content.decision === 'accept' ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>
@@ -1369,7 +1426,7 @@ export function TransactionDetail() {
                           {/* Full reasoning */}
                           {content?.reasoning && typeof content.reasoning === 'string' && (
                             <div>
-                              <div className="text-xs text-coda-text-muted font-mono uppercase tracking-wider mb-1.5">Full Reasoning</div>
+                              <div className="text-[11px] text-coda-text-muted mb-1.5">Full Reasoning</div>
                               <p className="text-[13px] text-coda-text-muted leading-relaxed">{content.reasoning}</p>
                             </div>
                           )}
@@ -1377,7 +1434,7 @@ export function TransactionDetail() {
                           {/* Raw payload fallback */}
                           {!content?.composite_score && !content?.checks && !content?.reasoning && !content?.risk_context && !content?.action && Object.keys(content || {}).length > 0 && (
                             <div>
-                              <div className="text-xs text-coda-text-muted font-mono uppercase tracking-wider mb-1.5">Payload</div>
+                              <div className="text-[11px] text-coda-text-muted mb-1.5">Payload</div>
                               <pre className="text-xs text-coda-text-muted font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap break-all">
                                 {JSON.stringify(content, null, 2)}
                               </pre>
@@ -1395,10 +1452,10 @@ export function TransactionDetail() {
 
         {/* ═══ Section 8: Active Treasury Mandates ═══ */}
         {mandates.length > 0 && (
-          <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
+          <div className="liquid-glass-card squircle p-6 mb-4">
             <button
               onClick={() => setShowMandates(!showMandates)}
-              className="w-full flex items-center gap-3 p-0 text-xs tracking-wider uppercase text-coda-text-secondary font-mono hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
+              className="w-full flex items-center gap-3 p-0 text-base font-light text-coda-text hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
             >
               <FileText className="w-5 h-5" />
               <span>{receiverCode} Active Treasury Mandates ({mandates.length})</span>
@@ -1441,10 +1498,22 @@ export function TransactionDetail() {
           </div>
         )}
 
+          </>
+        )}
+
+        {/* ═══ COUNTERPARTIES TAB ═══ */}
+        {detailTab === 'counterparties' && (
+          <>
+        {/* ═══ Section 5: Bank Counterparty Profiles ═══ */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          <BankProfileCard bank={senderBank} wallet={senderWallet} role="Sender" />
+          <BankProfileCard bank={receiverBank} wallet={receiverWallet} role="Receiver" />
+        </div>
+
         {/* ═══ Section 9: Corridor History ═══ */}
         {corridorHistory.length > 0 && (
-          <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
-            <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-4 flex items-center gap-2">
+          <div className="liquid-glass-card squircle p-6 mb-4">
+            <h3 className="text-base font-light text-coda-text mb-4 flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
               Corridor History
               <span className="text-coda-text-muted font-mono text-xs ml-1">
@@ -1485,15 +1554,18 @@ export function TransactionDetail() {
           </div>
         )}
 
-        {/* ═══ Sections 10–12: Cadenza Lockup Details (conditional) ═══ */}
-        {hasLockup && lockup && (
+          </>
+        )}
+
+        {/* ═══ Sections 10–12: Cadenza Lockup Details (in Settlement tab) ═══ */}
+        {detailTab === 'settlement' && hasLockup && lockup && (
           <>
             {/* ═══ Section 10: Three-Token Flow ═══ */}
-            <div className={`liquid-glass-subtle squircle-sm p-6 mb-5 transition-all duration-700 ${
+            <div className={`liquid-glass-card squircle p-6 mb-4 transition-all duration-700 ${
               justTransitioned === 'settled' ? 'ring-1 ring-emerald-500/25 shadow-[0_0_30px_rgba(52,211,153,0.08)]' :
               justTransitioned === 'reversed' ? 'ring-1 ring-red-500/25 shadow-[0_0_30px_rgba(248,113,113,0.08)]' : ''
             }`}>
-              <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-5 flex items-center gap-2">
+              <h3 className="text-base font-light text-coda-text mb-5 flex items-center gap-2">
                 <ArrowDownUp className="w-5 h-5" />
                 Three-Token Lockup Flow
                 <span className={`ml-auto px-2.5 py-1 rounded-full text-xs font-semibold transition-all duration-500 ${
@@ -1792,8 +1864,8 @@ export function TransactionDetail() {
             </div>
 
             {/* ═══ Section 11: Yield Accrual ═══ */}
-            <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
-              <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-4 flex items-center gap-2">
+            <div className="liquid-glass-card squircle p-6 mb-4">
+              <h3 className="text-base font-light text-coda-text mb-4 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
                 Yield Accrual
                 {!isLockupFinalized && ['active', 'escalated'].includes(lockup.status) && (
@@ -1812,7 +1884,7 @@ export function TransactionDetail() {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1.5">Rate</div>
+                  <div className="text-[11px] text-coda-text-muted mb-1.5">Rate</div>
                   <div className="text-[20px] font-mono font-bold text-coda-text-secondary">
                     {lockup.yield_rate_bps} <span className="text-[14px] text-coda-text-muted">bps</span>
                   </div>
@@ -1821,7 +1893,7 @@ export function TransactionDetail() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1.5">Accrued</div>
+                  <div className="text-[11px] text-coda-text-muted mb-1.5">Accrued</div>
                   <div className="text-[20px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
                     ${liveYield ?? (Number(lockup.yield_accrued) / 1e6).toFixed(6)}
                   </div>
@@ -1830,7 +1902,7 @@ export function TransactionDetail() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1.5">Duration</div>
+                  <div className="text-[11px] text-coda-text-muted mb-1.5">Duration</div>
                   {(() => {
                     const resolvedTime = lockup.resolved_at || tx.settled_at;
                     const endTime = isLockupFinalized && resolvedTime ? new Date(resolvedTime).getTime() : Date.now();
@@ -1869,7 +1941,7 @@ export function TransactionDetail() {
                   })()}
                 </div>
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-1.5">Yield Destination</div>
+                  <div className="text-[11px] text-coda-text-muted mb-1.5">Yield Destination</div>
                   <div className="text-[14px] font-mono font-medium text-coda-text-secondary">
                     Rimark Network Fees
                   </div>
@@ -1882,8 +1954,8 @@ export function TransactionDetail() {
 
             {/* ═══ Section 11b: Lockup Management ═══ */}
             {tx.status === 'locked' && lockup && ['active', 'escalated'].includes(lockup.status) && !isLockupFinalized && (
-              <div className="liquid-glass-subtle squircle-sm p-6 mb-5 border border-amber-500/25 dark:border-amber-500/15">
-                <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-4 flex items-center gap-2">
+              <div className="liquid-glass-card squircle p-6 mb-4 border border-amber-500/25 dark:border-amber-500/15">
+                <h3 className="text-base font-light text-coda-text mb-4 flex items-center gap-2">
                   <Lock className="w-5 h-5 text-amber-400" />
                   Lockup Management
                   <span className="ml-auto px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 dark:border-amber-500/20">
@@ -2052,8 +2124,8 @@ export function TransactionDetail() {
             )}
 
             {/* ═══ Section 12: Cadenza Activity ═══ */}
-            <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
-              <h3 className="text-xs tracking-wider uppercase text-coda-text-secondary font-mono mb-5 flex items-center gap-2">
+            <div className="liquid-glass-card squircle p-6 mb-4">
+              <h3 className="text-base font-light text-coda-text mb-5 flex items-center gap-2">
                 <Eye className="w-5 h-5" />
                 Cadenza Activity
                 <span className="ml-auto text-[13px] text-coda-text-muted">{cadenzaFlags.length} event{cadenzaFlags.length !== 1 ? 's' : ''}</span>
@@ -2119,7 +2191,7 @@ export function TransactionDetail() {
               {/* Cadenza Decision Summary */}
               {cadenzaFlags.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-coda-border/20">
-                  <div className="text-[11px] uppercase tracking-wider text-coda-text-muted font-mono mb-2">Current Decision</div>
+                  <div className="text-[11px] text-coda-text-muted mb-2">Current Decision</div>
                   <div className="flex items-center gap-3">
                     <span className={`text-[15px] font-mono font-bold ${
                       lockup.status === 'settled' ? 'text-emerald-400' :
@@ -2147,7 +2219,7 @@ export function TransactionDetail() {
                 <div className="mt-5 pt-5 border-t border-coda-brand/20">
                   <div className="flex items-center gap-2 mb-4">
                     <Flag className="w-4 h-4 text-coda-brand" />
-                    <span className="text-[12px] font-semibold text-coda-brand font-mono uppercase tracking-wider">
+                    <span className="text-[12px] font-medium text-coda-brand font-mono">
                       Human Review Required
                     </span>
                   </div>
@@ -2172,19 +2244,19 @@ export function TransactionDetail() {
                     <div className="mb-5 p-4 rounded-lg bg-coda-brand/5 border border-coda-brand/15 space-y-3">
                       {briefing.executive_summary && (
                         <div>
-                          <div className="text-[11px] uppercase tracking-wider text-coda-brand/60 font-mono mb-1">Executive Summary</div>
+                          <div className="text-[11px] text-coda-brand/60 mb-1">Executive Summary</div>
                           <p className="text-[14px] text-coda-text-secondary leading-relaxed">{briefing.executive_summary}</p>
                         </div>
                       )}
                       {briefing.risk_assessment && (
                         <div>
-                          <div className="text-[11px] uppercase tracking-wider text-coda-brand/60 font-mono mb-1">Risk Assessment</div>
+                          <div className="text-[11px] text-coda-brand/60 mb-1">Risk Assessment</div>
                           <p className="text-[13px] text-coda-text-muted leading-relaxed">{briefing.risk_assessment}</p>
                         </div>
                       )}
                       {briefing.recommended_action && (
                         <div className="flex items-center gap-3">
-                          <span className="text-[11px] uppercase tracking-wider text-coda-brand/60 font-mono">Recommendation:</span>
+                          <span className="text-[11px] text-coda-brand/60">Recommendation:</span>
                           <span className={`text-[13px] font-mono font-bold ${
                             briefing.recommended_action === 'APPROVE_SETTLEMENT' ? 'text-emerald-400' :
                             briefing.recommended_action === 'REVERSE_TRANSACTION' ? 'text-red-400' :
@@ -2201,7 +2273,7 @@ export function TransactionDetail() {
                       )}
                       {briefing.reasoning && (
                         <div>
-                          <div className="text-[11px] uppercase tracking-wider text-coda-brand/60 font-mono mb-1">Reasoning</div>
+                          <div className="text-[11px] text-coda-brand/60 mb-1">Reasoning</div>
                           <p className="text-[13px] text-coda-text-muted leading-relaxed">{briefing.reasoning}</p>
                         </div>
                       )}
@@ -2246,7 +2318,7 @@ export function TransactionDetail() {
           </>
         )}
       </div>
-    </PageTransition>
+    </div>
   );
 }
 
@@ -2337,10 +2409,10 @@ function TravelRuleSection({ payload }: { payload: any }) {
   const isTransmitted = payload?.status === 'transmitted';
 
   return (
-    <div className="liquid-glass-subtle squircle-sm p-6 mb-5">
+    <div className="liquid-glass-card squircle p-6 mb-4">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 p-0 text-xs tracking-wider uppercase text-coda-text-secondary font-mono hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
+        className="w-full flex items-center gap-3 p-0 text-base font-light text-coda-text hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
         <UserCheck className="w-5 h-5" />
         <span>Travel Rule Compliance</span>
