@@ -414,13 +414,13 @@ export function DashboardLayout({
       </TooltipProvider>
 
       {/* ===== MAIN CONTENT AREA ===== */}
-      <LayoutProvider sidebarWidth={sidebarExpanded ? 314 : 104}>
+      <LayoutProvider sidebarWidth={sidebarExpanded ? 312 : 102}>
         <div
           className={`h-screen overflow-y-auto transition-all duration-500 ease-out ${
-            sidebarExpanded ? 'pl-[314px]' : 'pl-[104px]'
+            sidebarExpanded ? 'pl-[312px]' : 'pl-[102px]'
           }`}
         >
-          <div className="pt-8 pb-4 px-4 relative z-10 min-h-full">
+          <div className="pt-8 pb-4 pr-[10px] relative z-10 min-h-full">
             <EnvironmentBanner />
             {children}
           </div>

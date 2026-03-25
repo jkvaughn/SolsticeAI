@@ -233,6 +233,36 @@ html { font-size: var(--font-size); }
   border-radius: 3px;
 }
 
+/* === Solstice Core XD Design System === */
+/*
+ * Layout Pattern — Two-Zone Header Card (PageShell):
+ *   Top zone:  LiquidGlass fill (backdrop-blur + glassBg) — page title
+ *   Bottom zone: Outline only (transparent bg, border) — stat metrics
+ *   Border radius: 28px (squircle-lg)
+ *
+ * Content Cards (WidgetShell):
+ *   Single zone: LiquidGlass fill, border-radius 20px
+ *   Title: text-base font-light text-coda-text
+ *   No uppercase, no colored headings
+ *
+ * Font Hierarchy:
+ *   Page title:     text-2xl font-light  (font-weight: 300)
+ *   Stat values:    text-xl  font-medium (font-weight: 500)
+ *   Widget titles:  text-base font-light (font-weight: 300)
+ *   Content:        text-sm / text-xs
+ *   Stat labels:    text-[11px] text-coda-text-muted
+ *
+ * Color Philosophy:
+ *   Neutral throughout — no colored headings or values
+ *   Status colors only for badges and indicators
+ *   Glass borders: white/70 (light) → white/10 (dark)
+ *   Glass fills:   white/55 (light) → white/5 (dark)
+ *
+ * Morph Transitions:
+ *   Framer Motion layoutId on header zones for cross-page morphing
+ *   Spring: damping 30, stiffness 250, mass 0.8
+ */
+
 /* === iOS 26 LiquidGlass Utilities === */
 
 .liquid-glass-card {

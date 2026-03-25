@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-03-24 — Solstice Core XD Design System
+
+- **PageShell component** (`PageShell.tsx`) — Reusable two-zone header card layout: LiquidGlass fill title zone + outline-only stats zone, tab bar with pill buttons, morph transitions via `layoutId`
+- **WidgetShell component** (`WidgetShell.tsx`) — Subordinate content card with LiquidGlass fill, light-weight title, optional footer
+- **Dashboard redesigned** — PageShell header with Lottie stat icons, flat metric rows in widgets (no nested glass cards), Quick Actions removed (duplicate of sidebar nav), Agent Terminals as clean table rows
+- **NetworkInfrastructureWidget** — Refactored to WidgetShell with flat MetricRow dividers, neutral status badges
+- **CadenzaEscalationsWidget** — Refactored to WidgetShell with flat rows, neutral colors throughout
+- **Environment banner** — Converted from filled glass card to outline-only pill
+- **Font hierarchy** — Page titles `text-2xl font-light`, stat values `text-xl font-medium`, widget titles `text-base font-light`, content `text-sm`/`text-xs`
+- **Theme CSS updated** — Added LiquidGlass design system tokens for PageShell/WidgetShell patterns
+- **Treasury Operations page** — Transformed to PageShell layout with stats, WidgetShell controls/cycle log
+
 ## 2026-03-24 — Animated Lottie Sidebar Icons
 
 - **LottieIcon component** (`LottieIcon.tsx`) — Reusable wrapper with hover delegation, configurable triggers (hover/click/loop/auto/none), per-icon `scale` prop for visual normalization

@@ -110,7 +110,7 @@ export function LiquidityGauges({ banks }: LiquidityGaugesProps) {
 
   return (
     <div>
-      <h4 className="text-xs font-semibold text-coda-text-muted uppercase tracking-wide mb-2">
+      <h4 className="text-xs font-light text-coda-text mb-2">
         Per-Bank Liquidity
       </h4>
       <div
@@ -171,7 +171,7 @@ function GaugeCard({ bankCode, data }: { bankCode: string; data: any }) {
   }
 
   return (
-    <div className="flex flex-col items-center px-3 py-3 rounded-xl backdrop-blur-md bg-white/[0.06] border border-white/[0.08]">
+    <div className="flex flex-col items-center px-3 py-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02]">
       {/* SVG Arc Gauge */}
       <svg
         width={SIZE}
@@ -277,12 +277,12 @@ function GaugeCard({ bankCode, data }: { bankCode: string; data: any }) {
 
       {/* Inflow / Outflow row */}
       <div className="flex items-center gap-3 mt-1 text-[10px]">
-        <span className="flex items-center gap-0.5 text-emerald-400 font-mono">
-          <TrendingUp size={10} />
+        <span className="flex items-center gap-0.5 text-coda-text-secondary font-mono">
+          <TrendingUp size={10} className="text-coda-text-muted" />
           ${((data.inflow ?? 0) / 1e6).toLocaleString()}
         </span>
-        <span className="flex items-center gap-0.5 text-red-400 font-mono">
-          <TrendingDown size={10} />
+        <span className="flex items-center gap-0.5 text-coda-text-secondary font-mono">
+          <TrendingDown size={10} className="text-coda-text-muted" />
           ${((data.outflow ?? 0) / 1e6).toLocaleString()}
         </span>
       </div>
@@ -293,7 +293,7 @@ function GaugeCard({ bankCode, data }: { bankCode: string; data: any }) {
           {flags.map((f) => (
             <span
               key={f.label}
-              className={`px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider ${f.className}`}
+              className={`px-1.5 py-0.5 rounded text-[8px] font-medium tracking-wide ${f.className}`}
             >
               {f.label}
             </span>

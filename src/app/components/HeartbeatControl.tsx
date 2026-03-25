@@ -3,22 +3,28 @@ import type React from 'react';
 import { createPortal } from 'react-dom';
 import {
   Play, Square, Zap, Loader2,
-  CheckCircle2, RotateCcw, ChevronDown, Hash,
-  TrendingUp, Activity, Clock, ChevronRight,
-  ArrowRight, Brain, Landmark, Globe,
+  CheckCircle2, RotateCcw, ChevronDown,
+  Activity, Clock, ChevronRight,
+  ArrowRight, Brain, Globe,
 } from 'lucide-react';
 import { supabase, callServer } from '../supabaseClient';
 import { useHeartbeat } from './HeartbeatContext';
 import { NetworkActivityFeed } from './NetworkActivityFeed';
 import { useSWRCache, evictSWRCache } from '../hooks/useSWRCache';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
-import { PageHeader } from './PageHeader';
-import { PageTransition } from './PageTransition';
-import { AnimatedValue } from './AnimatedValue';
+import { PageShell } from './PageShell';
+import type { PageStat } from './PageShell';
+import { WidgetShell } from './dashboard/WidgetShell';
 import { LiquidityGauges } from './LiquidityGauges';
 import { Link } from 'react-router';
 import { LivePipelineProgress } from './LivePipelineProgress';
 import { AgentReasoningPanel } from './AgentReasoningPanel';
+import {
+  lightning as lightningAnim,
+  refresh as refreshAnim,
+  play as playAnim,
+  clock as clockAnim,
+} from './icons/lottie';
 
 // ============================================================
 // Types
@@ -288,213 +294,218 @@ export default function HeartbeatControl() {
     return null;
   }, [cycles, lastCycle]);
 
+  // Derived: total banks evaluated across all completed cycles
+  const totalBanksEvaluated = useMemo(
+    () => cycles.filter((c) => c.status === 'completed')
+      .reduce((sum, c) => sum + (c.banks_evaluated || 0), 0),
+    [cycles],
+  );
+
+  // Derived: avg txns per cycle
+  const avgTxnsPerCycle = useMemo(
+    () => totalCycles > 0 ? +(totalTransactions / totalCycles).toFixed(1) : 0,
+    [totalCycles, totalTransactions],
+  );
+
+  // -- PageShell stats --
+  const pageStats: PageStat[] = [
+    {
+      lottieData: refreshAnim,
+      value: totalCycles,
+      label: 'Completed Cycles',
+    },
+    {
+      lottieData: lightningAnim,
+      value: totalTransactions,
+      label: 'Txns Initiated',
+    },
+    {
+      lottieData: clockAnim,
+      value: totalBanksEvaluated,
+      label: 'Banks Evaluated',
+    },
+    {
+      lottieData: playAnim,
+      value: avgTxnsPerCycle,
+      label: 'Avg Txns / Cycle',
+    },
+  ];
+
+  // -- Status indicator for header --
+  const statusIndicator = (
+    <div className="flex items-center gap-2">
+      {cycleInFlight && <Loader2 size={14} className="text-coda-text-muted animate-spin" />}
+      <div className="relative flex-shrink-0">
+        <div
+          className={`w-2.5 h-2.5 rounded-full ${
+            isRunning ? 'bg-emerald-500' : 'bg-coda-text-faint'
+          }`}
+        />
+        {isRunning && (
+          <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+        )}
+      </div>
+      <span
+        className={`text-xs font-medium ${
+          isRunning ? 'text-emerald-500' : 'text-coda-text-muted'
+        }`}
+      >
+        {isRunning ? 'Running' : 'Stopped'}
+      </span>
+    </div>
+  );
+
   // -- Render --
   return (
-    <div className="space-y-4">
-      {/* SECTION 1: HEADER ROW */}
-      <PageHeader
-        icon={Landmark}
-        title="Treasury Operations"
-        subtitle="Autonomous inter-bank settlement engine"
-      >
-        {cycleInFlight && <Loader2 size={14} className="text-coda-text-muted animate-spin" />}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-shrink-0">
-            <div
-              className={`w-2.5 h-2.5 rounded-full ${
-                isRunning ? 'bg-emerald-500' : 'bg-coda-text-faint'
-              }`}
-            />
-            {isRunning && (
-              <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            )}
-          </div>
-          <span
-            className={`text-xs font-semibold tracking-wide uppercase ${
-              isRunning ? 'text-emerald-500' : 'text-coda-text-muted'
-            }`}
-          >
-            {isRunning ? 'Running' : 'Stopped'}
-          </span>
-        </div>
-      </PageHeader>
-
-      <PageTransition className="space-y-0">
+    <PageShell
+      title="Treasury Operations"
+      subtitle="Autonomous inter-bank settlement engine"
+      stats={pageStats}
+      headerActions={statusIndicator}
+    >
       {/* MAIN CONTENT */}
       <div className="flex gap-4 items-start">
-        {/* LEFT: Main Controls */}
+        {/* LEFT: Main Controls + Cycle Log */}
         <div className="flex-1 min-w-0 space-y-4">
 
-        {/* SECTION 2: CONTROLS ROW */}
-        <div className="dashboard-card p-4 flex flex-wrap items-center gap-3 relative z-10">
-          {/* Start / Stop */}
-          {!isRunning ? (
+        {/* CONTROLS */}
+        <WidgetShell
+          title="Engine Controls"
+          headerRight={
+            !mandatesSeeded ? (
+              <button
+                onClick={seedMandates}
+                disabled={seedingInProgress}
+                className="liquid-button flex items-center px-3 py-1.5 text-xs
+                  bg-transparent text-coda-text-secondary
+                  disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {seedingInProgress ? <Loader2 size={12} className="animate-spin" /> : <Activity size={12} />}
+                <span>Seed Mandates</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5 text-[11px] text-emerald-500">
+                <CheckCircle2 size={12} />
+                Mandates seeded
+              </div>
+            )
+          }
+        >
+          <div className="flex flex-wrap items-center gap-3 relative z-10">
+            {/* Start / Stop */}
+            {!isRunning ? (
+              <button
+                onClick={startHeartbeat}
+                disabled={cycleInFlight || !mandatesSeeded}
+                className="liquid-button flex items-center px-3 py-1.5 text-xs font-semibold text-coda-text
+                  bg-transparent
+                  disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <Play size={12} />
+                <span>Start Engine</span>
+              </button>
+            ) : (
+              <button
+                onClick={stopHeartbeat}
+                className="liquid-button flex items-center px-3 py-1.5 text-xs font-semibold text-coda-text
+                  bg-transparent cursor-pointer"
+              >
+                <Square size={12} />
+                <span>Stop</span>
+              </button>
+            )}
+
+            {/* Single Cycle */}
             <button
-              onClick={startHeartbeat}
+              onClick={runSingleCycle}
               disabled={cycleInFlight || !mandatesSeeded}
-              className="liquid-button flex items-center px-4 py-2 text-sm font-semibold text-white
+              className="liquid-button flex items-center px-3 py-1.5 text-xs font-semibold text-coda-text
                 bg-transparent
                 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              <Play size={14} />
-              <span>Start Engine</span>
+              {cycleInFlight ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+              <span>Single Cycle</span>
             </button>
-          ) : (
-            <button
-              onClick={stopHeartbeat}
-              className="liquid-button flex items-center px-4 py-2 text-sm font-semibold text-white
-                bg-transparent cursor-pointer"
+
+            {/* Network Command */}
+            <Link
+              to="/network-command"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
+                text-coda-text-secondary hover:text-coda-text hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors no-underline cursor-pointer"
             >
-              <Square size={14} />
-              <span>Stop</span>
-            </button>
-          )}
+              <Globe size={12} />
+              Network Command
+            </Link>
 
-          {/* Single Cycle */}
-          <button
-            onClick={runSingleCycle}
-            disabled={cycleInFlight || !mandatesSeeded}
-            className="liquid-button flex items-center px-4 py-2 text-sm font-semibold text-white
-              bg-transparent
-              disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {cycleInFlight ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-            <span>Single Cycle</span>
-          </button>
+            {/* Speed selector */}
+            <div className="relative">
+              <button
+                ref={speedBtnRef}
+                onClick={() => setSpeedOpen((v) => !v)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs
+                  bg-transparent text-coda-text-secondary hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer rounded-md"
+              >
+                <Clock size={12} />
+                <span>{SPEED_OPTIONS.find((o) => o.value === currentSpeed)?.label || 'Normal (15s)'}</span>
+                <ChevronDown size={10} className={`transition-transform ${speedOpen ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
 
-          {/* Network Command */}
-          <Link
-            to="/network-command"
-            className="flex items-center gap-2 px-3 py-2 squircle-sm text-sm
-              dashboard-card-subtle text-coda-text-secondary hover:text-coda-text transition-colors no-underline cursor-pointer"
-          >
-            <Globe size={14} />
-            Network Command
-          </Link>
+            {/* Speed dropdown -- portaled to body so backdrop-blur works outside parent's backdrop-filter context */}
+            {speedOpen && speedDropdownPos && createPortal(
+              <div
+                className="fixed z-[9999] rounded-[10px] overflow-hidden shadow-xl
+                  backdrop-blur-2xl backdrop-saturate-150 bg-white/30 dark:bg-white/[0.06]
+                  border border-white/30 dark:border-white/[0.10]"
+                style={{
+                  top: speedDropdownPos.top,
+                  left: speedDropdownPos.left,
+                  width: speedDropdownPos.width,
+                  WebkitBackdropFilter: 'blur(40px) saturate(1.5)',
+                }}
+              >
+                {SPEED_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => { setCurrentSpeed(opt.value); setSpeedOpen(false); }}
+                    className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors cursor-pointer
+                      ${currentSpeed === opt.value
+                        ? 'text-coda-text font-semibold'
+                        : 'text-coda-text-secondary hover:text-coda-text'
+                      }`}
+                  >
+                    <span>{opt.label}</span>
+                  </button>
+                ))}
+              </div>,
+              document.body
+            )}
 
-          {/* Speed selector */}
-          <div className="relative">
+            {/* Divider */}
+            <div className="w-px h-6 bg-black/[0.06] dark:bg-white/[0.06] hidden sm:block" />
+
+            {/* Reset Cycles */}
             <button
-              ref={speedBtnRef}
-              onClick={() => setSpeedOpen((v) => !v)}
-              className="flex items-center px-3 py-2 text-sm
-                bg-transparent text-coda-text-secondary hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer rounded-md"
+              onClick={resetCycles}
+              className="liquid-button flex items-center px-2.5 py-1.5 text-xs
+                text-coda-text-muted cursor-pointer ml-auto"
             >
-              <Clock size={14} />
-              <span>{SPEED_OPTIONS.find((o) => o.value === currentSpeed)?.label || 'Normal (15s)'}</span>
-              <ChevronDown size={12} className={`transition-transform ${speedOpen ? 'rotate-180' : ''}`} />
+              <RotateCcw size={12} />
+              <span>Reset Cycles</span>
             </button>
           </div>
+        </WidgetShell>
 
-          {/* Speed dropdown -- portaled to body so backdrop-blur works outside parent's backdrop-filter context */}
-          {speedOpen && speedDropdownPos && createPortal(
-            <div
-              className="fixed z-[9999] rounded-[10px] overflow-hidden shadow-xl
-                backdrop-blur-2xl backdrop-saturate-150 bg-white/30 dark:bg-white/[0.06]
-                border border-white/30 dark:border-white/[0.10]"
-              style={{
-                top: speedDropdownPos.top,
-                left: speedDropdownPos.left,
-                width: speedDropdownPos.width,
-                WebkitBackdropFilter: 'blur(40px) saturate(1.5)',
-              }}
-            >
-              {SPEED_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={() => { setCurrentSpeed(opt.value); setSpeedOpen(false); }}
-                  className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors cursor-pointer
-                    ${currentSpeed === opt.value
-                      ? 'text-coda-text font-semibold'
-                      : 'text-coda-text-secondary hover:text-coda-text'
-                    }`}
-                >
-                  <span>{opt.label}</span>
-                </button>
-              ))}
-            </div>,
-            document.body
-          )}
-
-          {/* Divider */}
-          <div className="w-px h-6 bg-coda-border hidden sm:block" />
-
-          {/* Seed Mandates / Seeded badge */}
-          {!mandatesSeeded ? (
-            <button
-              onClick={seedMandates}
-              disabled={seedingInProgress}
-              className="liquid-button flex items-center px-3 py-2 text-sm
-                bg-transparent text-coda-text-secondary
-                disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {seedingInProgress ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
-              <span>Seed Mandates</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-500">
-              <CheckCircle2 size={14} />
-              Mandates seeded
-            </div>
-          )}
-
-          {/* Reset Cycles */}
-          <button
-            onClick={resetCycles}
-            className="liquid-button flex items-center px-3 py-2 text-sm
-              text-coda-text-muted cursor-pointer ml-auto"
-          >
-            <RotateCcw size={14} />
-            <span>Reset Cycles</span>
-          </button>
-        </div>
-
-        {/* SECTION 3: LIVE METRICS ROW */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Total Cycles */}
-          <MetricCard
-            icon={Hash}
-            label="Total Cycles"
-            value={totalCycles}
-          />
-
-          {/* Transactions Initiated */}
-          <MetricCard
-            icon={TrendingUp}
-            label="Txns Initiated"
-            value={totalTransactions}
-          />
-
-          {/* Current Status */}
-          <div className="dashboard-card-subtle p-4">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Activity size={14} className="text-coda-text-muted" />
-              <span className="text-xs text-coda-text-muted">Last Status</span>
-            </div>
-            <StatusBadge status={lastStatus} />
-          </div>
-
-          {/* Last Event Type */}
-          <div className="dashboard-card-subtle p-4">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Zap size={14} className="text-coda-text-muted" />
-              <span className="text-xs text-coda-text-muted">Last Event</span>
-            </div>
-            <EventBadge eventType={lastEventType} />
-          </div>
-        </div>
-
-        {/* SECTION 3.5: LIVE PIPELINE PROGRESS */}
+        {/* LIVE PIPELINE PROGRESS */}
         <LivePipelineProgress runningCycle={pipelineCycle} />
 
-        {/* SECTION 3.75: AGENT REASONING PANEL (detailed view below overview) */}
+        {/* AGENT REASONING PANEL */}
         <AgentReasoningPanel isRunning={isRunning} currentCycle={pipelineCycle} />
 
-        {/* SECTION 4: CYCLE LOG */}
-        <div>
-          <h3 className="text-sm font-semibold text-coda-text mb-3">Cycle Log</h3>
-          <div className="space-y-3">
+        {/* CYCLE LOG */}
+        <WidgetShell title="Cycle Log">
+          <div className="space-y-0">
             {cycles.length === 0 ? (
               <div className="text-center py-10 text-coda-text-muted text-sm">
                 No cycles yet. Seed mandates and start the engine.
@@ -511,16 +522,15 @@ export default function HeartbeatControl() {
               ))
             )}
           </div>
-        </div>
+        </WidgetShell>
         </div>
 
         {/* RIGHT: Live Activity Feed */}
-        <div className="w-[380px] xl:w-[440px] flex-shrink-0 dashboard-card overflow-hidden flex flex-col sticky top-8 max-h-[calc(100vh-4rem)]">
+        <div className="w-[380px] xl:w-[440px] flex-shrink-0 liquid-glass-card squircle overflow-hidden flex flex-col sticky top-8 max-h-[calc(100vh-4rem)]">
           <NetworkActivityFeed />
         </div>
       </div>
-      </PageTransition>
-    </div>
+    </PageShell>
   );
 }
 
@@ -693,13 +703,13 @@ function CycleRow({ cycle, isNew, expanded, onToggle }: { cycle: HeartbeatCycle;
       >
         <div className="overflow-hidden min-h-0">
           {hasExpandedOnce.current && (
-          <div className="backdrop-blur-xl bg-white/[0.07] dark:bg-white/[0.03] border-t border-white/20 dark:border-white/10 px-4 py-3 pt-4 space-y-4 rounded-b-[14px]">
+          <div className="border-t border-black/[0.06] dark:border-white/[0.06] px-4 py-3 pt-4 space-y-4">
             {cycle.market_event && (
               <div>
-                <h4 className="text-xs font-semibold text-coda-text-muted uppercase tracking-wide mb-1.5">
+                <h4 className="text-xs font-light text-coda-text mb-1.5">
                   Market Event
                 </h4>
-                <p className="text-sm text-coda-text">
+                <p className="text-xs text-coda-text-secondary">
                   {cycle.market_event.cycle_narrative}
                 </p>
               </div>
@@ -716,14 +726,14 @@ function CycleRow({ cycle, isNew, expanded, onToggle }: { cycle: HeartbeatCycle;
               </div>
             ) : detailLoaded ? (
               <>
-                {/* Transactions — compact settlement links */}
+                {/* Transactions — flat table rows */}
                 {cycleTxns.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold text-coda-text-muted uppercase tracking-wide mb-2">
+                  <h4 className="text-xs font-light text-coda-text mb-2">
                     Transactions Created ({cycleTxns.length})
                   </h4>
-                    <div className="space-y-1.5">
-                      {cycleTxns.map((tx: any) => {
+                    <div className="space-y-0">
+                      {cycleTxns.map((tx: any, i: number) => {
                         const sCode = tx.sender_bank?.short_code || '?';
                         const rCode = tx.receiver_bank?.short_code || '?';
                         const amount = tx.amount_display || tx.amount / 1e6;
@@ -732,20 +742,21 @@ function CycleRow({ cycle, isNew, expanded, onToggle }: { cycle: HeartbeatCycle;
                           <Link
                             key={tx.id}
                             to={`/transactions/${tx.id}`}
-                            className="group flex items-center gap-3 px-3 py-2 rounded-lg backdrop-blur-md
-                              bg-white/[0.06] dark:bg-white/[0.03] border border-white/10
-                              hover:bg-white/[0.12] dark:hover:bg-white/[0.07] hover:border-white/20
-                              transition-all duration-200 cursor-pointer no-underline"
+                            className={`group flex items-center gap-3 py-2.5
+                              hover:bg-black/[0.02] dark:hover:bg-white/[0.02]
+                              transition-colors cursor-pointer no-underline ${
+                              i > 0 ? 'border-t border-black/[0.06] dark:border-white/[0.06]' : ''
+                            }`}
                           >
-                            <div className="flex items-center gap-1.5 text-xs font-mono text-coda-text">
-                              <span className="font-bold">{sCode}</span>
+                            <div className="flex items-center gap-1.5 text-xs font-mono text-coda-text w-20 flex-shrink-0">
+                              <span className="font-medium">{sCode}</span>
                               <ArrowRight size={10} className="text-coda-text-muted" />
-                              <span className="font-bold">{rCode}</span>
+                              <span className="font-medium">{rCode}</span>
                             </div>
-                            <span className="font-mono text-xs text-coda-text font-semibold">
+                            <span className="font-mono text-xs text-coda-text font-medium flex-shrink-0">
                               ${amount.toLocaleString()}
                             </span>
-                            <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors duration-300 ${statusStyle.bg} ${statusStyle.text}`}>
+                            <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-medium ${statusStyle.bg} ${statusStyle.text}`}>
                               {tx.status}
                             </span>
                             {tx.purpose_code && (
@@ -753,9 +764,9 @@ function CycleRow({ cycle, isNew, expanded, onToggle }: { cycle: HeartbeatCycle;
                                 {tx.purpose_code}
                               </span>
                             )}
-                            <ChevronRight
+                            <ArrowRight
                               size={12}
-                              className="ml-auto text-coda-text-muted/0 group-hover:text-coda-text-muted transition-all duration-200 -translate-x-1 group-hover:translate-x-0"
+                              className="ml-auto text-coda-text-muted group-hover:text-coda-text transition-colors flex-shrink-0"
                             />
                           </Link>
                         );
@@ -767,10 +778,10 @@ function CycleRow({ cycle, isNew, expanded, onToggle }: { cycle: HeartbeatCycle;
                 {/* No transactions for completed cycles */}
                 {cycleTxns.length === 0 && cycle.status !== 'running' && (
                   <div>
-                    <h4 className="text-xs font-semibold text-coda-text-muted uppercase tracking-wide mb-2">
+                    <h4 className="text-xs font-light text-coda-text mb-2">
                       Transactions Created
                     </h4>
-                    <p className="text-xs text-coda-text-muted italic py-1">
+                    <p className="text-xs text-coda-text-muted py-1">
                       No transactions recorded for this cycle.
                     </p>
                   </div>
@@ -778,21 +789,23 @@ function CycleRow({ cycle, isNew, expanded, onToggle }: { cycle: HeartbeatCycle;
 
                 {noActionDecisions.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-semibold text-coda-text-muted uppercase tracking-wide mb-2">
+                    <h4 className="text-xs font-light text-coda-text mb-2">
                       Agent Decisions
                     </h4>
-                    <div className="space-y-1.5">
-                      {noActionDecisions.map((msg: any) => {
+                    <div className="space-y-0">
+                      {noActionDecisions.map((msg: any, i: number) => {
                         const bankCode = msg.from_bank?.short_code || '?';
                         const reasoning = msg.content?.reasoning || msg.natural_language || '';
                         return (
-                          <div key={msg.id} className="flex items-start gap-3 px-3 py-2 rounded-lg backdrop-blur-md bg-white/[0.06] dark:bg-white/[0.03] border border-white/10">
+                          <div key={msg.id} className={`flex items-start gap-3 py-2.5 ${
+                            i > 0 ? 'border-t border-black/[0.06] dark:border-white/[0.06]' : ''
+                          }`}>
                             <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
                               <Brain size={12} className="text-coda-text-muted" />
-                              <span className="font-mono text-xs font-bold text-coda-text">{bankCode}</span>
+                              <span className="font-mono text-xs font-medium text-coda-text">{bankCode}</span>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold bg-coda-surface-alt text-coda-text-muted mb-1">
+                              <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-medium bg-black/[0.04] dark:bg-white/[0.06] text-coda-text-muted mb-1">
                                 NO_ACTION
                               </span>
                               <p className="text-xs text-coda-text-secondary leading-relaxed mt-1 line-clamp-3">
@@ -816,31 +829,3 @@ function CycleRow({ cycle, isNew, expanded, onToggle }: { cycle: HeartbeatCycle;
   );
 }
 
-// MetricCard -- with AnimatedValue + pulse overlay
-function MetricCard({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: number }) {
-  const [pulseKey, setPulseKey] = useState(0);
-  const triggerPulse = useCallback(() => {
-    setPulseKey((k) => k + 1);
-  }, []);
-
-  return (
-    <div className="dashboard-card-subtle p-4 relative overflow-hidden">
-      {pulseKey > 0 && (
-        <div
-          key={pulseKey}
-          className="absolute inset-0 pointer-events-none animate-stat-pulse"
-        />
-      )}
-      <div className="flex items-center gap-2 mb-1.5">
-        <Icon size={14} className="text-coda-text-muted" />
-        <span className="text-xs text-coda-text-muted">{label}</span>
-      </div>
-      <p className="text-2xl font-semibold font-mono text-coda-text">
-        <AnimatedValue
-          value={value}
-          onLiveChange={triggerPulse}
-        />
-      </p>
-    </div>
-  );
-}
