@@ -44,7 +44,7 @@ function EnvironmentBanner() {
   const dotColor = isLocal ? '#b45309' : '#2563eb';
 
   return (
-    <div className="dashboard-card mb-4 py-1.5 px-5 flex items-center justify-center gap-2">
+    <div className="mb-4 py-1.5 px-5 flex items-center justify-center gap-2 rounded-full border border-white/70 dark:border-white/10">
       <span
         className="inline-block w-1.5 h-1.5 rounded-full"
         style={{ background: dotColor, boxShadow: `0 0 6px ${dotColor}40` }}
