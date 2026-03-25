@@ -1665,3 +1665,32 @@ Removed the confusing Devnet/Production toggle from Settings page. The toggle on
 | `PROJECT_HISTORY.md` | Appended Task 143 |
 
 ---END_TASK---
+
+---
+
+## Task 144: Solstice Core XD Design System (2026-03-24)
+
+---TASK_COMPLETE---
+Step: Task 144 — Apply Solstice Core XD design system from Adobe XD prototype
+Timestamp: 2026-03-24T18:00:00Z
+Status: DONE
+
+### Summary:
+Extracted the design system from the Solstice Core XD prototype and applied it across the CODA frontend. New two-zone header card pattern (LiquidGlass fill title + outline-only stats) via PageShell component. WidgetShell for subordinate content cards. Dashboard fully redesigned with flat metric rows, Lottie stat icons, neutral color palette. Font hierarchy standardized: page titles font-light, widget titles font-light, content in text-sm/text-xs. Environment banner converted to outline-only pill. Treasury Operations page transformed to match.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `src/app/components/PageShell.tsx` | NEW: Reusable two-zone header card layout with morph transitions |
+| `src/app/components/dashboard/WidgetShell.tsx` | NEW: LiquidGlass subordinate content card |
+| `src/app/components/Dashboard.tsx` | Refactored to PageShell, removed Quick Actions, Agent Terminals as table rows |
+| `src/app/components/dashboard/NetworkInfrastructureWidget.tsx` | Refactored to WidgetShell, flat MetricRow pattern |
+| `src/app/components/dashboard/CadenzaEscalationsWidget.tsx` | Refactored to WidgetShell, flat rows, neutral colors |
+| `src/app/components/dashboard/dashboard-layout.tsx` | Environment banner → outline-only pill |
+| `src/app/components/HeartbeatControl.tsx` | Transformed to PageShell layout with stats and WidgetShell |
+| `src/styles/theme.css` | Added LiquidGlass design system documentation comment |
+| `CHANGELOG.md` | Added Solstice Core XD entry |
+| `PROJECT_STATUS.md` | Updated header for Task 144 |
+| `PROJECT_HISTORY.md` | Appended Task 144 |
+
+---END_TASK---

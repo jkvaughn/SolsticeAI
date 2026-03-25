@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { ArrowRight, Activity, ChevronDown } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { useBanks } from '../contexts/BanksContext';
@@ -418,24 +418,21 @@ export function NetworkActivityFeed() {
   return (
     <div className="flex flex-col h-full">
       {/* ── Header ── */}
-      <div className="px-4 pt-4 pb-3 flex items-center gap-2.5 border-b border-white/[0.1]">
-        <div className="relative">
-          <div className="w-7 h-7 rounded-lg bg-black/[0.06] dark:bg-white/[0.08] flex items-center justify-center">
-            <Activity size={14} className="text-coda-text-secondary" />
-          </div>
-          {events.length > 0 && (
-            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-coda-text leading-tight">Agent Feed</h3>
-          <p className="text-[10px] text-coda-text-muted">Multi-agent reasoning log</p>
-        </div>
+      <div className="px-5 pt-4 pb-3 flex items-center justify-between">
+        <h2 className="text-base font-light text-coda-text">Agent Feed</h2>
         {events.length > 0 && (
-          <span className="text-[9px] font-mono text-coda-text-secondary tabular-nums px-1.5 py-0.5 rounded bg-white/8">
+          <span className="text-[11px] text-coda-text-muted tabular-nums">
             {events.length} events
           </span>
         )}
+      </div>
+
+      {/* ── Column headers ── */}
+      <div className="px-5 pb-2 flex items-center gap-2 text-[10px] text-coda-text-muted">
+        <span className="w-[52px] flex-shrink-0">Agent</span>
+        <span className="flex-1 min-w-0">Description</span>
+        <span className="w-[64px] flex-shrink-0 text-center">Status</span>
+        <span className="w-[56px] flex-shrink-0 text-right">Time</span>
       </div>
 
       {/* ── Feed body (newest-first) ── */}
@@ -445,9 +442,6 @@ export function NetworkActivityFeed() {
       >
         {events.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-            <div className="w-10 h-10 rounded-xl bg-white/8 flex items-center justify-center mb-3">
-              <span className="text-lg text-coda-text-muted">↗</span>
-            </div>
             <p className="text-xs text-coda-text-muted">
               Agents idle
             </p>
@@ -456,9 +450,9 @@ export function NetworkActivityFeed() {
             </p>
           </div>
         ) : (
-          <div className="px-2.5 py-2 space-y-1">
-            {/* Live indicator at top (newest-first) */}
-            <div className="flex items-center gap-2 px-2 py-1.5">
+          <div className="px-5">
+            {/* Live indicator */}
+            <div className="flex items-center gap-2 py-2 border-t border-black/[0.06] dark:border-white/[0.06]">
               <div className="flex gap-[3px]">
                 {[0, 1, 2].map(i => (
                   <div
@@ -468,7 +462,7 @@ export function NetworkActivityFeed() {
                   />
                 ))}
               </div>
-              <span className="text-[9px] text-coda-text-secondary font-mono">
+              <span className="text-[9px] text-coda-text-muted font-mono">
                 listening for agent activity…
               </span>
             </div>
@@ -478,7 +472,7 @@ export function NetworkActivityFeed() {
                 key={evt.id}
                 className={idx === 0 ? 'animate-fade-slide-in' : ''}
               >
-                <CompactEventCard
+                <EventRow
                   event={evt}
                   isNewest={idx === 0}
                 />
@@ -492,10 +486,10 @@ export function NetworkActivityFeed() {
 }
 
 // ============================================================
-// Compact Event Card — scannable single-card layout
+// EventRow — Clean table row matching XD "Recent Events" pattern
 // ============================================================
 
-function CompactEventCard({
+function EventRow({
   event,
   isNewest,
 }: {
@@ -511,101 +505,81 @@ function CompactEventCard({
   const hasExpandable = !!(event.detail || event.narrative.length > 80);
 
   return (
-    <button
-      type="button"
+    <div
       onClick={() => hasExpandable && setExpanded(e => !e)}
-      className={`
-        liquid-button w-full text-left px-3 py-2
-        ${isNewest ? 'bg-transparent ring-1 ring-white/[0.08]' : 'bg-transparent'}
-        ${isThinking ? 'ring-1 ring-blue-500/20' : ''}
-        ${hasExpandable ? 'cursor-pointer' : 'cursor-default'}
+      className={`flex items-start gap-2 py-2.5 border-t border-black/[0.06] dark:border-white/[0.06]
+        ${hasExpandable ? 'cursor-pointer' : ''}
+        ${isNewest ? 'bg-black/[0.01] dark:bg-white/[0.01]' : ''}
       `}
     >
-      {/* ── Row 1: Agent + Verb + Banks + Amount + Time ── */}
-      <div className="flex items-center gap-1.5 min-w-0">
-        {/* Agent badge */}
-        <div className={`flex items-center gap-1 flex-shrink-0 ${agent.color}`}>
-          <div className={`w-[16px] h-[16px] rounded-full flex items-center justify-center ${agent.bg}`}>
-            <span className="text-[7px] leading-none">{agent.glyph}</span>
-          </div>
-          <span className="text-[10px] font-semibold">{agent.name}</span>
-        </div>
-
-        {/* Verb pill */}
-        <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded-full flex-shrink-0 ${verbStyle.text} ${verbStyle.bg}`}>
-          {event.verb}
-        </span>
-
-        {/* Inter-agent arrow */}
+      {/* Agent name */}
+      <div className="w-[52px] flex-shrink-0 pt-0.5">
+        <span className="text-xs font-medium text-coda-text">{agent.name}</span>
         {toAgent && event.agent !== event.toAgent && (
-          <span className="flex items-center gap-0.5 flex-shrink-0">
-            <span className="text-[8px] text-coda-text-secondary">→</span>
-            <span className={`text-[9px] font-medium ${toAgent.color}`}>{toAgent.name}</span>
-          </span>
+          <div className="flex items-center gap-0.5 mt-0.5">
+            <span className="text-[9px] text-coda-text-muted">→ {toAgent.name}</span>
+          </div>
         )}
+      </div>
 
-        {/* Bank routing (inline) */}
-        {event.bankCode && (
-          <div className="flex items-center gap-0.5 flex-shrink-0 ml-auto">
-            <span className={`text-[9px] font-bold font-mono ${BANK_COLORS[event.bankCode] || 'text-coda-text-secondary'}`}>
-              {event.bankCode}
-            </span>
-            {event.bankCode2 && (
-              <>
-                <ArrowRight size={7} className="text-coda-text-secondary" />
-                <span className={`text-[9px] font-bold font-mono ${BANK_COLORS[event.bankCode2] || 'text-coda-text-secondary'}`}>
-                  {event.bankCode2}
-                </span>
-              </>
+      {/* Description column */}
+      <div className="flex-1 min-w-0">
+        <p className={`text-xs text-coda-text-secondary leading-snug ${!expanded ? 'line-clamp-1' : ''}`}>
+          {event.narrative}
+        </p>
+
+        {/* Bank routing + amount */}
+        {(event.bankCode || event.amount) && (
+          <div className="flex items-center gap-2 mt-0.5">
+            {event.bankCode && (
+              <span className="text-[10px] font-mono text-coda-text-muted">
+                {event.bankCode}
+                {event.bankCode2 && ` → ${event.bankCode2}`}
+              </span>
+            )}
+            {event.amount && (
+              <span className={`text-[10px] font-mono font-medium ${isError ? 'text-red-400' : 'text-coda-text'}`}>
+                {event.amount}
+              </span>
             )}
           </div>
         )}
 
-        {/* Amount */}
-        {event.amount && (
-          <span className={`text-[10px] font-mono font-semibold flex-shrink-0 ${!event.bankCode ? 'ml-auto' : 'ml-1.5'} ${isError ? 'text-red-400' : 'text-coda-text'}`}>
-            {event.amount}
-          </span>
+        {/* Expanded detail */}
+        {expanded && event.detail && (
+          <p className="text-[10px] text-coda-text-muted leading-snug mt-1">
+            {event.detail}
+          </p>
         )}
 
-        {/* Timestamp */}
-        <span className="text-[9px] font-mono text-coda-text-secondary tabular-nums flex-shrink-0 ml-1">
-          {formatTime(event.ts)}
-        </span>
-
-        {/* Expand chevron */}
-        {hasExpandable && (
-          <ChevronDown size={10} className={`text-coda-text-secondary flex-shrink-0 transition-transform duration-150 ${expanded ? 'rotate-180' : ''}`} />
+        {/* Thinking indicator */}
+        {isThinking && (
+          <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex gap-[3px]">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className="w-[3px] h-[3px] rounded-full bg-coda-text-muted animate-pulse"
+                  style={{ animationDelay: `${i * 200}ms` }}
+                />
+              ))}
+            </div>
+            <span className="text-[9px] font-mono text-coda-text-muted">processing…</span>
+          </div>
         )}
       </div>
 
-      {/* ── Row 2: Narrative (collapsed = 1 line, expanded = full) ── */}
-      <p className={`text-[11px] leading-[1.4] mt-1 ${isError ? 'text-red-400/70' : 'text-coda-text-secondary'} ${!expanded ? 'line-clamp-1' : ''}`}>
-        {event.narrative}
-      </p>
+      {/* Status badge */}
+      <div className="w-[64px] flex-shrink-0 flex justify-center pt-0.5">
+        <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-medium uppercase tracking-wide ${verbStyle.bg} ${verbStyle.text}`}>
+          {event.verb}
+        </span>
+      </div>
 
-      {/* ── Row 3: Detail / reasoning (only when expanded) ── */}
-      {expanded && event.detail && (
-        <p className="text-[10px] text-coda-text-muted leading-snug mt-1 italic">
-          {event.detail}
-        </p>
-      )}
-
-      {/* Thinking pulse */}
-      {isThinking && (
-        <div className="flex items-center gap-1.5 mt-1">
-          <div className="flex gap-[3px]">
-            {[0, 1, 2].map(i => (
-              <div
-                key={i}
-                className={`w-[3px] h-[3px] rounded-full ${agent.dot} animate-pulse`}
-                style={{ animationDelay: `${i * 200}ms` }}
-              />
-            ))}
-          </div>
-          <span className={`text-[9px] font-mono ${agent.color}`}>processing…</span>
-        </div>
-      )}
-    </button>
+      {/* Timestamp */}
+      <span className="w-[56px] flex-shrink-0 text-right text-[10px] text-coda-text-muted tabular-nums pt-0.5">
+        {formatTime(event.ts)}
+      </span>
+    </div>
   );
 }
