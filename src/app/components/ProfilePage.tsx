@@ -6,8 +6,10 @@ import { useBanks } from '../contexts/BanksContext';
 import { usePersona } from '../contexts/PersonaContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useIsAdmin } from '../hooks/useIsAdmin';
-import { PageHeader } from './PageHeader';
+import { PageShell } from './PageShell';
+import type { PageStat } from './PageShell';
 import { PersonaSwitcher } from './PersonaSwitcher';
+import { WidgetShell } from './dashboard/WidgetShell';
 import { motion } from './motion-shim';
 import { supabase } from '../supabaseClient';
 import {
@@ -180,15 +182,21 @@ export function ProfilePage() {
   // ── Initials ──
   const initials = currentUser.avatarInitials;
 
+  const pageStats: PageStat[] = [
+    { icon: ShieldCheck, value: escalations !== null ? String(escalations) : '...', label: 'Escalations Resolved' },
+    { icon: BarChart3, value: settlements !== null ? String(settlements) : '...', label: 'Total Settlements' },
+    { icon: Activity, value: '99.97%', label: 'Network Uptime' },
+    { icon: Clock, value: sessionStart, label: 'Session Start' },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
-      <PageHeader
-        icon={UserCircle}
+    <div className="max-w-5xl mx-auto pb-12">
+      <PageShell
         title="Profile"
         subtitle="Operator identity, activity & preferences"
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        stats={pageStats}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* ════════════════════════════════════════════════════════
             LEFT COLUMN — Identity Card
         ════════════════════════════════════════════════════════ */}
@@ -196,7 +204,7 @@ export function ProfilePage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="dashboard-card-subtle p-6 space-y-6"
+          className="liquid-glass-card squircle p-6 space-y-6"
         >
           {/* Avatar + Name */}
           <div className="flex flex-col items-center text-center space-y-4">
@@ -310,7 +318,7 @@ export function ProfilePage() {
                 Online
               </span>
               {isAdmin && (
-                <span className="text-[8px] font-bold uppercase tracking-wider text-coda-brand bg-coda-brand/10 px-1.5 py-0.5 rounded">
+                <span className="text-[8px] font-bold text-coda-brand bg-coda-brand/10 px-1.5 py-0.5 rounded">
                   ADMIN
                 </span>
               )}
@@ -328,37 +336,9 @@ export function ProfilePage() {
           transition={{ duration: 0.35, delay: 0.08 }}
           className="space-y-6"
         >
-          {/* ── Stat cards grid ── */}
-          <div className="grid grid-cols-2 gap-4">
-            <StatCard
-              icon={ShieldCheck}
-              label="Escalations Resolved"
-              value={escalations !== null ? String(escalations) : '...'}
-            />
-            <StatCard
-              icon={BarChart3}
-              label="Total Settlements"
-              value={settlements !== null ? String(settlements) : '...'}
-            />
-            <StatCard
-              icon={Activity}
-              label="Network Uptime"
-              value="99.97%"
-            />
-            <StatCard
-              icon={Clock}
-              label="Session Start"
-              value={sessionStart}
-              small
-            />
-          </div>
-
           {/* ── Recent Escalations ── */}
           {recentEscalations.length > 0 && (
-            <div className="dashboard-card-subtle p-4 space-y-3">
-              <h4 className="text-[11px] font-semibold font-sans text-coda-text-muted uppercase tracking-wide">
-                Recent Escalations
-              </h4>
+            <WidgetShell title="Recent Escalations">
               <table className="w-full text-[10px] font-mono">
                 <thead>
                   <tr className="text-coda-text-muted">
@@ -385,81 +365,45 @@ export function ProfilePage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </WidgetShell>
           )}
 
           {/* ── Preferences ── */}
-          <div className="dashboard-card-subtle p-5 space-y-5">
-            <h4 className="text-sm font-semibold font-sans text-coda-text">
-              Defaults & Preferences
-            </h4>
-
-            {/* Persona + Bank selector — card picker, applies instantly */}
+          <WidgetShell title="Defaults & Preferences">
             <PersonaSwitcher />
-          </div>
+          </WidgetShell>
         </motion.div>
       </div>
 
-      {/* ── Sign Out — standalone section ── */}
-      <div className="flex justify-center pt-2">
-        {!signOutConfirm ? (
-          <button
-            onClick={() => setSignOutConfirm(true)}
-            className="liquid-button flex items-center px-6 py-2.5 text-sm font-medium text-coda-text-muted cursor-pointer"
-          >
-            <LogOut size={15} />
-            <span>Sign Out</span>
-          </button>
-        ) : (
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-red-500">End session?</span>
+        {/* ── Sign Out — standalone section ── */}
+        <div className="flex justify-center pt-2">
+          {!signOutConfirm ? (
             <button
-              onClick={() => setSignOutConfirm(false)}
-              className="liquid-button px-3 py-1.5 text-xs font-medium text-coda-text-secondary cursor-pointer"
+              onClick={() => setSignOutConfirm(true)}
+              className="liquid-button flex items-center px-6 py-2.5 text-sm font-medium text-coda-text-muted cursor-pointer"
             >
-              <span>Cancel</span>
-            </button>
-            <button
-              onClick={handleSignOut}
-              className="liquid-button px-3 py-1.5 text-xs font-medium bg-red-500/15 text-red-400 cursor-pointer"
-            >
+              <LogOut size={15} />
               <span>Sign Out</span>
             </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Stat Card ────────────────────────────────────────────────
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  small,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  small?: boolean;
-}) {
-  return (
-    <div className="dashboard-card-subtle p-4 space-y-2">
-      <div className="flex items-center gap-2">
-        <Icon size={14} className="text-coda-text-muted shrink-0" />
-        <span className="text-[11px] font-sans text-coda-text-muted uppercase tracking-wide">
-          {label}
-        </span>
-      </div>
-      <p
-        className={`font-mono font-semibold text-coda-text ${
-          small ? 'text-xs' : 'text-lg'
-        }`}
-      >
-        {value}
-      </p>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-red-500">End session?</span>
+              <button
+                onClick={() => setSignOutConfirm(false)}
+                className="liquid-button px-3 py-1.5 text-xs font-medium text-coda-text-secondary cursor-pointer"
+              >
+                <span>Cancel</span>
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="liquid-button px-3 py-1.5 text-xs font-medium bg-red-500/15 text-red-400 cursor-pointer"
+              >
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </PageShell>
     </div>
   );
 }

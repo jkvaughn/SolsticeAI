@@ -11,8 +11,8 @@ import { supabase, callServer } from '../supabaseClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { formatTokenAmount, explorerUrl, truncateAddress } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { PageHeader } from './PageHeader';
-import { PageTransition } from './PageTransition';
+import { PageShell } from './PageShell';
+import type { PageStat } from './PageShell';
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
   AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
@@ -212,7 +212,7 @@ function EscalationCard({
     : ['Validating lockup state…', 'Initiating clawback…', 'Returning deposit…', 'Finalizing…'];
 
   return (
-    <div className={`dashboard-card overflow-hidden relative transition-all duration-300 ${resolvingThis ? 'ring-2 ring-offset-1 ring-offset-transparent' : ''} ${resolvingThis && resolvingDecision === 'approve' ? 'ring-emerald-500/40' : ''} ${resolvingThis && resolvingDecision === 'reverse' ? 'ring-red-500/40' : ''}`}>
+    <div className={`liquid-glass-card squircle overflow-hidden relative transition-all duration-300 ${resolvingThis ? 'ring-2 ring-offset-1 ring-offset-transparent' : ''} ${resolvingThis && resolvingDecision === 'approve' ? 'ring-emerald-500/40' : ''} ${resolvingThis && resolvingDecision === 'reverse' ? 'ring-red-500/40' : ''}`}>
       {/* Processing overlay */}
       <AnimatePresence>
         {resolvingThis && (
@@ -245,7 +245,7 @@ function EscalationCard({
               <div
                 className={`w-1.5 h-1.5 rounded-full animate-pulse ${resolvingDecision === 'approve' ? 'bg-emerald-400' : 'bg-red-400'}`}
               />
-              <span className="text-[10px] font-mono text-white/70 uppercase tracking-wider">
+              <span className="text-[10px] font-mono text-white/70">
                 {resolvingDecision === 'approve' ? 'Settling' : 'Reversing'} on Solana
               </span>
             </div>
@@ -312,7 +312,7 @@ function EscalationCard({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {/* Time in escalation */}
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-coda-text-muted mb-0.5">Escalation Time</p>
+              <p className="text-[10px] text-coda-text-muted mb-0.5">Escalation Time</p>
               <div className="flex items-center gap-1.5 text-sm text-amber-400">
                 <Clock size={13} />
                 <LiveDurationCounter escalatedAt={item.escalated_at} />
@@ -321,7 +321,7 @@ function EscalationCard({
 
             {/* Yield accruing */}
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-coda-text-muted mb-0.5">Yield Accrued</p>
+              <p className="text-[10px] text-coda-text-muted mb-0.5">Yield Accrued</p>
               <div className="flex items-center gap-1.5 text-sm">
                 <TrendingUp size={13} className="text-emerald-400" />
                 <LiveYieldCounter
@@ -334,7 +334,7 @@ function EscalationCard({
 
             {/* Flags count */}
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-coda-text-muted mb-0.5">Cadenza Flags</p>
+              <p className="text-[10px] text-coda-text-muted mb-0.5">Cadenza Flags</p>
               <div className="flex items-center gap-1.5 text-sm text-coda-brand">
                 <Flag size={13} />
                 <span className="font-mono">{item.flag_count}</span>
@@ -343,7 +343,7 @@ function EscalationCard({
 
             {/* Rate */}
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-coda-text-muted mb-0.5">Yield Rate</p>
+              <p className="text-[10px] text-coda-text-muted mb-0.5">Yield Rate</p>
               <div className="flex items-center gap-1.5 text-sm text-blue-400">
                 <Coins size={13} />
                 <span className="font-mono">{(item.yield_rate_bps / 100).toFixed(2)}%</span>
@@ -379,7 +379,7 @@ function EscalationCard({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-[10px] font-bold uppercase ${sev.text}`}>
+                          <span className={`text-[10px] font-bold ${sev.text}`}>
                             {flag.severity}
                           </span>
                           <span className="text-[10px] text-coda-text-muted font-mono">
@@ -425,7 +425,7 @@ function EscalationCard({
               {briefingLoading ? 'Generating AI Briefing...' : briefing ? 'AI Briefing' : 'View Briefing'}
             </span>
             {briefing && (
-              <span className={`ml-auto text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+              <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded ${
                 briefing.recommended_action === 'approve' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'
               }`}>
                 Recommends: {briefing.recommended_action} ({Math.round(briefing.confidence * 100)}%)
@@ -449,7 +449,7 @@ function EscalationCard({
               {/* Confidence gauge */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] uppercase tracking-wider text-coda-text-muted">Confidence</span>
+                  <span className="text-[10px] text-coda-text-muted">Confidence</span>
                   <span className="text-xs font-mono font-bold text-coda-text">
                     {Math.round(briefing.confidence * 100)}%
                   </span>
@@ -469,7 +469,7 @@ function EscalationCard({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {briefing.risk_factors?.length > 0 && (
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-red-400 mb-1.5">Risk Factors</p>
+                    <p className="text-[10px] text-red-400 mb-1.5">Risk Factors</p>
                     <ul className="space-y-1">
                       {briefing.risk_factors.map((f, i) => (
                         <li key={i} className="text-xs text-coda-text-secondary flex items-start gap-1.5">
@@ -482,7 +482,7 @@ function EscalationCard({
                 )}
                 {briefing.mitigating_factors?.length > 0 && (
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-emerald-400 mb-1.5">Mitigating Factors</p>
+                    <p className="text-[10px] text-emerald-400 mb-1.5">Mitigating Factors</p>
                     <ul className="space-y-1">
                       {briefing.mitigating_factors.map((f, i) => (
                         <li key={i} className="text-xs text-coda-text-secondary flex items-start gap-1.5">
@@ -498,7 +498,7 @@ function EscalationCard({
               {/* Yield impact */}
               {briefing.yield_impact && (
                 <div className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
-                  <p className="text-[10px] uppercase tracking-wider text-emerald-400 mb-0.5">Yield Impact</p>
+                  <p className="text-[10px] text-emerald-400 mb-0.5">Yield Impact</p>
                   <p className="text-xs text-coda-text-secondary">{briefing.yield_impact}</p>
                 </div>
               )}
@@ -506,7 +506,7 @@ function EscalationCard({
               {/* Regulatory note */}
               {briefing.regulatory_note && (
                 <div className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/15">
-                  <p className="text-[10px] uppercase tracking-wider text-amber-400 mb-0.5">Regulatory Note</p>
+                  <p className="text-[10px] text-amber-400 mb-0.5">Regulatory Note</p>
                   <p className="text-xs text-coda-text-secondary">{briefing.regulatory_note}</p>
                 </div>
               )}
@@ -521,7 +521,7 @@ function EscalationCard({
                     <AlertTriangle size={13} className="text-amber-500" />
                     <span className="font-semibold text-amber-500">SAR DRAFT</span>
                     <span className="text-[10px] text-coda-text-muted">&mdash; Not Filed</span>
-                    <span className="ml-auto px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                    <span className="ml-auto px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/20">
                       For Review Only
                     </span>
                     {sarExpanded ? <ChevronDown size={12} className="text-amber-400" /> : <ChevronRight size={12} className="text-amber-400" />}
@@ -531,20 +531,20 @@ function EscalationCard({
                     <div className="px-3 pb-3 space-y-2.5">
                       {/* Subject */}
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-coda-text-muted mb-0.5">Subject</p>
+                        <p className="text-[10px] text-coda-text-muted mb-0.5">Subject</p>
                         <p className="text-xs text-coda-text-secondary">{sarDraft.subject}</p>
                       </div>
 
                       {/* Transaction */}
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-coda-text-muted mb-0.5">Transaction</p>
+                        <p className="text-[10px] text-coda-text-muted mb-0.5">Transaction</p>
                         <p className="text-xs text-coda-text-secondary font-mono">{sarDraft.transaction}</p>
                       </div>
 
                       {/* Indicators */}
                       {sarDraft.indicators.length > 0 && (
                         <div>
-                          <p className="text-[10px] uppercase tracking-wider text-coda-text-muted mb-1">Suspicious Indicators</p>
+                          <p className="text-[10px] text-coda-text-muted mb-1">Suspicious Indicators</p>
                           <ul className="space-y-1">
                             {sarDraft.indicators.map((ind, i) => (
                               <li key={i} className="text-xs text-coda-text-secondary flex items-start gap-1.5">
@@ -558,10 +558,10 @@ function EscalationCard({
 
                       {/* Typology + Action badges */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-coda-brand/15 text-coda-brand border border-coda-brand/20">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-coda-brand/15 text-coda-brand border border-coda-brand/20">
                           {sarDraft.typology.replace(/_/g, ' ')}
                         </span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase border ${
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${
                           sarDraft.recommendedAction === 'file'
                             ? 'bg-red-500/15 text-red-400 border-red-500/20'
                             : sarDraft.recommendedAction === 'monitor'
@@ -588,7 +588,7 @@ function EscalationCard({
         <div className="px-5 py-4 border-t border-coda-border-subtle flex items-center gap-3">
           <button
             onClick={() => navigate(`/transactions/${item.transaction_id}`)}
-            className="liquid-button flex items-center px-3 py-2 text-xs font-medium text-coda-text-muted cursor-pointer"
+            className="flex items-center px-3 py-2 text-xs font-medium text-coda-text-muted cursor-pointer hover:text-coda-text transition-colors"
           >
             <Eye size={13} />
             <span>View Details</span>
@@ -799,31 +799,27 @@ export function EscalationDashboard() {
     }
   }, [confirmDialog, operatorName, fetchEscalations, fetchMonitoredCount]);
 
+  const pageStats: PageStat[] = [
+    { icon: AlertOctagon, value: escalations.length, label: 'Active Escalations' },
+    { icon: Eye, value: totalMonitored, label: 'Monitored Lockups' },
+  ];
+
   return (
-    <PageTransition className="space-y-4">
-      {/* Header */}
-      <PageHeader
-        icon={Shield}
-        title="Cadenza Escalations"
-        subtitle="Human-in-the-loop review for escalated lockup transactions"
-      >
-        {escalations.length > 0 && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-coda-brand/15 text-coda-brand text-sm font-bold tabular-nums">
-            <AlertOctagon size={14} />
-            {escalations.length} Active
-          </span>
-        )}
-      </PageHeader>
+    <PageShell
+      title="Cadenza Escalations"
+      subtitle="Human-in-the-loop review for escalated lockup transactions"
+      stats={pageStats}
+    >
 
       {/* Error banner */}
       {error && (
-        <div className="dashboard-card p-4 border-red-500/30 bg-red-500/5">
+        <div className="liquid-glass-card squircle p-4 border-red-500/30 bg-red-500/5">
           <div className="flex items-center gap-2">
             <AlertTriangle size={14} className="text-red-400 flex-shrink-0" />
             <p className="text-xs text-red-400 flex-1">{error}</p>
             <button
               onClick={() => setError(null)}
-              className="liquid-button text-xs text-red-400 cursor-pointer"
+              className="text-xs text-red-400 cursor-pointer hover:text-red-300 transition-colors"
             >
               <span>Dismiss</span>
             </button>
@@ -833,7 +829,7 @@ export function EscalationDashboard() {
 
       {/* Loading state */}
       {loading && (
-        <div className="dashboard-card p-12 flex flex-col items-center justify-center gap-3">
+        <div className="liquid-glass-card squircle p-12 flex flex-col items-center justify-center gap-3">
           <Loader2 size={24} className="animate-spin text-coda-text-muted" />
           <p className="text-sm text-coda-text-muted">Loading escalations...</p>
         </div>
@@ -847,7 +843,7 @@ export function EscalationDashboard() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="dashboard-card p-12 flex flex-col items-center justify-center gap-4"
+            className="liquid-glass-card squircle p-12 flex flex-col items-center justify-center gap-4"
           >
             <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
               <CheckCircle2 size={32} className="text-emerald-400" />
@@ -948,6 +944,6 @@ export function EscalationDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </PageTransition>
+    </PageShell>
   );
 }

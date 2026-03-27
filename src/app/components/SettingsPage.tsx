@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTheme, type ThemePreference } from './ThemeProvider';
 import { useIsAdmin } from '../hooks/useIsAdmin';
 import { callServer } from '../supabaseClient';
-import { PageHeader } from './PageHeader';
-import { PageTransition } from './PageTransition';
+import { PageShell } from './PageShell';
+import type { PageStat } from './PageShell';
+import { WidgetShell } from './dashboard/WidgetShell';
 import { motion } from './motion-shim';
 import {
   Settings, Sun, Moon, Monitor, Wifi, Globe,
-  ChevronDown, ChevronRight, Bell, BellOff,
+  Bell, BellOff,
   AlertTriangle, Trash2, RotateCcw, Timer,
   Layers, Maximize2, Minimize2,
 } from 'lucide-react';
@@ -164,23 +165,29 @@ export function SettingsPage() {
     { key: 'treasuryCycleCompletions',    label: 'Treasury cycle completions',  desc: 'Notify when a full treasury sweep cycle completes' },
   ];
 
+  const themeLabel = preference === 'dark' ? 'Dark' : preference === 'light' ? 'Light' : 'Auto';
+  const pageStats: PageStat[] = [
+    { icon: Sun, value: themeLabel, label: 'Theme' },
+    { icon: Globe, value: isProductionCluster ? 'Solstice' : 'Devnet', label: 'Network' },
+    { icon: Timer, value: refreshInterval === 'off' ? 'Off' : `${refreshInterval}s`, label: 'Auto Refresh' },
+  ];
+
   return (
-    <div className="max-w-2xl mx-auto space-y-8 pb-12">
-      <PageHeader
-        icon={Settings}
+    <div className="pb-12">
+      <PageShell
         title="Settings"
         subtitle="Appearance, network, notifications, and maintenance"
-      />
-
-      <PageTransition className="space-y-5">
+        stats={pageStats}
+      >
+        <div className="space-y-5">
 
         {/* ─────────────────────────────────────────────────────── */}
         {/* 1. Appearance                                          */}
         {/* ─────────────────────────────────────────────────────── */}
-        <CollapsibleCard title="Appearance" icon={Layers} defaultOpen>
+        <WidgetShell title="Appearance" icon={Layers} collapsible defaultOpen>
           {/* Theme selector */}
           <div className="mb-4">
-            <p className="text-[11px] font-medium text-coda-text-muted uppercase tracking-wider mb-3">Theme</p>
+            <p className="text-[11px] font-medium text-coda-text-muted mb-3">Theme</p>
             <div className="grid grid-cols-3 gap-3">
               {themeOptions.map(opt => {
                 const Icon = opt.icon;
@@ -189,18 +196,18 @@ export function SettingsPage() {
                   <button
                     key={opt.pref}
                     onClick={() => setTheme(opt.pref)}
-                    className={`relative flex flex-col items-center p-4 rounded-md transition-colors cursor-pointer ${
+                    className={`relative flex flex-col items-center gap-3 p-5 rounded-xl transition-colors cursor-pointer ${
                       active
                         ? isDark
-                          ? 'bg-white/10 shadow-lg shadow-coda-brand/5'
-                          : 'bg-black/[0.04] shadow-lg shadow-coda-brand/5'
+                          ? 'bg-white/10'
+                          : 'bg-black/[0.04]'
                         : isDark
                           ? 'bg-transparent hover:text-coda-text'
                           : 'bg-transparent hover:text-coda-text'
                     }`}
                   >
                     {active && (
-                      <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${opt.dotColor}`} />
+                      <div className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full ${opt.dotColor}`} />
                     )}
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                       active
@@ -213,7 +220,7 @@ export function SettingsPage() {
                       <p className={`text-[13px] font-medium ${active ? 'text-coda-text' : 'text-coda-text-secondary'}`}>
                         {opt.label}
                       </p>
-                      <p className="text-[10px] text-coda-text-muted mt-0.5">{opt.desc}</p>
+                      <p className="text-[10px] text-coda-text-muted mt-1">{opt.desc}</p>
                     </div>
                   </button>
                 );
@@ -223,7 +230,7 @@ export function SettingsPage() {
 
           {/* Density toggle */}
           <div>
-            <p className="text-[11px] font-medium text-coda-text-muted uppercase tracking-wider mb-3">Density</p>
+            <p className="text-[11px] font-medium text-coda-text-muted mb-3">Density</p>
             <div className="grid grid-cols-2 gap-3">
               {([
                 { value: 'default' as Density, icon: Maximize2, label: 'Default',  desc: 'Standard spacing and padding' },
@@ -235,11 +242,11 @@ export function SettingsPage() {
                   <button
                     key={opt.value}
                     onClick={() => setDensity(opt.value)}
-                    className={`relative flex items-center p-4 text-left rounded-md transition-colors cursor-pointer ${
+                    className={`relative flex items-center gap-3 p-5 text-left rounded-xl transition-colors cursor-pointer ${
                       active
                         ? isDark
-                          ? 'bg-white/10 shadow-lg'
-                          : 'bg-black/[0.04] shadow-lg'
+                          ? 'bg-white/10'
+                          : 'bg-black/[0.04]'
                         : isDark
                           ? 'bg-transparent hover:text-coda-text'
                           : 'bg-transparent hover:text-coda-text'
@@ -259,27 +266,25 @@ export function SettingsPage() {
                       <p className={`text-[13px] font-medium ${active ? 'text-coda-text' : 'text-coda-text-secondary'}`}>
                         {opt.label}
                       </p>
-                      <p className="text-[10px] text-coda-text-muted mt-0.5">{opt.desc}</p>
+                      <p className="text-[10px] text-coda-text-muted mt-1">{opt.desc}</p>
                     </div>
                   </button>
                 );
               })}
             </div>
           </div>
-        </CollapsibleCard>
+        </WidgetShell>
 
         {/* ─────────────────────────────────────────────────────── */}
         {/* 2. Network                                             */}
         {/* ─────────────────────────────────────────────────────── */}
-        <CollapsibleCard title="Network" icon={Wifi} defaultOpen>
+        <WidgetShell title="Network" icon={Wifi} collapsible defaultOpen>
           {/* Network environment (read-only, determined by build config) */}
           <div className="mb-4">
-            <p className="text-[11px] font-medium text-coda-text-muted uppercase tracking-wider mb-3">Environment</p>
+            <p className="text-[11px] font-medium text-coda-text-muted mb-3">Environment</p>
 
             {/* Live status indicator */}
-            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
-              isDark ? 'bg-white/[0.03] border-white/[0.06]' : 'bg-black/[0.02] border-black/[0.04]'
-            }`}>
+            <div className="flex items-center gap-3 py-2">
               <div className="relative flex-shrink-0">
                 <div className={`w-2.5 h-2.5 rounded-full ${isProductionCluster ? 'bg-coda-brand' : 'bg-emerald-500'}`} />
                 <div className={`absolute inset-0 w-2.5 h-2.5 rounded-full animate-pulse ${isProductionCluster ? 'bg-coda-brand' : 'bg-emerald-500'}`} />
@@ -302,34 +307,27 @@ export function SettingsPage() {
             </div>
 
             {/* Network details */}
-            <div className={`mt-3 rounded-xl border overflow-hidden ${
-              isDark ? 'bg-white/[0.02] border-white/[0.06]' : 'bg-black/[0.015] border-black/[0.04]'
-            }`}>
-              <div className="px-3 py-2 border-b border-black/[0.04] dark:border-white/[0.06]">
-                <p className="text-[10px] font-bold text-coda-text-muted uppercase tracking-wider">Active Connection</p>
-              </div>
-              <div className="px-3 py-2 space-y-1.5">
-                {[
-                  { label: 'Cluster', value: import.meta.env.VITE_SOLANA_CLUSTER || 'devnet' },
-                  { label: 'Network', value: isProductionCluster ? 'Solstice Network' : 'Solana Devnet' },
-                  { label: 'Auth Provider', value: (import.meta.env.VITE_AUTH_PROVIDER || 'supabase').toUpperCase() },
-                  { label: 'Explorer', value: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com' },
-                  { label: 'Realtime', value: import.meta.env.VITE_USE_SUPABASE_REALTIME === 'false' ? 'Polling' : 'Supabase Realtime' },
-                  { label: 'Live Data', value: import.meta.env.VITE_USE_LIVE_NETWORK_DATA === 'true' ? 'Enabled' : 'Simulation' },
-                  { label: 'Environment', value: import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development' },
-                ].map(row => (
-                  <div key={row.label} className="flex items-center justify-between gap-4">
-                    <span className="text-[10px] font-mono text-coda-text-muted whitespace-nowrap">{row.label}</span>
-                    <span className="text-[10px] font-mono text-coda-text-secondary truncate text-right">{row.value}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="mt-2 pt-3 border-t border-black/[0.06] dark:border-white/[0.06] space-y-2">
+              {[
+                { label: 'Cluster', value: import.meta.env.VITE_SOLANA_CLUSTER || 'devnet' },
+                { label: 'Network', value: isProductionCluster ? 'Solstice Network' : 'Solana Devnet' },
+                { label: 'Auth Provider', value: (import.meta.env.VITE_AUTH_PROVIDER || 'supabase').toUpperCase() },
+                { label: 'Explorer', value: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com' },
+                { label: 'Realtime', value: import.meta.env.VITE_USE_SUPABASE_REALTIME === 'false' ? 'Polling' : 'Supabase Realtime' },
+                { label: 'Live Data', value: import.meta.env.VITE_USE_LIVE_NETWORK_DATA === 'true' ? 'Enabled' : 'Simulation' },
+                { label: 'Environment', value: import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'development' },
+              ].map(row => (
+                <div key={row.label} className="flex items-center justify-between gap-4">
+                  <span className="text-[10px] font-mono text-coda-text-muted whitespace-nowrap">{row.label}</span>
+                  <span className="text-[10px] font-mono text-coda-text-secondary truncate text-right">{row.value}</span>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Auto-refresh interval */}
           <div>
-            <p className="text-[11px] font-medium text-coda-text-muted uppercase tracking-wider mb-3">
+            <p className="text-[11px] font-medium text-coda-text-muted mb-3">
               Transaction Monitor Refresh
             </p>
             <div className="grid grid-cols-4 gap-2">
@@ -339,11 +337,11 @@ export function SettingsPage() {
                   <button
                     key={opt.value}
                     onClick={() => handleRefreshInterval(opt.value)}
-                    className={`flex items-center justify-center px-3 py-2.5 text-[13px] font-medium rounded-md transition-colors cursor-pointer ${
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 text-[13px] font-medium rounded-xl transition-colors cursor-pointer ${
                       active
                         ? isDark
-                          ? 'bg-white/10 text-coda-text shadow-lg'
-                          : 'bg-black/[0.04] text-coda-text shadow-lg'
+                          ? 'bg-white/10 text-coda-text'
+                          : 'bg-black/[0.04] text-coda-text'
                         : isDark
                           ? 'bg-transparent text-coda-text-secondary hover:text-coda-text'
                           : 'bg-transparent text-coda-text-secondary hover:text-coda-text'
@@ -360,12 +358,12 @@ export function SettingsPage() {
               Set to Off for manual refresh only.
             </p>
           </div>
-        </CollapsibleCard>
+        </WidgetShell>
 
         {/* ─────────────────────────────────────────────────────── */}
         {/* 3. Notifications                                       */}
         {/* ─────────────────────────────────────────────────────── */}
-        <CollapsibleCard title="Notifications" icon={Bell}>
+        <WidgetShell title="Notifications" icon={Bell} collapsible defaultOpen={false}>
           <div className="space-y-1">
             {notifItems.map(item => (
               <NotificationToggle
@@ -381,12 +379,12 @@ export function SettingsPage() {
           <p className="text-[10px] text-coda-text-muted mt-3 leading-relaxed">
             Notifications appear as in-app toasts. No external push or email delivery is configured.
           </p>
-        </CollapsibleCard>
+        </WidgetShell>
 
         {/* ─────────────────────────────────────────────────────── */}
         {/* 4. Danger Zone                                         */}
         {/* ─────────────────────────────────────────────────────── */}
-        {isAdmin && <CollapsibleCard title="Danger Zone" icon={AlertTriangle} variant="danger">
+        {isAdmin && <WidgetShell title="Danger Zone" icon={AlertTriangle} collapsible defaultOpen={false} variant="danger">
           <div className="space-y-3">
             <DangerAction
               icon={RotateCcw}
@@ -410,59 +408,10 @@ export function SettingsPage() {
           <p className="text-[10px] text-coda-text-muted mt-3 leading-relaxed">
             These actions are irreversible. Cached data will be rebuilt on next agent cycle.
           </p>
-        </CollapsibleCard>}
+        </WidgetShell>}
 
-      </PageTransition>
-    </div>
-  );
-}
-
-// ============================================================
-// CollapsibleCard — reusable accordion section
-// ============================================================
-
-function CollapsibleCard({
-  title,
-  icon: Icon,
-  children,
-  defaultOpen = false,
-  variant = 'default',
-}: {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-  variant?: 'default' | 'danger';
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  const iconBg = variant === 'danger'
-    ? 'bg-red-500/10 text-red-500 dark:text-red-400'
-    : 'bg-black/[0.06] dark:bg-white/[0.08] text-coda-text-secondary';
-
-  return (
-    <div className="dashboard-card-subtle overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
-      >
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconBg}`}>
-          <Icon size={15} />
         </div>
-        <span className="font-semibold text-sm text-coda-text flex-1 text-left font-sans">{title}</span>
-        {open
-          ? <ChevronDown size={16} className="text-coda-text-muted" />
-          : <ChevronRight size={16} className="text-coda-text-muted" />
-        }
-      </button>
-      <div
-        className="transition-all duration-200 ease-in-out overflow-hidden"
-        style={{ maxHeight: open ? '2000px' : '0', opacity: open ? 1 : 0 }}
-      >
-        <div className="px-4 pb-4 space-y-4 border-t border-coda-border">
-          {children}
-        </div>
-      </div>
+      </PageShell>
     </div>
   );
 }

@@ -7,8 +7,9 @@ import {
 import { motion, AnimatePresence } from './motion-shim';
 import { Link, Navigate } from 'react-router';
 import { useIsAdmin } from '../hooks/useIsAdmin';
-import { PageHeader } from './PageHeader';
-import { PageTransition } from './PageTransition';
+import { PageShell } from './PageShell';
+import { WidgetShell } from './dashboard/WidgetShell';
+import type { PageStat } from './PageShell';
 import { useBanks } from '../contexts/BanksContext';
 import { callServer } from '../supabaseClient';
 import { useSWRCache, writeSWRCache, readSWRCache, evictSWRCache } from '../hooks/useSWRCache';
@@ -117,8 +118,6 @@ export function ProvingGround() {
   const scenarios = scenariosData ?? [];
   const loadError = scenariosError ? (scenariosError.message || 'Failed to load scenarios') : null;
 
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
-
   // ── Single-bank results ───────────────────────────────────
   const [results, setResults] = useState<Map<string, ScenarioResult>>(new Map());
   const [allSummary, setAllSummary] = useState<ProvingGroundSummary | null>(null);
@@ -210,14 +209,6 @@ export function ProvingGround() {
   const bankNameA = getBankName(bankIdA);
   const bankNameB = getBankName(bankIdB);
 
-  // ── Toggle category collapse ──────────────────────────────
-  const toggleCategory = useCallback((key: string) => {
-    setCollapsedCategories(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      return next;
-    });
-  }, []);
 
   // ── Reset ─────────────────────────────────────────────────
   const resetResults = useCallback(() => {
@@ -467,36 +458,43 @@ export function ProvingGround() {
   // ── No active banks state ─────────────────────────────────
   if (activeBanks.length === 0 && !loadError) {
     return (
-      <div className="space-y-4">
-        <PageHeader icon={FlaskConical} title="Solstice Proving Ground" subtitle="Adversarial scenario testing for agent pipeline resilience" />
-        <PageTransition>
-          <div className="dashboard-card p-12 flex flex-col items-center justify-center text-center" style={{ minHeight: '400px' }}>
-            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
-              <AlertCircle size={28} className="text-coda-text-muted" />
-            </div>
-            <p className="text-sm font-medium text-coda-text mb-1">No Active Banks</p>
-            <p className="text-xs text-coda-text-muted mb-4">
-              Onboard at least one bank before running adversarial tests.
-            </p>
-            <Link
-              to="/setup"
-              className="px-4 py-2 rounded-lg bg-black/[0.06] dark:bg-white/[0.08] text-coda-text text-xs font-medium hover:bg-black/[0.10] dark:hover:bg-white/[0.12] transition-colors"
-            >
-              Go to Setup
-            </Link>
+      <PageShell
+        title="Solstice Proving Ground"
+        subtitle="Adversarial scenario testing for agent pipeline resilience"
+      >
+        <div className="liquid-glass-card squircle p-12 flex flex-col items-center justify-center text-center" style={{ minHeight: '400px' }}>
+          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+            <AlertCircle size={28} className="text-coda-text-muted" />
           </div>
-        </PageTransition>
-      </div>
+          <p className="text-sm font-medium text-coda-text mb-1">No Active Banks</p>
+          <p className="text-xs text-coda-text-muted mb-4">
+            Onboard at least one bank before running adversarial tests.
+          </p>
+          <Link
+            to="/setup"
+            className="px-4 py-2 rounded-lg bg-black/[0.06] dark:bg-white/[0.08] text-coda-text text-xs font-medium hover:bg-black/[0.10] dark:hover:bg-white/[0.12] transition-colors"
+          >
+            Go to Setup
+          </Link>
+        </div>
+      </PageShell>
     );
   }
 
+  const pageStats: PageStat[] = [
+    { icon: Building2, value: activeBanks.length, label: 'Active Banks' },
+    { icon: FlaskConical, value: CATEGORIES.length, label: 'Test Categories' },
+  ];
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <PageHeader icon={FlaskConical} title="Solstice Proving Ground" subtitle="Adversarial scenario testing for agent pipeline resilience" />
+    <PageShell
+      title="Solstice Proving Ground"
+      subtitle="Adversarial scenario testing for agent pipeline resilience"
+      stats={pageStats}
+    >
 
       {/* Toolbar — mode toggle, bank selector, actions */}
-      <div className="dashboard-card-subtle p-2 flex items-center gap-2 overflow-x-auto">
+      <div className="liquid-glass-card squircle p-2 flex items-center gap-2 overflow-x-auto">
         {/* Mode toggle */}
         <div className="flex items-center bg-white/5 rounded-lg border border-white/10 p-0.5">
           <button
@@ -621,9 +619,9 @@ export function ProvingGround() {
       </div>
 
       {/* Content */}
-      <PageTransition className="space-y-0">
+      <div className="space-y-0">
         {loadError ? (
-          <div className="dashboard-card p-8 text-center">
+          <div className="liquid-glass-card squircle p-8 text-center">
             <AlertCircle size={24} className="mx-auto text-red-400 mb-2" />
             <p className="text-sm font-medium text-coda-text mb-1">Backend Unavailable</p>
             <p className="text-xs text-coda-text-muted mb-3">{loadError}</p>
@@ -635,78 +633,55 @@ export function ProvingGround() {
             <div className="w-[38%] flex-shrink-0 space-y-2 overflow-y-auto max-h-[calc(100vh-10rem)] pr-1 scrollbar-thin">
               {grouped.map(cat => {
                 const CatIcon = cat.icon;
-                const isCollapsed = collapsedCategories.has(cat.key);
                 const catResultsA = cat.scenarios.map(s => activeResults.get(s.id)).filter(Boolean);
                 const passedA = catResultsA.filter(r => r?.overall_result === 'PASS').length;
                 const errorsA = catResultsA.filter(r => r?.overall_result === 'ERROR').length;
                 const totalA = catResultsA.length;
 
                 return (
-                  <div key={cat.key} className="dashboard-card-subtle overflow-hidden">
-                    <button
-                      onClick={() => toggleCategory(cat.key)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
-                    >
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                        cat.key === 'dispute' ? 'bg-coda-brand/10' : 'bg-white/5'
-                      }`}>
-                        <CatIcon size={14} className={cat.key === 'dispute' ? 'text-coda-brand' : 'text-coda-text-muted'} />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <span className="text-sm font-medium text-coda-text">{cat.label}</span>
-                        <span className="text-[10px] text-coda-text-muted ml-2">
+                  <WidgetShell
+                    key={cat.key}
+                    title={cat.label}
+                    icon={CatIcon}
+                    collapsible
+                    headerRight={
+                      <>
+                        <span className="text-[10px] text-coda-text-muted">
                           {cat.scenarios.length} scenarios
                         </span>
-                      </div>
-                      {totalA > 0 && (
-                        <span className="text-[10px] font-mono text-coda-text-muted mr-2">
-                          {compareMode ? `A:${passedA}/${totalA}` : `${passedA}/${totalA}`}
-                          {errorsA > 0 && <span className="text-amber-600 dark:text-amber-400 ml-1">{errorsA}err</span>}
-                        </span>
-                      )}
-                      {isCollapsed ? (
-                        <ChevronRight size={14} className="text-coda-text-muted" />
-                      ) : (
-                        <ChevronDown size={14} className="text-coda-text-muted" />
-                      )}
-                    </button>
-
-                    <AnimatePresence initial={false}>
-                      {!isCollapsed && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-2 pb-2 space-y-1">
-                            {cat.scenarios.map(scenario => (
-                              <ScenarioCard
-                                key={scenario.id}
-                                scenario={scenario}
-                                result={activeResults.get(scenario.id)}
-                                resultB={compareMode ? activeResultsB.get(scenario.id) : undefined}
-                                compareMode={compareMode}
-                                bankNameA={compareMode ? bankNameA : undefined}
-                                bankNameB={compareMode ? bankNameB : undefined}
-                                isRunning={currentRunningId === scenario.id}
-                                isSelected={selectedScenarioId === scenario.id}
-                                disabled={isRunningAll || (!!currentRunningId && currentRunningId !== scenario.id) || !canRun}
-                                onRun={() => runScenario(scenario.id)}
-                                onSelect={() => {
-                                  setSelectedScenarioId(scenario.id);
-                                  setAllSummary(null);
-                                  setSummaryA(null);
-                                  setSummaryB(null);
-                                }}
-                              />
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                        {totalA > 0 && (
+                          <span className="text-[10px] font-mono text-coda-text-muted">
+                            {compareMode ? `A:${passedA}/${totalA}` : `${passedA}/${totalA}`}
+                            {errorsA > 0 && <span className="text-amber-600 dark:text-amber-400 ml-1">{errorsA}err</span>}
+                          </span>
+                        )}
+                      </>
+                    }
+                  >
+                    <div className="space-y-1">
+                      {cat.scenarios.map(scenario => (
+                        <ScenarioCard
+                          key={scenario.id}
+                          scenario={scenario}
+                          result={activeResults.get(scenario.id)}
+                          resultB={compareMode ? activeResultsB.get(scenario.id) : undefined}
+                          compareMode={compareMode}
+                          bankNameA={compareMode ? bankNameA : undefined}
+                          bankNameB={compareMode ? bankNameB : undefined}
+                          isRunning={currentRunningId === scenario.id}
+                          isSelected={selectedScenarioId === scenario.id}
+                          disabled={isRunningAll || (!!currentRunningId && currentRunningId !== scenario.id) || !canRun}
+                          onRun={() => runScenario(scenario.id)}
+                          onSelect={() => {
+                            setSelectedScenarioId(scenario.id);
+                            setAllSummary(null);
+                            setSummaryA(null);
+                            setSummaryB(null);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </WidgetShell>
                 );
               })}
             </div>
@@ -721,7 +696,7 @@ export function ProvingGround() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="dashboard-card p-12 flex flex-col items-center justify-center text-center"
+                    className="liquid-glass-card squircle p-12 flex flex-col items-center justify-center text-center"
                     style={{ minHeight: '400px' }}
                   >
                     <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
@@ -751,7 +726,7 @@ export function ProvingGround() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="dashboard-card p-8 flex flex-col items-center justify-center text-center"
+                    className="liquid-glass-card squircle p-8 flex flex-col items-center justify-center text-center"
                     style={{ minHeight: '400px' }}
                   >
                     <Loader2 size={32} className="text-coda-text-muted animate-spin mb-4" />
@@ -780,7 +755,7 @@ export function ProvingGround() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="dashboard-card p-6"
+                    className="liquid-glass-card squircle p-6"
                     style={{ minHeight: '400px' }}
                   >
                     <div className="flex items-center justify-between mb-4">
@@ -924,8 +899,8 @@ export function ProvingGround() {
             </div>
           </div>
         )}
-      </PageTransition>
-    </div>
+      </div>
+    </PageShell>
   );
 }
 

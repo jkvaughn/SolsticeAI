@@ -25,8 +25,9 @@ import type { Bank, Wallet as WalletType, SetupBankRequest } from '../types';
 import { truncateAddress, explorerUrl, formatTokenAmount } from '../types';
 import { useBanks } from '../contexts/BanksContext';
 import { useSWRCache } from '../hooks/useSWRCache';
-import { PageHeader } from './PageHeader';
-import { PageTransition } from './PageTransition';
+import { PageShell } from './PageShell';
+import { WidgetShell } from './dashboard/WidgetShell';
+import type { PageStat } from './PageShell';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -291,6 +292,12 @@ export function SetupPage() {
 
   // Network mode derived from build-time env var (no toggle, no server call)
   const networkMode = isProductionCluster ? 'production' : 'devnet';
+
+  const pageStats: PageStat[] = [
+    { icon: Building2, value: activeBanks.length, label: 'Banks Deployed' },
+    { icon: Globe, value: isProductionCluster ? 'Solstice' : 'Devnet', label: 'Network' },
+    { icon: Coins, value: gasToken, label: 'Gas Token' },
+  ];
 
   // ── Fetch live SOL balances from Solana Devnet RPC ──
   const fetchSolBalances = useCallback(async (bankList: { solana_wallet_pubkey?: string | null }[]) => {
@@ -653,12 +660,11 @@ export function SetupPage() {
   if (!isAdmin) return <Navigate to="/" replace />;
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        icon={Network}
-        title="Solstice Network"
-        subtitle={`Manage member banks and tokenized deposit wallets on ${isProductionCluster ? 'Solstice Network' : 'Solana Devnet'}`}
-      >
+    <PageShell
+      title="Solstice Network"
+      subtitle={`Manage member banks and tokenized deposit wallets on ${isProductionCluster ? 'Solstice Network' : 'Solana Devnet'}`}
+      stats={pageStats}
+      headerActions={
         <div className="flex gap-2">
           <button
             onClick={revalidate}
@@ -676,7 +682,8 @@ export function SetupPage() {
             <span>Add Bank</span>
           </button>
         </div>
-      </PageHeader>
+      }
+    >
 
       {/* Global error display (visible after reset operations) */}
       {deployError && !showForm && (
@@ -695,12 +702,10 @@ export function SetupPage() {
       )}
 
       {/* ── Network Environment Card ── */}
-      <div className="dashboard-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-coda-border/30 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="w-3.5 h-3.5 text-coda-text-muted" />
-            <h2 className="text-sm font-medium dashboard-text">Network Environment</h2>
-          </div>
+      <WidgetShell
+        title="Network Environment"
+        icon={Shield}
+        headerRight={
           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono font-medium ${
             networkMode === 'devnet'
               ? 'bg-coda-brand/15 text-coda-brand border border-coda-brand/20'
@@ -712,38 +717,37 @@ export function SetupPage() {
               <><Building2 className="w-3 h-3" />Solstice Network</>
             )}
           </span>
-        </div>
-        <div className="px-4 py-3">
-          {networkMode === 'devnet' ? (
-            <>
-              <p className="text-xs text-coda-text-secondary leading-relaxed">
-                AI agents are aware this is a <span className="text-coda-brand font-medium">controlled demo environment</span> on
-                Solana Devnet. Token-2022 settlements are treated as the intended infrastructure &mdash;
-                Devnet will <span className="text-coda-text font-medium">not</span> be flagged as an operational risk in risk assessments.
-              </p>
-              <p className="text-[11px] text-coda-text-muted mt-1.5">
-                Agents evaluate transactions purely on financial merit: counterparty reputation, jurisdiction, amount, and purpose codes.
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-xs text-coda-text-secondary leading-relaxed">
-                AI agents operate in <span className="text-coda-text font-medium">production assessment mode</span> on
-                the <span className="text-coda-brand font-medium">Solstice Network</span>.
-                Token-2022 settlements execute on the production SPE with full institutional-grade infrastructure.
-              </p>
-              <p className="text-[11px] text-coda-text-muted mt-1.5">
-                Agents evaluate transactions on financial merit with production-grade risk assessment.
-              </p>
-            </>
-          )}
-        </div>
-      </div>
+        }
+      >
+        {networkMode === 'devnet' ? (
+          <>
+            <p className="text-xs text-coda-text-secondary leading-relaxed">
+              AI agents are aware this is a <span className="text-coda-brand font-medium">controlled demo environment</span> on
+              Solana Devnet. Token-2022 settlements are treated as the intended infrastructure &mdash;
+              Devnet will <span className="text-coda-text font-medium">not</span> be flagged as an operational risk in risk assessments.
+            </p>
+            <p className="text-[11px] text-coda-text-muted mt-1.5">
+              Agents evaluate transactions purely on financial merit: counterparty reputation, jurisdiction, amount, and purpose codes.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-xs text-coda-text-secondary leading-relaxed">
+              AI agents operate in <span className="text-coda-text font-medium">production assessment mode</span> on
+              the <span className="text-coda-brand font-medium">Solstice Network</span>.
+              Token-2022 settlements execute on the production SPE with full institutional-grade infrastructure.
+            </p>
+            <p className="text-[11px] text-coda-text-muted mt-1.5">
+              Agents evaluate transactions on financial merit with production-grade risk assessment.
+            </p>
+          </>
+        )}
+      </WidgetShell>
 
-      <PageTransition className="space-y-4">
+      <div className="space-y-4">
       {/* Onboard Demo Banks Prompt / Awaiting Funding Cards */}
       {!loading && (!allSeedBanksOnboarded || seedCards.some((c) => c.status !== 'active')) && !showForm && (
-        <div className="dashboard-card p-6 mb-6">
+        <div className="liquid-glass-card squircle p-6 mb-6">
           <div className="text-center mb-4">
             <Users className="w-8 h-8 text-coda-text-secondary mx-auto mb-3" />
             <h3 className="font-mono text-sm font-bold dashboard-text mb-1">
@@ -817,7 +821,7 @@ export function SetupPage() {
 
       {/* Add Bank Form */}
       {showForm && (
-        <div className="dashboard-card p-5 mb-6">
+        <div className="liquid-glass-card squircle p-5 mb-6">
           <h2 className="text-sm font-mono font-bold dashboard-text mb-4">Onboard New Bank</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -934,11 +938,7 @@ export function SetupPage() {
       )}
 
       {/* Active Banks Table */}
-      <div className="dashboard-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-coda-border/30">
-          <h2 className="text-sm font-medium dashboard-text">Member Banks</h2>
-        </div>
-
+      <WidgetShell title="Member Banks">
         {loading ? (
           <div className="p-8 text-center">
             <Loader2 className="w-5 h-5 text-coda-text-muted animate-spin mx-auto" />
@@ -976,26 +976,22 @@ export function SetupPage() {
             </table>
           </div>
         )}
-      </div>
+      </WidgetShell>
 
       {/* ── Network Infrastructure: Custodian & Fees Wallet ── */}
-      <div className="dashboard-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-coda-border/30 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Landmark className="w-3.5 h-3.5 text-coda-text-muted" />
-            <h2 className="text-sm font-medium dashboard-text">Network Infrastructure</h2>
-          </div>
-          {custodian && (
-            <button
-              onClick={refreshInfraBalances}
-              className="flex items-center px-2 py-1 bg-transparent text-[10px] text-coda-text liquid-button"
-            >
-              <RefreshCw className="w-2.5 h-2.5" />
-              <span>Refresh</span>
-            </button>
-          )}
-        </div>
-        <div className="px-4 py-4">
+      <WidgetShell
+        title="Network Infrastructure"
+        icon={Landmark}
+        headerRight={custodian && (
+          <button
+            onClick={refreshInfraBalances}
+            className="flex items-center px-2 py-1 bg-transparent text-[10px] text-coda-text liquid-button"
+          >
+            <RefreshCw className="w-2.5 h-2.5" />
+            <span>Refresh</span>
+          </button>
+        )}
+      >
           {infraLoading ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="w-4 h-4 text-coda-text-muted animate-spin" />
@@ -1194,8 +1190,7 @@ export function SetupPage() {
               )}
             </div>
           )}
-        </div>
-      </div>
+      </WidgetShell>
 
       {/* ── Network Fee Protocol (mandatory, enforced) ── */}
       <NetworkFeeProtocolCard />
@@ -1204,7 +1199,7 @@ export function SetupPage() {
       {!loading && banks.length > 0 && (
         <div className="mt-8 pt-6 border-t border-coda-border/20 space-y-3">
           {/* Soft Reset: Reset Tokens */}
-          <div className="dashboard-card-subtle p-4 flex items-center justify-between">
+          <div className="liquid-glass-card squircle p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-coda-text-secondary">Reset Tokens</p>
               <p className="text-[11px] text-coda-text-muted mt-0.5">
@@ -1256,7 +1251,7 @@ export function SetupPage() {
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={resetTokens}
-                    className="squircle-sm bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 text-xs border border-amber-500/20"
+                    className="squircle bg-amber-500/15 text-amber-500 hover:bg-amber-500/25 text-xs border border-amber-500/20"
                   >
                     Reset Tokens
                   </AlertDialogAction>
@@ -1266,7 +1261,7 @@ export function SetupPage() {
           </div>
 
           {/* Nuclear Reset: Reset Network */}
-          <div className="dashboard-card-subtle p-4 flex items-center justify-between">
+          <div className="liquid-glass-card squircle p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-coda-text-secondary">Reset Network</p>
               <p className="text-[11px] text-coda-text-muted mt-0.5">
@@ -1308,7 +1303,7 @@ export function SetupPage() {
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={resetNetwork}
-                    className="squircle-sm bg-red-500/15 text-red-400 hover:bg-red-500/25 text-xs border border-red-500/20"
+                    className="squircle bg-red-500/15 text-red-400 hover:bg-red-500/25 text-xs border border-red-500/20"
                   >
                     Reset Everything
                   </AlertDialogAction>
@@ -1318,8 +1313,8 @@ export function SetupPage() {
           </div>
         </div>
       )}
-      </PageTransition>
-    </div>
+      </div>
+    </PageShell>
   );
 }
 
@@ -1971,20 +1966,17 @@ function NetworkFeeProtocolCard() {
   }, []);
 
   return (
-    <div className="dashboard-card overflow-hidden">
-      <div className="px-4 py-3 border-b border-coda-border/30 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Coins className="w-3.5 h-3.5 text-coda-text-muted" />
-          <h2 className="text-sm font-medium dashboard-text">Network Fee Protocol</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-transparent text-coda-text-secondary border border-black/[0.08] dark:border-white/[0.10]">
-            <Shield className="w-3 h-3" />
-            Mandatory &mdash; Enforced
-          </span>
-        </div>
-      </div>
-      <div className="px-4 py-4 space-y-4">
+    <WidgetShell
+      title="Network Fee Protocol"
+      icon={Coins}
+      headerRight={
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-transparent text-coda-text-secondary border border-black/[0.08] dark:border-white/[0.10]">
+          <Shield className="w-3 h-3" />
+          Mandatory &mdash; Enforced
+        </span>
+      }
+    >
+      <div className="space-y-4">
         {feeLoading ? (
           <div className="flex items-center justify-center py-4">
             <Loader2 className="w-4 h-4 text-coda-text-muted animate-spin" />
@@ -1993,7 +1985,7 @@ function NetworkFeeProtocolCard() {
           <>
             {/* Fee model + rate */}
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-full bg-transparent text-coda-text-secondary">
+              <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-transparent text-coda-text-secondary">
                 {gasToken} Gas-Layer Fee
               </span>
               <span className="text-[10px] text-coda-text-muted font-mono">
@@ -2034,7 +2026,7 @@ function NetworkFeeProtocolCard() {
             {feeInfo?.fees_wallet && (
               <div className="bg-black/[0.03] dark:bg-white/[0.04] rounded-lg p-3 border border-coda-border/50">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] uppercase tracking-wider text-coda-text-muted font-mono">Solstice Network Fees Wallet</span>
+                  <span className="text-[10px] text-coda-text-muted font-mono">Solstice Network Fees Wallet</span>
                   <span className="text-[10px] font-mono text-coda-text-secondary">{feeInfo.fees_wallet.balance?.toFixed(6) ?? '0'} {gasToken} collected</span>
                 </div>
                 <div className="text-[11px] font-mono text-coda-text-muted truncate" title={feeInfo.fees_wallet.wallet_address}>
@@ -2053,6 +2045,6 @@ function NetworkFeeProtocolCard() {
           </>
         )}
       </div>
-    </div>
+    </WidgetShell>
   );
 }
