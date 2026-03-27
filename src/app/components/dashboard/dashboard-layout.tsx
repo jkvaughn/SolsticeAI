@@ -306,19 +306,24 @@ export function DashboardLayout({
                     !sidebarExpanded ? 'cursor-pointer' : 'cursor-default'
                   }`}
                 >
-                  {!sidebarExpanded && isIconHovered === 'logo' ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
+                  {/* Logo — fades out on hover when collapsed */}
+                  <div className={`w-full h-full flex items-center justify-center transition-opacity duration-300 ${
+                    !sidebarExpanded && isIconHovered === 'logo' ? 'opacity-0' : 'opacity-100'
+                  }`}>
+                    <img src={codaIcon} alt="CODA" className="w-[90%] h-[90%] object-contain dark:invert" />
+                  </div>
+                  {/* Expand icon — fades in on hover when collapsed */}
+                  {!sidebarExpanded && (
+                    <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+                      isIconHovered === 'logo' ? 'opacity-40' : 'opacity-0'
+                    }`}>
                       <LottieIcon
                         animationData={sidebarOpenAnim}
                         size={22}
                         trigger="hover"
                         scale={1.15}
-                        className={`transition-[filter] duration-500 opacity-40 ${isDark ? 'invert' : ''}`}
+                        className={`transition-[filter] duration-500 ${isDark ? 'invert' : ''}`}
                       />
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <img src={codaIcon} alt="CODA" className="w-[90%] h-[90%] object-contain dark:invert" />
                     </div>
                   )}
                 </button>

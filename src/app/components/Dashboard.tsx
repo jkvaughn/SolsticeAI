@@ -294,7 +294,7 @@ export function Dashboard() {
           <p className="text-sm dashboard-text-muted mb-4">No banks deployed yet</p>
           <Link
             to="/setup"
-            className="inline-flex items-center px-5 py-2.5 bg-transparent text-sm liquid-button"
+            className="inline-flex items-center px-5 py-2.5 bg-transparent text-sm"
           >
             <span>Go to Setup</span>
             <ArrowRight className="w-3.5 h-3.5" />

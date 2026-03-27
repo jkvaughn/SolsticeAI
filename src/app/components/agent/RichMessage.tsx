@@ -428,7 +428,7 @@ function AgentMessage({ message, onQuickAction }: { message: ChatMessage; onQuic
             {isLongContent && !showFullText && hiddenCount > 0 && (
               <button
                 onClick={() => setShowFullText(true)}
-                className="liquid-button mt-1 flex items-center text-[10px] text-blue-500 dark:text-blue-400"
+                className="mt-1 flex items-center text-[10px] text-blue-500 dark:text-blue-400"
               >
                 <ChevronDown className="w-3 h-3" />
                 <span>Show {hiddenCount} more section{hiddenCount > 1 ? 's' : ''}</span>
@@ -437,7 +437,7 @@ function AgentMessage({ message, onQuickAction }: { message: ChatMessage; onQuic
             {isLongContent && showFullText && (
               <button
                 onClick={() => setShowFullText(false)}
-                className="liquid-button mt-1 flex items-center text-[10px] text-coda-text-muted"
+                className="mt-1 flex items-center text-[10px] text-coda-text-muted"
               >
                 <ChevronDown className="w-3 h-3 rotate-180" />
                 <span>Show less</span>
@@ -485,7 +485,7 @@ function AgentMessage({ message, onQuickAction }: { message: ChatMessage; onQuic
             <div className="ml-auto flex items-center gap-1">
               <button
                 onClick={copyContent}
-                className="liquid-button p-1"
+                className="p-1"
                 title="Copy response"
               >
                 {copied ? (
@@ -583,7 +583,7 @@ function CounterpartyMessage({ message }: { message: ChatMessage }) {
               {hasMore && (
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="liquid-button mt-1 text-[10px] text-coda-brand flex items-center"
+                  className="mt-1 text-[10px] text-coda-brand flex items-center"
                 >
                   {expanded ? (
                     <><ChevronDown className="w-3 h-3 rotate-180" /> <span>Show less</span></>
@@ -1013,14 +1013,14 @@ function ContentSection({ section, onQuickAction }: { section: ContentPart; onQu
             <div className="px-3 pb-3 pt-1 flex items-center gap-2">
               <button
                 onClick={() => onQuickAction('Accept this payment')}
-                className="liquid-button flex items-center px-4 py-2 text-white text-[12px] font-medium"
+                className="flex items-center px-4 py-2 text-white text-[12px] font-medium"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Accept</span>
               </button>
               <button
                 onClick={() => onQuickAction('Reject this payment')}
-                className="liquid-button flex items-center px-4 py-2 bg-red-500/15 text-red-400 text-[12px] font-medium"
+                className="flex items-center px-4 py-2 bg-red-500/15 text-red-400 text-[12px] font-medium"
               >
                 <XCircle className="w-3.5 h-3.5" />
                 <span>Reject</span>

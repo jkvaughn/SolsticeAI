@@ -498,16 +498,17 @@ function DangerAction({
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`liquid-button flex-shrink-0 px-3.5 py-1.5 text-[12px] font-medium cursor-pointer ${
+        className={`liquid-button flex-shrink-0 flex items-center px-3.5 py-1.5 text-[12px] font-medium cursor-pointer ${
           disabled
             ? 'opacity-50 cursor-not-allowed'
             : ''
         } ${
           isDark
-            ? 'bg-red-500/15 text-red-400'
-            : 'bg-red-500/10 text-red-600'
+            ? 'text-coda-text'
+            : 'text-coda-text'
         }`}
       >
+        <Icon size={14} />
         <span>{buttonLabel}</span>
       </button>
     </div>

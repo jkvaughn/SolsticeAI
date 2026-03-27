@@ -128,7 +128,7 @@ export function ActionGuide({
               <button
                 key={idx}
                 onClick={() => onSelectCommand(action.command)}
-                className={`liquid-button text-left px-3 py-2.5 bg-transparent group`}
+                className={`text-left px-3 py-2.5 bg-transparent group`}
               >
                 <div className="flex items-center gap-2 mb-0.5">
                   <cat.icon className={`w-3 h-3 ${cat.color}`} />

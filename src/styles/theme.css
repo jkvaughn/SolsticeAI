@@ -220,7 +220,11 @@
 
 html { font-size: var(--font-size); }
 
-/* Scrollbar theming */
+/* Scrollbar theming — overlay so content doesn't shift */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--coda-scroll-thumb) transparent;
+}
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -231,6 +235,22 @@ html { font-size: var(--font-size); }
 ::-webkit-scrollbar-thumb {
   background: var(--coda-scroll-thumb);
   border-radius: 3px;
+}
+
+/* Make scrollbars overlay content instead of pushing it left */
+[class*="overflow-auto"],
+[class*="overflow-y-auto"],
+[class*="overflow-scroll"],
+[class*="overflow-y-scroll"] {
+  overflow: overlay;
+}
+@supports not (overflow: overlay) {
+  [class*="overflow-auto"],
+  [class*="overflow-y-auto"],
+  [class*="overflow-scroll"],
+  [class*="overflow-y-scroll"] {
+    scrollbar-gutter: stable;
+  }
 }
 
 /* === Solstice Core XD Design System === */

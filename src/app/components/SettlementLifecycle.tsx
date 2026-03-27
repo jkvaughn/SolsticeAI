@@ -524,7 +524,7 @@ export function SettlementLifecycle({ tx, lockup, messages, senderCode, receiver
                         <span className="text-coda-text-muted w-12 shrink-0">Sig:</span>
                         <button
                           onClick={(e) => { e.stopPropagation(); copyText(step.signature!, `sig-${step.step}`); }}
-                          className="liquid-button text-coda-text-secondary flex items-center"
+                          className="text-coda-text-secondary flex items-center"
                         >
                           <span>{truncateAddress(step.signature, 10)}</span>
                           {copied === `sig-${step.step}` ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-2.5 h-2.5" />}
@@ -547,7 +547,7 @@ export function SettlementLifecycle({ tx, lockup, messages, senderCode, receiver
                         <span className="text-coda-text-muted w-12 shrink-0">Mint:</span>
                         <button
                           onClick={(e) => { e.stopPropagation(); copyText(step.mint!, `mint-${step.step}`); }}
-                          className="liquid-button text-coda-text-secondary flex items-center"
+                          className="text-coda-text-secondary flex items-center"
                         >
                           <span>{truncateAddress(step.mint, 10)}</span>
                           {copied === `mint-${step.step}` ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-2.5 h-2.5" />}
@@ -583,7 +583,7 @@ export function SettlementLifecycle({ tx, lockup, messages, senderCode, receiver
               <span className="text-coda-text-muted">Phase 1 Sig:</span>
               <button
                 onClick={() => copyText(tx.solana_tx_signature!, 'primary-sig')}
-                className="liquid-button flex items-center"
+                className="flex items-center"
               >
                 <span>{truncateAddress(tx.solana_tx_signature, 10)}</span>
                 {copied === 'primary-sig' ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-2.5 h-2.5" />}
@@ -597,7 +597,7 @@ export function SettlementLifecycle({ tx, lockup, messages, senderCode, receiver
                 <span className="text-coda-text-muted">Phase 2 Sig:</span>
                 <button
                   onClick={() => copyText(tx.finality_tx_signature!, 'finality-sig')}
-                  className="liquid-button flex items-center"
+                  className="flex items-center"
                 >
                   <span>{truncateAddress(tx.finality_tx_signature, 10)}</span>
                   {copied === 'finality-sig' ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-2.5 h-2.5" />}

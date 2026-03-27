@@ -261,7 +261,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="liquid-button p-1 cursor-pointer text-coda-text-muted"
+      className="p-1 cursor-pointer text-coda-text-muted"
       title="Copy"
     >
       {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
@@ -277,7 +277,7 @@ function FeedbackButton({ type }: { type: 'up' | 'down' }) {
   return (
     <button
       onClick={() => setActive(!active)}
-      className={`liquid-button p-1 cursor-pointer ${
+      className={`p-1 cursor-pointer ${
         active
           ? 'text-coda-brand bg-transparent'
           : 'text-coda-text-muted'
@@ -297,7 +297,7 @@ function ThoughtSection({ reasoning }: { reasoning: string }) {
     <div className="mb-1.5">
       <button
         onClick={() => setOpen(!open)}
-        className="liquid-button flex items-center text-[11px] text-coda-text-muted
+        className="flex items-center text-[11px] text-coda-text-muted
                    cursor-pointer py-0.5"
       >
         <ChevronRight
@@ -364,7 +364,7 @@ function ModeSwitcher({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="liquid-button p-1.5
+        className="p-1.5
                    cursor-pointer text-coda-text-muted"
         title="Switch layout"
       >
@@ -556,13 +556,13 @@ export function GlobalInputBar({
         {/* Left actions */}
         <div className="flex items-center gap-0.5">
           <button
-            className="liquid-button liquid-button-add p-1.5 text-coda-text-muted cursor-pointer"
+            className="p-1.5 text-coda-text-muted cursor-pointer"
             title="Add context"
           >
             <Plus size={16} />
           </button>
           <button
-            className="liquid-button p-1.5 text-coda-text-muted cursor-pointer"
+            className="p-1.5 text-coda-text-muted cursor-pointer"
             title="Settings"
           >
             <SlidersHorizontal size={16} />
@@ -580,7 +580,7 @@ export function GlobalInputBar({
           )}
           <span className="text-xs text-coda-text-muted/60 font-medium mr-1 select-none">Auto</span>
           <button
-            className="liquid-button p-1.5 text-coda-text-muted cursor-pointer"
+            className="p-1.5 text-coda-text-muted cursor-pointer"
             title="Voice input"
           >
             <Mic size={16} />
@@ -588,7 +588,7 @@ export function GlobalInputBar({
           <button
             onClick={() => { if (query.trim()) handleSubmit(query); }}
             disabled={!query.trim() || isLoading}
-            className={`liquid-button p-1.5 flex-shrink-0 cursor-pointer ${
+            className={`p-1.5 flex-shrink-0 cursor-pointer ${
               query.trim() && !isLoading
                 ? 'bg-transparent text-coda-text'
                 : 'bg-transparent text-coda-text-muted cursor-not-allowed'
@@ -701,7 +701,7 @@ export function GlobalInputBar({
           <p className="text-[11px] text-coda-text-muted">Changes applied.</p>
           <button
             onClick={workflowContext.onViewResults}
-            className="liquid-button flex items-center px-3 py-1.5 text-xs font-medium
+            className="flex items-center px-3 py-1.5 text-xs font-medium
                        bg-transparent text-coda-brand
                        cursor-pointer"
           >
@@ -713,7 +713,7 @@ export function GlobalInputBar({
           {workflowContext.showApproval && workflowContext.onApprove && (
             <button
               onClick={workflowContext.onApprove}
-              className="liquid-button px-3 py-1.5 text-xs font-medium cursor-pointer
+              className="px-3 py-1.5 text-xs font-medium cursor-pointer
                          bg-transparent text-coda-brand"
             >
               <span>Apply Changes</span>
@@ -722,7 +722,7 @@ export function GlobalInputBar({
           {workflowContext.onCancel && (
             <button
               onClick={workflowContext.onCancel}
-              className="liquid-button px-3 py-1.5 text-xs cursor-pointer
+              className="px-3 py-1.5 text-xs cursor-pointer
                          bg-transparent text-coda-text-muted"
             >
               <span>Reject</span>
@@ -744,7 +744,7 @@ export function GlobalInputBar({
               if (s.action) s.action();
               else handleSubmit(s.text);
             }}
-            className="liquid-button px-2 py-1 text-[10px] cursor-pointer
+            className="px-2 py-1 text-[10px] cursor-pointer
                        bg-transparent text-coda-text-muted"
           >
             <span>{s.text}</span>
@@ -775,7 +775,7 @@ export function GlobalInputBar({
       {/* Minimize to dot */}
       <button
         onClick={() => setAriaMode('dot')}
-        className="liquid-button p-1.5
+        className="p-1.5
                    cursor-pointer"
         title="Minimize"
       >
@@ -784,7 +784,7 @@ export function GlobalInputBar({
       {/* Close */}
       <button
         onClick={() => setAriaMode('dot')}
-        className="liquid-button p-1.5
+        className="p-1.5
                    cursor-pointer"
         title="Close"
       >
@@ -808,7 +808,7 @@ export function GlobalInputBar({
             exit={{ opacity: 0, scale: 0.5 }}
             transition={{ duration: 0.2, ease: EASE_OUT }}
             onClick={() => setAriaMode('floating')}
-            className="liquid-button fixed bottom-5 right-5 z-50 w-12 h-12
+            className="fixed bottom-5 right-5 z-50 w-12 h-12
                        shadow-lg shadow-black/15 hover:shadow-xl hover:shadow-black/20
                        hover:scale-105 active:scale-95
                        flex items-center justify-center cursor-pointer
