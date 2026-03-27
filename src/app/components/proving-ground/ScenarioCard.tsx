@@ -199,7 +199,7 @@ export function ScenarioCard({
             onClick={(e) => { e.stopPropagation(); onRun(); }}
             disabled={disabled || isRunning}
             className={`
-              liquid-button w-7 h-7 flex items-center justify-center cursor-pointer
+              w-7 h-7 flex items-center justify-center cursor-pointer
               ${isRunning
                 ? 'text-coda-brand'
                 : disabled

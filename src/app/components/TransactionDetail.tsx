@@ -825,7 +825,7 @@ export function TransactionDetail() {
           {error ? 'Failed to load transaction' : 'Transaction not found'}
         </p>
         {error && <p className="text-sm text-red-400/70 font-mono mt-2">{String(error.message || error)}</p>}
-        <button onClick={() => navigate(-1)} className="liquid-button mt-4 text-sm text-blue-500"><span>Go back</span></button>
+        <button onClick={() => navigate(-1)} className="mt-4 text-sm text-blue-500"><span>Go back</span></button>
       </div>
     );
   }
@@ -1715,7 +1715,7 @@ export function TransactionDetail() {
                         <span className="text-[10px] text-coda-text-muted block">Mint</span>
                         <button
                           onClick={() => copyText(lockup.yb_token_mint, 'yb-mint')}
-                          className="liquid-button flex items-center text-[12px] font-mono text-coda-text-muted"
+                          className="flex items-center text-[12px] font-mono text-coda-text-muted"
                         >
                           <span>{truncateAddress(lockup.yb_token_mint, 6)}</span>
                           {copied === 'yb-mint' ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-3 h-3" />}
@@ -1725,7 +1725,7 @@ export function TransactionDetail() {
                         <span className="text-[10px] text-coda-text-muted block">Holder</span>
                         <button
                           onClick={() => copyText(lockup.yb_holder, 'yb-holder')}
-                          className="liquid-button flex items-center text-[12px] font-mono text-coda-text-muted"
+                          className="flex items-center text-[12px] font-mono text-coda-text-muted"
                         >
                           <span>{truncateAddress(lockup.yb_holder, 6)}</span>
                           {copied === 'yb-holder' ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-3 h-3" />}
@@ -1798,7 +1798,7 @@ export function TransactionDetail() {
                         <span className="text-[10px] text-coda-text-muted block">Mint</span>
                         <button
                           onClick={() => copyText(lockup.tb_token_mint, 'tb-mint')}
-                          className="liquid-button flex items-center text-[12px] font-mono text-coda-text-muted"
+                          className="flex items-center text-[12px] font-mono text-coda-text-muted"
                         >
                           <span>{truncateAddress(lockup.tb_token_mint, 6)}</span>
                           {copied === 'tb-mint' ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-3 h-3" />}
@@ -1808,7 +1808,7 @@ export function TransactionDetail() {
                         <span className="text-[10px] text-coda-text-muted block">Holder</span>
                         <button
                           onClick={() => copyText(lockup.tb_holder, 'tb-holder')}
-                          className="liquid-button flex items-center text-[12px] font-mono text-coda-text-muted"
+                          className="flex items-center text-[12px] font-mono text-coda-text-muted"
                         >
                           <span>{truncateAddress(lockup.tb_holder, 6)}</span>
                           {copied === 'tb-holder' ? <CheckCircle2 className="w-3 h-3 text-coda-brand" /> : <Copy className="w-3 h-3" />}
@@ -2106,7 +2106,7 @@ export function TransactionDetail() {
                       />
                       <button
                         onClick={() => setShowReverseConfirm(false)}
-                        className="liquid-button px-3 py-1.5 text-[12px] font-mono text-coda-text-muted"
+                        className="px-3 py-1.5 text-[12px] font-mono text-coda-text-muted"
                       >
                         <span>Cancel</span>
                       </button>

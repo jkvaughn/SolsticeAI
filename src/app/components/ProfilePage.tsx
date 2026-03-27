@@ -204,8 +204,9 @@ export function ProfilePage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="liquid-glass-card squircle p-6 space-y-6"
+          className="liquid-glass-card squircle p-6 flex flex-col"
         >
+          <div className="space-y-6 flex-1">
           {/* Avatar + Name */}
           <div className="flex flex-col items-center text-center space-y-4">
             <div className="w-24 h-24 rounded-full bg-coda-brand flex items-center justify-center shadow-lg">
@@ -230,7 +231,7 @@ export function ProfilePage() {
                   />
                   <button
                     onClick={commitName}
-                    className="liquid-button p-1 cursor-pointer"
+                    className="p-1 cursor-pointer"
                   >
                     <Check size={16} className="text-coda-brand" />
                   </button>
@@ -238,7 +239,7 @@ export function ProfilePage() {
               ) : (
                 <button
                   onClick={() => { setEditBuffer(name); setIsEditingName(true); }}
-                  className="liquid-button group relative cursor-pointer bg-transparent border-none"
+                  className="group relative cursor-pointer bg-transparent border-none"
                 >
                   <h3 className="text-xl font-semibold font-sans text-coda-text text-center">
                     {name}
@@ -295,7 +296,7 @@ export function ProfilePage() {
                   </span>
                   <button
                     onClick={copyUserId}
-                    className="liquid-button p-0.5 cursor-pointer"
+                    className="p-0.5 cursor-pointer"
                     title="Copy account ID"
                   >
                     {copied ? (
@@ -323,6 +324,37 @@ export function ProfilePage() {
                 </span>
               )}
             </div>
+          </div>
+          </div>
+          {/* end space-y-6 wrapper */}
+
+          {/* Sign Out — pinned to bottom of card */}
+          <div className="mt-auto pt-4 -mx-6 -mb-6 px-6 py-3 border-t border-black/[0.06] dark:border-white/[0.06]">
+            {!signOutConfirm ? (
+              <button
+                onClick={() => setSignOutConfirm(true)}
+                className="liquid-button w-full flex items-center justify-center px-6 py-2.5 text-sm font-medium text-coda-text-muted cursor-pointer"
+              >
+                <LogOut size={15} />
+                <span>Sign Out</span>
+              </button>
+            ) : (
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-xs text-red-500">End session?</span>
+                <button
+                  onClick={() => setSignOutConfirm(false)}
+                  className="px-3 py-1.5 text-xs font-medium text-coda-text-secondary cursor-pointer"
+                >
+                  <span>Cancel</span>
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  className="px-3 py-1.5 text-xs font-medium bg-red-500/15 text-red-400 cursor-pointer rounded-lg"
+                >
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
           </div>
 
         </motion.div>
@@ -375,34 +407,6 @@ export function ProfilePage() {
         </motion.div>
       </div>
 
-        {/* ── Sign Out — standalone section ── */}
-        <div className="flex justify-center pt-2">
-          {!signOutConfirm ? (
-            <button
-              onClick={() => setSignOutConfirm(true)}
-              className="liquid-button flex items-center px-6 py-2.5 text-sm font-medium text-coda-text-muted cursor-pointer"
-            >
-              <LogOut size={15} />
-              <span>Sign Out</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-red-500">End session?</span>
-              <button
-                onClick={() => setSignOutConfirm(false)}
-                className="liquid-button px-3 py-1.5 text-xs font-medium text-coda-text-secondary cursor-pointer"
-              >
-                <span>Cancel</span>
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="liquid-button px-3 py-1.5 text-xs font-medium bg-red-500/15 text-red-400 cursor-pointer"
-              >
-                <span>Sign Out</span>
-              </button>
-            </div>
-          )}
-        </div>
       </PageShell>
     </div>
   );

@@ -599,7 +599,7 @@ function EscalationCard({
           <button
             onClick={() => onReverse(item.lockup_id)}
             disabled={resolvingThis}
-            className="liquid-button flex items-center px-4 py-2 text-xs font-medium bg-red-500/10 text-red-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center px-4 py-2 text-xs font-medium bg-red-500/10 text-red-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {resolvingThis ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />}
             <span>Reverse</span>
@@ -608,7 +608,7 @@ function EscalationCard({
           <button
             onClick={() => onApprove(item.lockup_id)}
             disabled={resolvingThis}
-            className="liquid-button flex items-center px-4 py-2 text-xs font-medium text-emerald-400 bg-transparent cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center px-4 py-2 text-xs font-medium text-emerald-400 bg-transparent cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {resolvingThis ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
             <span>Approve</span>

@@ -105,7 +105,7 @@ function SidebarLiveCard({
         </div>
         <button
           onClick={() => navigate(`/transactions/${pipeline.transactionId}`)}
-          className="liquid-button shrink-0 text-[8px] text-coda-text-muted font-mono flex items-center"
+          className="shrink-0 text-[8px] text-coda-text-muted font-mono flex items-center"
           title="View details"
         >
           <ExternalLink className="w-2.5 h-2.5" />
@@ -183,7 +183,7 @@ function SidebarCompletedRow({
           <StepProgressSidebar pipeline={pipeline} />
           <button
             onClick={() => navigate(`/transactions/${pipeline.transactionId}`)}
-            className="liquid-button mt-2 w-full text-center text-[9px] text-coda-text-muted font-mono flex items-center justify-center"
+            className="mt-2 w-full text-center text-[9px] text-coda-text-muted font-mono flex items-center justify-center"
           >
             <ExternalLink className="w-2.5 h-2.5" />
             <span>View Details</span>

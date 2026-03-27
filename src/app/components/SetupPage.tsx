@@ -910,7 +910,7 @@ export function SetupPage() {
               <button
                 type="submit"
                 disabled={deploying || !formName || !formCode}
-                className="flex items-center px-4 py-2 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-coda-text liquid-button"
+                className="flex items-center px-4 py-2 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-coda-text"
               >
                 {deploying ? (
                   <>
@@ -928,7 +928,7 @@ export function SetupPage() {
                 type="button"
                 onClick={() => { setShowForm(false); resetForm(); }}
                 disabled={deploying}
-                className="px-4 py-2 bg-transparent text-xs font-mono text-coda-text disabled:opacity-50 liquid-button"
+                className="px-4 py-2 bg-transparent text-xs font-mono text-coda-text disabled:opacity-50"
               >
                 <span>Cancel</span>
               </button>
@@ -1050,7 +1050,7 @@ export function SetupPage() {
                     }
                   } : setupCustodian}
                   disabled={infraDeploying || activeBanks.length === 0}
-                  className="inline-flex items-center px-4 py-2 bg-transparent disabled:opacity-50 text-coda-text text-sm font-mono liquid-button cursor-pointer disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 bg-transparent disabled:opacity-50 text-coda-text text-sm font-mono cursor-pointer disabled:cursor-not-allowed"
                 >
                   {infraDeploying ? (
                     <>
@@ -1067,7 +1067,7 @@ export function SetupPage() {
                 {changingCustodian && (
                   <button
                     onClick={() => setChangingCustodian(false)}
-                    className="px-3 py-2 bg-transparent text-xs font-mono text-coda-text liquid-button cursor-pointer"
+                    className="px-3 py-2 bg-transparent text-xs font-mono text-coda-text cursor-pointer"
                   >
                     <span>Cancel</span>
                   </button>
@@ -1130,7 +1130,7 @@ export function SetupPage() {
                   }}>
                     <AlertDialogTrigger asChild>
                       <button
-                        className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text liquid-button cursor-pointer"
+                        className="liquid-button inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text cursor-pointer"
                       >
                         <Landmark className="w-3.5 h-3.5" />
                         <span>Reassign Custodian Bank</span>
@@ -1173,7 +1173,7 @@ export function SetupPage() {
                         <AlertDialogAction
                           id="confirm-reassign-btn"
                           disabled={confirmText !== 'REASSIGN'}
-                          className="text-xs font-mono bg-transparent text-coda-text cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed liquid-button"
+                          className="text-xs font-mono bg-transparent text-coda-text cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={() => {
                             setConfirmOpen(false);
                             setConfirmText('');
@@ -1210,7 +1210,7 @@ export function SetupPage() {
               <AlertDialogTrigger asChild>
                 <button
                   disabled={resettingTokens || resetting || seedingDemo || deploying}
-                  className="flex items-center px-3 py-1.5 bg-transparent text-xs text-coda-text disabled:opacity-50 disabled:cursor-not-allowed liquid-button"
+                  className="liquid-button flex items-center px-3 py-1.5 bg-transparent text-xs text-coda-text disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {resettingTokens ? (
                     <>
@@ -1272,7 +1272,7 @@ export function SetupPage() {
               <AlertDialogTrigger asChild>
                 <button
                   disabled={resetting || resettingTokens || seedingDemo || deploying}
-                  className="flex items-center px-3 py-1.5 bg-transparent text-xs text-coda-text disabled:opacity-50 disabled:cursor-not-allowed liquid-button"
+                  className="liquid-button flex items-center px-3 py-1.5 bg-transparent text-xs text-coda-text disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {resetting ? (
                     <>
@@ -1610,7 +1610,7 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
               <button
                 onClick={handleFundWallet}
                 disabled={funding || isFunded}
-                className="inline-flex items-center px-3 py-1.5 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-coda-text liquid-button"
+                className="inline-flex items-center px-3 py-1.5 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-coda-text"
               >
                 {funding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Coins className="w-3 h-3" />}
                 <span>{funding ? 'Funding...' : isFunded ? 'Funded' : `Fund Wallet (100 ${gasToken})`}</span>
@@ -1618,7 +1618,7 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
             ) : (
               <button
                 onClick={handleOpenFaucet}
-                className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text liquid-button"
+                className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text"
               >
                 <Globe className="w-3 h-3" />
                 <span>Open Solana Faucet</span>
@@ -1628,7 +1628,7 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
             <button
               onClick={handleCheckBalance}
               disabled={checkingBalance}
-              className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text disabled:opacity-50 liquid-button"
+              className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text disabled:opacity-50"
             >
               {checkingBalance ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
               <span>Check Balance</span>
@@ -1636,7 +1636,7 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
             <button
               onClick={handleActivate}
               disabled={!isFunded || activating}
-              className="inline-flex items-center px-3 py-1.5 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-coda-text liquid-button"
+              className="inline-flex items-center px-3 py-1.5 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-coda-text"
             >
               {activating ? (
                 <>
@@ -1670,7 +1670,7 @@ function SeedBankCardUI({ card, onActivate, adminEmail }: {
           )}
           <button
             onClick={onActivate}
-            className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text liquid-button"
+            className="inline-flex items-center px-3 py-1.5 bg-transparent text-xs font-mono text-coda-text"
           >
             <RefreshCw className="w-3 h-3" />
             <span>Retry</span>
@@ -1916,7 +1916,7 @@ function InfraWalletCard({
               href={`${import.meta.env.VITE_SOLANA_FAUCET_URL || 'https://faucet.solana.com'}/?address=${walletAddress}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-2 py-1 bg-transparent text-[10px] font-mono text-coda-text-secondary liquid-button"
+              className="inline-flex items-center px-2 py-1 bg-transparent text-[10px] font-mono text-coda-text-secondary"
             >
               <Wallet className="w-3 h-3" />
               <span>Fund via Faucet</span>
@@ -1926,7 +1926,7 @@ function InfraWalletCard({
             <button
               onClick={handleFund}
               disabled={funding}
-              className="inline-flex items-center px-2 py-1 bg-transparent text-[10px] font-mono text-coda-text-secondary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed liquid-button"
+              className="inline-flex items-center px-2 py-1 bg-transparent text-[10px] font-mono text-coda-text-secondary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               <Wallet className="w-3 h-3" />
               <span>{funding ? 'Funding...' : `Fund Wallet (100 ${gasToken})`}</span>

@@ -20,7 +20,7 @@ export function HeartbeatIndicator() {
   return (
     <button
       onClick={() => navigate('/treasury-ops')}
-      className="liquid-button fixed bottom-5 right-5 z-[9999] flex items-center px-4 py-2.5
+      className="fixed bottom-5 right-5 z-[9999] flex items-center px-4 py-2.5
         cursor-pointer
         backdrop-blur-2xl
         shadow-lg

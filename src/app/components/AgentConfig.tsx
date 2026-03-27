@@ -102,7 +102,7 @@ function DollarInput({
         {isDefault ? (
           <span className="text-[10px] text-coda-text-muted font-mono">(network default)</span>
         ) : (
-          <button onClick={onReset} className="liquid-button text-[10px] text-coda-text-muted"><span>Reset</span></button>
+          <button onClick={onReset} className="text-[10px] text-coda-text-muted"><span>Reset</span></button>
         )}
       </div>
       <div className="relative">
@@ -844,7 +844,7 @@ export function AgentConfig() {
                   {isDefaultsTab ? null : isFieldDefault('default_lockup_duration_minutes') ? (
                     <span className="text-[10px] text-coda-text-muted font-mono">(network default)</span>
                   ) : (
-                    <button onClick={() => resetField('default_lockup_duration_minutes')} className="liquid-button text-[10px] text-coda-text-muted"><span>Reset</span></button>
+                    <button onClick={() => resetField('default_lockup_duration_minutes')} className="text-[10px] text-coda-text-muted"><span>Reset</span></button>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -932,7 +932,7 @@ export function AgentConfig() {
                   {isFieldDefault('escalation_velocity_count') ? (
                     <span className="text-[10px] text-coda-text-muted font-mono">(network default)</span>
                   ) : (
-                    <button onClick={() => resetField('escalation_velocity_count')} className="liquid-button text-[10px] text-coda-text-muted"><span>Reset</span></button>
+                    <button onClick={() => resetField('escalation_velocity_count')} className="text-[10px] text-coda-text-muted"><span>Reset</span></button>
                   )}
                 </div>
                 <input
@@ -1059,7 +1059,7 @@ export function AgentConfig() {
                       updateField('risk_deferred_24h_ceiling', defaults.risk_deferred_24h_ceiling);
                       updateField('risk_deferred_72h_ceiling', defaults.risk_deferred_72h_ceiling);
                     }}
-                    className="liquid-button text-[10px] text-coda-text-muted"
+                    className="text-[10px] text-coda-text-muted"
                   >
                     <span>Reset to Network Defaults</span>
                   </button>
@@ -1149,7 +1149,7 @@ export function AgentConfig() {
                     <button
                       onClick={regenerateMandates}
                       disabled={regenerating}
-                      className="liquid-button flex items-center px-2 py-1 text-[10px] font-medium text-coda-text-muted disabled:opacity-40"
+                      className="flex items-center px-2 py-1 text-[10px] font-medium text-coda-text-muted disabled:opacity-40"
                     >
                       <RefreshCw size={10} className={regenerating ? 'animate-spin' : ''} />
                       <span>{regenerating ? 'Regenerating...' : 'Regenerate via Gemini'}</span>

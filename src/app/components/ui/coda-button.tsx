@@ -10,7 +10,7 @@ interface CodaButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 export const CodaButton = React.forwardRef<HTMLButtonElement, CodaButtonProps>(
   ({ className, variant = 'default', size = 'md', children, disabled, ...props }, ref) => {
     const baseStyles =
-      "flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed liquid-button";
+      "flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed";
 
     const sizeStyles = {
       sm: "h-9 px-4 text-sm",
