@@ -75,13 +75,14 @@ export function ProfilePage() {
   // ── Stats from Supabase ──
   const [escalations, setEscalations] = useState<number | null>(null);
   const [settlements, setSettlements] = useState<number | null>(null);
-  const [sessionStart] = useState(() => new Date().toLocaleString());
+  const [pendingActions, setPendingActions] = useState<number | null>(null);
+  const [totalVolume, setTotalVolume] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function fetchStats() {
-      const [escRes, settRes] = await Promise.all([
+      const [escRes, settRes, pendingRes, volumeRes] = await Promise.all([
         supabase
           .from('lockup_tokens')
           .select('id', { count: 'exact', head: true })
@@ -90,11 +91,22 @@ export function ProfilePage() {
           .from('transactions')
           .select('id', { count: 'exact', head: true })
           .eq('status', 'settled'),
+        supabase
+          .from('transactions')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['pending', 'processing', 'lockup']),
+        supabase
+          .from('transactions')
+          .select('amount')
+          .eq('status', 'settled'),
       ]);
 
       if (cancelled) return;
       setEscalations(escRes.count ?? 0);
       setSettlements(settRes.count ?? 0);
+      setPendingActions(pendingRes.count ?? 0);
+      const vol = (volumeRes.data ?? []).reduce((sum: number, t: any) => sum + (Number(t.amount) || 0), 0);
+      setTotalVolume(vol);
     }
 
     fetchStats();
@@ -182,15 +194,22 @@ export function ProfilePage() {
   // ── Initials ──
   const initials = currentUser.avatarInitials;
 
+  const formatVolume = (raw: number) => {
+    const v = raw / 1_000_000; // raw amounts are in token micro-units
+    if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
+    if (v >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
+    return `$${v.toFixed(0)}`;
+  };
+
   const pageStats: PageStat[] = [
+    { icon: Activity, value: totalVolume !== null ? formatVolume(totalVolume) : '...', label: 'Total Volume' },
     { icon: ShieldCheck, value: escalations !== null ? String(escalations) : '...', label: 'Escalations Resolved' },
     { icon: BarChart3, value: settlements !== null ? String(settlements) : '...', label: 'Total Settlements' },
-    { icon: Activity, value: '99.97%', label: 'Network Uptime' },
-    { icon: Clock, value: sessionStart, label: 'Session Start' },
+    { icon: Clock, value: pendingActions !== null ? String(pendingActions) : '...', label: 'Pending Actions' },
   ];
 
   return (
-    <div className="max-w-5xl mx-auto pb-12">
+    <div className="pb-12">
       <PageShell
         title="Profile"
         subtitle="Operator identity, activity & preferences"
