@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  Sliders, ChevronDown, ChevronRight, Save, RefreshCw,
+  Sliders, Save, RefreshCw,
   Check, AlertTriangle, Zap, Shield, BarChart3, Landmark, Globe,
   FileText, Activity, Gauge, Eye, Timer
 } from 'lucide-react';
 import { motion, AnimatePresence } from './motion-shim';
-import { PageHeader } from './PageHeader';
+import { PageShell } from './PageShell';
+import { WidgetShell } from './dashboard/WidgetShell';
+import type { PageStat } from './PageShell';
 import { useBanks } from '../contexts/BanksContext';
 import { callServer } from '../supabaseClient';
 import { useSWRCache, evictSWRCache } from '../hooks/useSWRCache';
@@ -68,50 +70,6 @@ function fmtDollar(n: number): string {
   }).format(n);
 }
 
-// ============================================================
-// Collapsible Card Wrapper
-// ============================================================
-function AgentCard({
-  title, icon: Icon, children, dirty,
-  defaultOpen = true, forceOpen
-}: {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-  dirty?: boolean;
-  defaultOpen?: boolean;
-  forceOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(forceOpen ?? defaultOpen);
-
-  // Respond to forceOpen changes (persona switching)
-  useEffect(() => {
-    if (forceOpen !== undefined) setOpen(forceOpen);
-  }, [forceOpen]);
-  return (
-    <div className="dashboard-card-subtle overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
-      >
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-black/[0.06] dark:bg-white/[0.08]">
-          <Icon size={15} className="text-coda-text-secondary" />
-        </div>
-        <span className="font-semibold text-sm text-coda-text flex-1 text-left">{title}</span>
-        {dirty && <span className="w-2 h-2 rounded-full bg-coda-text-secondary mr-1" title="Unsaved changes" />}
-        {open ? <ChevronDown size={16} className="text-coda-text-muted" /> : <ChevronRight size={16} className="text-coda-text-muted" />}
-      </button>
-      <div
-        className="transition-all duration-200 ease-in-out overflow-hidden"
-        style={{ maxHeight: open ? '2000px' : '0', opacity: open ? 1 : 0 }}
-      >
-        <div className="px-4 pb-4 space-y-4 border-t border-coda-border">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ============================================================
 // Number input with dollar formatting + animated value display
@@ -760,56 +718,51 @@ export function AgentConfig() {
   // ── Render ──────────────────────────────────────────────────
   const d = isDefaultsTab ? defaults : config;
 
+  const selectedBank = activeBanks.find(b => b.id === selectedBankId);
+  const pageStats: PageStat[] = [
+    { icon: Sliders, value: selectedBank ? selectedBank.short_code : 'Defaults', label: 'Active Config' },
+    { icon: Landmark, value: activeBanks.length, label: 'Active Banks' },
+  ];
+
+  const bankTabs = [
+    { id: 'defaults', label: 'Network Defaults' },
+    ...activeBanks.map(bank => ({ id: bank.id, label: bank.short_code })),
+  ];
+
+  const activeBankTab = selectedBankId ?? 'defaults';
+
+  const handleBankTabChange = (tabId: string) => {
+    setSelectedBankId(tabId === 'defaults' ? null : tabId);
+  };
+
+  const swrIndicator = (defaultsValidating || bankValidating) && d ? (
+    <div className="flex items-center gap-1.5 px-2 text-[10px] text-coda-text-muted">
+      <div className="w-3 h-3 border border-coda-brand/30 border-t-coda-brand rounded-full animate-spin" />
+      Syncing
+    </div>
+  ) : undefined;
+
   return (
     <div
-      className="space-y-4 pb-24 transition-[padding] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+      className="pb-24 transition-[padding] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
       style={{ paddingRight: chatPanelOpen ? '348px' : '0px' }}
     >
-      <PageHeader icon={Sliders} title="Agent Configuration" subtitle="Per-bank parameter overrides for the 5-agent pipeline" />
-
-      {/* Bank selector tabs */}
-      <div className="dashboard-card-subtle p-2 flex items-center gap-1 overflow-x-auto">
-        <button
-          onClick={() => setSelectedBankId(null)}
-          className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap rounded-md transition-colors ${
-            isDefaultsTab
-              ? 'bg-coda-surface text-coda-text shadow-sm'
-              : 'text-coda-text-muted hover:text-coda-text'
-          }`}
-        >
-          <span className="inline-block w-2 h-2 rounded-full bg-coda-text-faint mr-1.5 align-middle" />
-          <span>Network Defaults</span>
-        </button>
-        {activeBanks.map((bank) => (
-          <button
-            key={bank.id}
-            onClick={() => setSelectedBankId(bank.id)}
-            className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap rounded-md transition-colors ${
-              selectedBankId === bank.id
-                ? 'text-coda-text'
-                : 'text-coda-text-muted hover:text-coda-text'
-            }`}
-          >
-            <span className="inline-block w-2 h-2 rounded-full bg-coda-text-secondary mr-1.5 align-middle" />
-            <span>{bank.short_code}</span>
-          </button>
-        ))}
-
-        {/* SWR revalidating indicator */}
-        {(defaultsValidating || bankValidating) && d && (
-          <div className="ml-auto flex items-center gap-1.5 px-2 text-[10px] text-coda-text-muted">
-            <div className="w-3 h-3 border border-coda-brand/30 border-t-coda-brand rounded-full animate-spin" />
-            Syncing
-          </div>
-        )}
-      </div>
+      <PageShell
+        title="Agent Configuration"
+        subtitle="Per-bank parameter overrides for the 5-agent pipeline"
+        stats={pageStats}
+        tabs={bankTabs}
+        activeTab={activeBankTab}
+        onTabChange={handleBankTabChange}
+        tabAction={swrIndicator}
+      >
 
       {/* Loading state — only on cold start (no cached data) */}
       {loading && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="dashboard-card-subtle p-8 flex items-center justify-center"
+          className="liquid-glass-card squircle p-8 flex items-center justify-center"
         >
           <div className="w-5 h-5 border-2 border-coda-brand/30 border-t-coda-brand rounded-full animate-spin" />
           <span className="ml-2 text-sm text-coda-text-muted">Loading configuration...</span>
@@ -837,11 +790,12 @@ export function AgentConfig() {
                 : {}}
               style={{ borderRadius: '12px' }}
             >
-            <AgentCard
+            <WidgetShell
               title={`Maestro — Decision Parameters${bankCode ? ` (${bankCode})` : ''}`}
               icon={Zap}
               forceOpen={cardOpenState('maestro')}
               dirty={isDefaultsTab ? false : personalityDirty || !isFieldDefault('auto_accept_ceiling') && configDirty}
+              collapsible
             >
               {/* Personality prompt */}
               {!isDefaultsTab && config && (
@@ -933,7 +887,7 @@ export function AgentConfig() {
                   </button>
                 </div>
               )}
-            </AgentCard>
+            </WidgetShell>
             </motion.div>
 
             {/* ━━ Card 2: Concord — Compliance ━━ */}
@@ -946,7 +900,7 @@ export function AgentConfig() {
                 : {}}
               style={{ borderRadius: '12px' }}
             >
-            <AgentCard title="Concord — Compliance" icon={Shield} dirty={isDefaultsTab ? false : configDirty} forceOpen={cardOpenState('concord')}>
+            <WidgetShell title="Concord — Compliance" icon={Shield} dirty={isDefaultsTab ? false : configDirty} forceOpen={cardOpenState('concord')} collapsible>
               {/* Escalation thresholds */}
               <div className="space-y-3 pt-2">
                 <DollarInput
@@ -1037,7 +991,7 @@ export function AgentConfig() {
                   </button>
                 </div>
               )}
-            </AgentCard>
+            </WidgetShell>
             </motion.div>
 
             {/* ━━ Card 3: Fermata — Risk Engine ━━ */}
@@ -1050,7 +1004,7 @@ export function AgentConfig() {
                 : {}}
               style={{ borderRadius: '12px' }}
             >
-            <AgentCard title="Fermata — Risk Engine" icon={Gauge} dirty={isDefaultsTab ? false : configDirty} forceOpen={cardOpenState('fermata')}>
+            <WidgetShell title="Fermata — Risk Engine" icon={Gauge} dirty={isDefaultsTab ? false : configDirty} forceOpen={cardOpenState('fermata')} collapsible>
               {/* Weight distribution */}
               <div className="space-y-3 pt-2">
                 <label className="text-xs font-medium text-coda-text-secondary flex items-center gap-1.5">
@@ -1129,7 +1083,7 @@ export function AgentConfig() {
                   </button>
                 </div>
               )}
-            </AgentCard>
+            </WidgetShell>
             </motion.div>
 
             {/* ━━ Card 4: Treasury — Autonomous Operations ━━ */}
@@ -1142,7 +1096,7 @@ export function AgentConfig() {
                 : {}}
               style={{ borderRadius: '12px' }}
             >
-            <AgentCard title="Treasury — Autonomous Operations" icon={Landmark} dirty={false} forceOpen={cardOpenState('treasury')}>
+            <WidgetShell title="Treasury — Autonomous Operations" icon={Landmark} dirty={false} forceOpen={cardOpenState('treasury')} collapsible>
               {/* Safety floor slider */}
               <div className="space-y-2 pt-2">
                 <label className="text-xs font-medium text-coda-text-secondary">Minimum Balance Floor</label>
@@ -1261,7 +1215,7 @@ export function AgentConfig() {
                   </button>
                 </div>
               )}
-            </AgentCard>
+            </WidgetShell>
             </motion.div>
 
             {/* ━━ Card 5: Cadenza — Dispute Resolution ━━ */}
@@ -1274,7 +1228,7 @@ export function AgentConfig() {
                 : {}}
               style={{ borderRadius: '12px' }}
             >
-            <AgentCard title="Cadenza — Dispute Resolution" icon={Eye} dirty={isDefaultsTab ? false : configDirty} forceOpen={cardOpenState('cadenza')}>
+            <WidgetShell title="Cadenza — Dispute Resolution" icon={Eye} dirty={isDefaultsTab ? false : configDirty} forceOpen={cardOpenState('cadenza')} collapsible>
               {/* Monitoring sensitivity selector */}
               <div className="space-y-2 pt-2">
                 <label className="text-xs font-medium text-coda-text-secondary">Monitoring Sensitivity</label>
@@ -1412,7 +1366,7 @@ export function AgentConfig() {
                   </button>
                 </div>
               )}
-            </AgentCard>
+            </WidgetShell>
             </motion.div>
 
 
@@ -1460,6 +1414,7 @@ export function AgentConfig() {
         duration={5000}
         chatPanelOpen={chatPanelOpen}
       />
+      </PageShell>
     </div>
   );
 }
