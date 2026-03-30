@@ -1,15 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme, type ThemePreference } from './ThemeProvider';
-import { useIsAdmin } from '../hooks/useIsAdmin';
-import { callServer } from '../supabaseClient';
 import { PageShell } from './PageShell';
 import type { PageStat } from './PageShell';
 import { WidgetShell } from './dashboard/WidgetShell';
-import { motion } from './motion-shim';
 import {
-  Settings, Sun, Moon, Monitor, Wifi, Globe,
+  Sun, Moon, Monitor, Wifi, Globe,
   Bell, BellOff,
-  AlertTriangle, Trash2, RotateCcw, Timer,
+  Timer,
   Layers, Maximize2, Minimize2,
 } from 'lucide-react';
 
@@ -69,7 +66,6 @@ function loadRefreshInterval(): RefreshInterval {
 export function SettingsPage() {
   const { resolved, preference, setTheme } = useTheme();
   const isDark = resolved === 'dark';
-  const isAdmin = useIsAdmin();
 
   // ── Appearance state ──
   const [density, setDensityState] = useState<Density>(loadDensity);
@@ -112,34 +108,6 @@ export function SettingsPage() {
       try { localStorage.setItem('coda-notification-prefs', JSON.stringify(next)); } catch {}
       return next;
     });
-  }, []);
-
-  // ── Danger zone ──
-  const [resettingTokens, setResettingTokens] = useState(false);
-  const [resettingNetwork, setResettingNetwork] = useState(false);
-
-  const handleResetTokens = useCallback(async () => {
-    if (!window.confirm('Reset all tokens? This will clear cached token metadata and balances. This action cannot be undone.')) return;
-    setResettingTokens(true);
-    try {
-      await callServer('/reset-tokens');
-    } catch (err) {
-      console.error('[Settings] Failed to reset tokens:', err);
-    } finally {
-      setResettingTokens(false);
-    }
-  }, []);
-
-  const handleResetNetwork = useCallback(async () => {
-    if (!window.confirm('Reset network configuration? This will restore default Devnet settings and clear all cached RPC state. This action cannot be undone.')) return;
-    setResettingNetwork(true);
-    try {
-      await callServer('/reset-network');
-    } catch (err) {
-      console.error('[Settings] Failed to reset network:', err);
-    } finally {
-      setResettingNetwork(false);
-    }
   }, []);
 
   // ── Theme options ──
@@ -381,35 +349,6 @@ export function SettingsPage() {
           </p>
         </WidgetShell>
 
-        {/* ─────────────────────────────────────────────────────── */}
-        {/* 4. Danger Zone                                         */}
-        {/* ─────────────────────────────────────────────────────── */}
-        {isAdmin && <WidgetShell title="Danger Zone" icon={AlertTriangle} collapsible defaultOpen={false} variant="danger">
-          <div className="space-y-3">
-            <DangerAction
-              icon={RotateCcw}
-              label="Reset Tokens"
-              desc="Clear all cached token metadata, balances, and mint associations."
-              buttonLabel={resettingTokens ? 'Resetting...' : 'Reset Tokens'}
-              disabled={resettingTokens}
-              onClick={handleResetTokens}
-              isDark={isDark}
-            />
-            <DangerAction
-              icon={Trash2}
-              label="Reset Network"
-              desc="Restore default Devnet settings and clear cached RPC state."
-              buttonLabel={resettingNetwork ? 'Resetting...' : 'Reset Network'}
-              disabled={resettingNetwork}
-              onClick={handleResetNetwork}
-              isDark={isDark}
-            />
-          </div>
-          <p className="text-[10px] text-coda-text-muted mt-3 leading-relaxed">
-            These actions are irreversible. Cached data will be rebuilt on next agent cycle.
-          </p>
-        </WidgetShell>}
-
         </div>
       </PageShell>
     </div>
@@ -461,56 +400,3 @@ function NotificationToggle({
   );
 }
 
-// ============================================================
-// DangerAction — single danger-zone action row
-// ============================================================
-
-function DangerAction({
-  icon: Icon,
-  label,
-  desc,
-  buttonLabel,
-  disabled,
-  onClick,
-  isDark,
-}: {
-  icon: React.ElementType;
-  label: string;
-  desc: string;
-  buttonLabel: string;
-  disabled: boolean;
-  onClick: () => void;
-  isDark: boolean;
-}) {
-  return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
-      isDark
-        ? 'bg-red-500/[0.03] border-red-500/10'
-        : 'bg-red-50/50 border-red-200/30'
-    }`}>
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-red-500/10 text-red-500 dark:text-red-400">
-        <Icon size={15} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-medium text-coda-text">{label}</p>
-        <p className="text-[10px] text-coda-text-muted mt-0.5 leading-relaxed">{desc}</p>
-      </div>
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        className={`liquid-button flex-shrink-0 flex items-center px-3.5 py-1.5 text-[12px] font-medium cursor-pointer ${
-          disabled
-            ? 'opacity-50 cursor-not-allowed'
-            : ''
-        } ${
-          isDark
-            ? 'text-coda-text'
-            : 'text-coda-text'
-        }`}
-      >
-        <Icon size={14} />
-        <span>{buttonLabel}</span>
-      </button>
-    </div>
-  );
-}

@@ -11,10 +11,11 @@ import HeartbeatControl from './components/HeartbeatControl';
 import { SettingsPage } from './components/SettingsPage';
 import { ProfilePage } from './components/ProfilePage';
 import { AgentConfig } from './components/AgentConfig';
-import { ProvingGround } from './components/ProvingGround';
+import ProvingGround from './components/ProvingGround';
 import { AuthGate } from './components/AuthGate';
 import { LoginPage } from './components/LoginPage';
-import { NetworkCommand } from './components/NetworkCommand';
+import NetworkCommand from './components/NetworkCommand';
+import { AdminConsole } from './components/AdminConsole';
 
 const LazyEscalationDashboard = lazy(() =>
   import('./components/EscalationDashboard').then(m => ({ default: m.EscalationDashboard }))
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
           { path: 'treasury-ops', Component: HeartbeatControl },
           { path: 'network-command', Component: NetworkCommand },
           { path: 'agent-config', Component: AgentConfig },
+          { path: 'admin', Component: AdminConsole },
           { path: 'proving-ground', Component: ProvingGround },
           { path: 'visualizer', Component: Visualizer },
           { path: 'settings', Component: SettingsPage },

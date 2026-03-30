@@ -10,13 +10,16 @@
  *   - Floating metrics badges (bottom-right, over globe)
  *   - Floating Cadenza status pill (top-right, over globe)
  *   - Event ticker (bottom strip, full width)
+ *
+ * Exports:
+ *   - NetworkCommandContent (named) — embeddable content with containerMode prop
+ *   - NetworkCommand (default) — redirects to /admin?tab=network-command
  */
 
 import { useEffect, useRef } from 'react';
 import { Play, Square, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Navigate } from 'react-router';
-import { useIsAdmin } from '../hooks/useIsAdmin';
 import {
   useNetworkSimulation,
 } from '../hooks/useNetworkSimulation';
@@ -108,13 +111,17 @@ function TickerContent({ events }: { events: typeof import('../hooks/useNetworkS
 }
 
 // ============================================================
-// Main Component
+// Content Component (embeddable)
 // ============================================================
-export function NetworkCommand() {
+
+interface NetworkCommandContentProps {
+  containerMode?: boolean;
+}
+
+export function NetworkCommandContent({ containerMode = false }: NetworkCommandContentProps) {
   const { state: sim, start, stop, reset } = useNetworkSimulation();
   const { sidebarWidth } = useLayout();
   const { theme } = useTheme();
-  const isAdmin = useIsAdmin();
 
   // Ticker scroll via rAF
   const tickerRef = useRef<HTMLDivElement>(null);
@@ -139,16 +146,29 @@ export function NetworkCommand() {
     return () => cancelAnimationFrame(tickerRaf.current);
   }, []);
 
-  if (!isAdmin) return <Navigate to="/" replace />;
-
   const flagCount = sim.cadenzaFlags.length;
 
+  // Outer wrapper classes differ based on mode
+  const outerClass = containerMode
+    ? 'relative h-[calc(100vh-260px)] overflow-hidden z-0 pointer-events-none bg-coda-bg'
+    : 'fixed inset-0 z-0 pointer-events-none bg-coda-bg';
+
+  // Globe positioning
+  const globeClass = containerMode
+    ? 'absolute inset-0 pointer-events-auto'
+    : 'absolute inset-0 pointer-events-auto';
+
+  // Header left offset: skip sidebar calc in container mode
+  const headerStyle = containerMode
+    ? { left: '16px' }
+    : { left: `${sidebarWidth + 16}px` };
+
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none bg-coda-bg">
+    <div className={outerClass}>
 
       {/* ===== GLOBE — FULL BLEED (behind everything) ===== */}
-      <div className="absolute inset-0 pointer-events-auto">
-        <GlobeCanvas sim={sim} sidebarWidth={sidebarWidth} />
+      <div className={globeClass}>
+        <GlobeCanvas sim={sim} sidebarWidth={containerMode ? 0 : sidebarWidth} />
       </div>
 
       {/* ===== HEARTBEAT BANNER ===== */}
@@ -172,7 +192,7 @@ export function NetworkCommand() {
       {/* ===== FLOATING HEADER BAR ===== */}
       <header
         className="absolute top-4 right-4 z-20 flex items-center justify-between px-5 py-3 squircle-lg backdrop-blur-xl border border-black/10 dark:border-white/10 shadow-2xl bg-white/60 dark:bg-white/5 transition-all duration-500 pointer-events-auto"
-        style={{ left: `${sidebarWidth + 16}px` }}
+        style={headerStyle}
       >
         <div>
           <h1 className="text-sm font-semibold tracking-[0.2em] uppercase text-black/80 dark:text-white/90">
@@ -284,4 +304,10 @@ function FloatingMetric({ label, value, variant }: { label: string; value: strin
   );
 }
 
-export default NetworkCommand;
+// ============================================================
+// Route Component (redirect to Admin Console)
+// ============================================================
+
+export default function NetworkCommand() {
+  return <Navigate to="/admin?tab=network-command" replace />;
+}

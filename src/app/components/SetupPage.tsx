@@ -6,28 +6,14 @@ import {
   FlaskConical, Building2, Landmark, Coins
 } from 'lucide-react';
 import { Navigate } from 'react-router';
-import { useIsAdmin } from '../hooks/useIsAdmin';
 import { useAuth } from '../contexts/AuthContext';
 import { callServer } from '../supabaseClient';
-
-// Module-level admin helper — used by both SetupPage and SeedBankCardUI
-function adminCallServer<T = unknown>(
-  route: string,
-  body?: Record<string, unknown> | unknown,
-  maxRetries = 3,
-  email?: string | null,
-) {
-  return callServer<T>(route, body, maxRetries, {
-    headers: email ? { 'X-Admin-Email': email } : {},
-  });
-}
+import { adminCallServer } from '../lib/adminClient';
 import type { Bank, Wallet as WalletType, SetupBankRequest } from '../types';
 import { truncateAddress, explorerUrl, formatTokenAmount } from '../types';
 import { useBanks } from '../contexts/BanksContext';
 import { useSWRCache } from '../hooks/useSWRCache';
-import { PageShell } from './PageShell';
 import { WidgetShell } from './dashboard/WidgetShell';
-import type { PageStat } from './PageShell';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -223,8 +209,7 @@ async function fetchSolBalanceRpc(pubkey: string): Promise<number | null> {
   }
 }
 
-export function SetupPage() {
-  const isAdmin = useIsAdmin();
+export function SetupPageContent() {
   const { userEmail } = useAuth();
   const { banks, isLoading: loading, revalidate } = useBanks();
 
@@ -292,12 +277,6 @@ export function SetupPage() {
 
   // Network mode derived from build-time env var (no toggle, no server call)
   const networkMode = isProductionCluster ? 'production' : 'devnet';
-
-  const pageStats: PageStat[] = [
-    { icon: Building2, value: activeBanks.length, label: 'Banks Deployed' },
-    { icon: Globe, value: isProductionCluster ? 'Solstice' : 'Devnet', label: 'Network' },
-    { icon: Coins, value: gasToken, label: 'Gas Token' },
-  ];
 
   // ── Fetch live SOL balances from Solana Devnet RPC ──
   const fetchSolBalances = useCallback(async (bankList: { solana_wallet_pubkey?: string | null }[]) => {
@@ -657,14 +636,11 @@ export function SetupPage() {
   const defaultWallet = (bank: Bank & { wallets?: WalletType[] }) =>
     bank.wallets?.find((w) => w.is_default) || bank.wallets?.[0];
 
-  if (!isAdmin) return <Navigate to="/" replace />;
-
   return (
-    <PageShell
-      title="Solstice Network"
-      subtitle={`Manage member banks and tokenized deposit wallets on ${isProductionCluster ? 'Solstice Network' : 'Solana Devnet'}`}
-      stats={pageStats}
-      headerActions={
+    <div className="space-y-6">
+      {/* Sticky sub-header with action buttons */}
+      <div className="flex items-center justify-between">
+        <div />
         <div className="flex gap-2">
           <button
             onClick={revalidate}
@@ -682,8 +658,7 @@ export function SetupPage() {
             <span>Add Bank</span>
           </button>
         </div>
-      }
-    >
+      </div>
 
       {/* Global error display (visible after reset operations) */}
       {deployError && !showForm && (
@@ -1314,9 +1289,15 @@ export function SetupPage() {
         </div>
       )}
       </div>
-    </PageShell>
+    </div>
   );
 }
+
+// ── Redirect wrapper — legacy route sends users to AdminConsole ──
+export function SetupPage() {
+  return <Navigate to="/admin?tab=setup" replace />;
+}
+export default SetupPage;
 
 // ── Seed Bank Card Component ───────────────────────────────
 function SeedBankCardUI({ card, onActivate, adminEmail }: {
