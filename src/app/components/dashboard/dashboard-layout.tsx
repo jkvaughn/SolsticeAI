@@ -427,7 +427,7 @@ export function DashboardLayout({
         >
           <div className="flex flex-col min-h-full">
             <EnvironmentBanner />
-            <div className="flex-1 pt-4 pb-4 pr-[10px] relative z-10 min-h-0">
+            <div className={`flex-1 pb-4 pr-[10px] relative z-10 min-h-0 ${import.meta.env.VITE_SERVER_BASE_URL ? 'pt-4' : 'pt-2'}`}>
               {children}
             </div>
           </div>
