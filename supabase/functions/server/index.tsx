@@ -69,6 +69,18 @@ import {
   type ActiveLockupSummary,
 } from "./cadenza-prompts.ts";
 
+// ── WebAuthn / Passkey (SimpleWebAuthn) ──────────────────────
+import {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} from "npm:@simplewebauthn/server@13";
+import type {
+  AuthenticatorTransportFuture,
+} from "npm:@simplewebauthn/types@13";
+import { encodeBase64, decodeBase64 } from "jsr:@std/encoding@1/base64";
+
 const app = new Hono();
 
 // ── SWIFT/BIC Registry ─────────────────────────────────────
@@ -250,7 +262,7 @@ app.use(
   "/*",
   cors({
     origin: "*",
-    allowHeaders: ["Content-Type", "Authorization", "X-Admin-Email"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Admin-Email", "X-Reauth-Token"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Length"],
     maxAge: 600,
@@ -262,12 +274,42 @@ app.use(
 // Used on sensitive endpoints (faucet, setup-bank, setup-custodian, reset).
 const ADMIN_EMAIL = (Deno.env.get("ADMIN_EMAIL") || "jeremy@rimark.io").toLowerCase();
 
+// ── WebAuthn / Passkey configuration ─────────────────────────
+const WEBAUTHN_RP_ID = Deno.env.get("WEBAUTHN_RP_ID") || "localhost";
+const WEBAUTHN_RP_NAME = "CODA Admin";
+const WEBAUTHN_ORIGIN = Deno.env.get("WEBAUTHN_ORIGIN") || "http://localhost:5173";
+
 function requireAdmin(c: any): Response | null {
   const email = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
   if (!email || email !== ADMIN_EMAIL) {
     console.log(`[admin-gate] ✗ Denied: "${email}" (expected: ${ADMIN_EMAIL})`);
     return c.json({ error: "Unauthorized — super admin access required" }, 403);
   }
+  return null; // authorized
+}
+
+// ── Re-auth gate ──────────────────────────────────────────────
+// Validates X-Reauth-Token header against KV store for sensitive actions.
+// Must be called AFTER requireAdmin (needs X-Admin-Email already verified).
+async function requireReauth(c: any): Promise<Response | null> {
+  const token = (c.req.header("X-Reauth-Token") || "").trim();
+  if (!token) {
+    return c.json({ error: "reauth_required", message: "This action requires re-authentication" }, 403);
+  }
+
+  const stored = await kv.get(`reauth:${token}`) as any;
+  if (!stored || !stored.expires_at || stored.expires_at < Date.now()) {
+    // Clean up expired token if it exists
+    if (stored) await kv.del(`reauth:${token}`);
+    return c.json({ error: "reauth_expired", message: "Re-authentication token expired. Please re-authenticate." }, 403);
+  }
+
+  // Verify email matches admin
+  const email = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+  if (stored.email !== email) {
+    return c.json({ error: "reauth_mismatch", message: "Re-authentication token does not match admin session" }, 403);
+  }
+
   return null; // authorized
 }
 
@@ -927,6 +969,8 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
 app.post("/make-server-49d15288/faucet", async (c) => {
   const denied = requireAdmin(c);
   if (denied) return denied;
+  const reauthDenied = await requireReauth(c);
+  if (reauthDenied) return reauthDenied;
   try {
     const body = await c.req.json();
     const { wallet_address, amount } = body;
@@ -1239,6 +1283,8 @@ app.post("/make-server-49d15288/custodian-status", async (c) => {
 app.post("/make-server-49d15288/reassign-custodian", async (c) => {
   const denied = requireAdmin(c);
   if (denied) return denied;
+  const reauthDenied = await requireReauth(c);
+  if (reauthDenied) return reauthDenied;
   try {
     const body = await c.req.json();
     const newCode = (body.custodian_code || "").toUpperCase();
@@ -1285,6 +1331,230 @@ app.post("/make-server-49d15288/reassign-custodian", async (c) => {
   } catch (err) {
     console.log(`[reassign-custodian] ✗ Error: ${(err as Error).message}`);
     return c.json({ error: `Reassign custodian error: ${(err as Error).message}` }, 500);
+  }
+});
+
+// ============================================================
+// ADMIN-REAUTH — Generate a short-lived proof token for sensitive actions
+// ============================================================
+app.post("/make-server-49d15288/admin-reauth", async (c) => {
+  // Require admin email header
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const email = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+
+  // Clean up any expired reauth tokens
+  try {
+    const existing = await kv.scan("reauth:");
+    const now = Date.now();
+    const expired = existing.filter((e: any) => e.value?.expires_at < now);
+    if (expired.length > 0) {
+      await kv.mdel(expired.map((e: any) => e.key));
+    }
+  } catch (_) { /* ignore cleanup errors */ }
+
+  // Generate proof token (5 minute TTL)
+  const token = crypto.randomUUID();
+  const expires_at = Date.now() + 5 * 60 * 1000;
+
+  await kv.set(`reauth:${token}`, { email, expires_at, created_at: Date.now() });
+
+  return c.json({ proof_token: token, expires_in: 300 });
+});
+
+// ============================================================
+// PASSKEY ENDPOINTS — WebAuthn passkey registration & authentication
+// ============================================================
+
+// ── Passkey Status: list registered passkeys for admin ──
+app.get("/make-server-49d15288/passkey-status", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const email = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+  const passkeys = await sql`SELECT id, device_name, created_at, last_used_at FROM admin_passkeys WHERE email = ${email} ORDER BY created_at DESC`;
+
+  return c.json({ has_passkeys: passkeys.length > 0, passkeys });
+});
+
+// ── Passkey Register Options: generate registration challenge ──
+app.post("/make-server-49d15288/passkey-register-options", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const email = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+
+  // Get existing credentials for exclusion
+  const existing = await sql`SELECT credential_id, transports FROM admin_passkeys WHERE email = ${email}`;
+  const excludeCredentials = existing.map((row: any) => ({
+    id: row.credential_id,
+    transports: row.transports || [],
+  }));
+
+  const options = await generateRegistrationOptions({
+    rpName: WEBAUTHN_RP_NAME,
+    rpID: WEBAUTHN_RP_ID,
+    userName: email,
+    userDisplayName: email,
+    excludeCredentials,
+    authenticatorSelection: {
+      residentKey: 'preferred',
+      userVerification: 'preferred',
+    },
+  });
+
+  // Store challenge with 5-minute TTL
+  await kv.set(`passkey-challenge:${email}`, {
+    challenge: options.challenge,
+    type: 'registration',
+    expires_at: Date.now() + 5 * 60 * 1000,
+  });
+
+  return c.json(options);
+});
+
+// ── Passkey Register Verify: validate registration response & store credential ──
+app.post("/make-server-49d15288/passkey-register-verify", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const email = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+  const body = await c.req.json();
+
+  // Retrieve stored challenge
+  const stored = await kv.get(`passkey-challenge:${email}`) as any;
+  if (!stored || stored.type !== 'registration' || stored.expires_at < Date.now()) {
+    return c.json({ error: "Challenge expired or not found" }, 400);
+  }
+
+  try {
+    const verification = await verifyRegistrationResponse({
+      response: body.response,
+      expectedChallenge: stored.challenge,
+      expectedOrigin: WEBAUTHN_ORIGIN,
+      expectedRPID: WEBAUTHN_RP_ID,
+    });
+
+    if (!verification.verified || !verification.registrationInfo) {
+      return c.json({ error: "Verification failed" }, 400);
+    }
+
+    const { credential, credentialDeviceType } = verification.registrationInfo;
+
+    // Store credential (encode publicKey as base64 for Postgres storage)
+    const publicKeyBase64 = encodeBase64(credential.publicKey);
+
+    await sql`INSERT INTO admin_passkeys (email, credential_id, public_key, counter, transports, device_name)
+      VALUES (
+        ${email},
+        ${credential.id},
+        ${publicKeyBase64},
+        ${credential.counter},
+        ${body.device_name ? [credentialDeviceType] : []},
+        ${body.device_name || credentialDeviceType || 'Unknown device'}
+      )`;
+
+    // Clean up challenge
+    await kv.del(`passkey-challenge:${email}`);
+
+    return c.json({ success: true, credential_id: credential.id });
+  } catch (err: any) {
+    console.error("[passkey-register] Error:", err);
+    return c.json({ error: err.message || "Registration verification failed" }, 400);
+  }
+});
+
+// ── Passkey Auth Options: generate authentication challenge ──
+app.post("/make-server-49d15288/passkey-auth-options", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const email = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+
+  // Get existing credentials
+  const credentials = await sql`SELECT credential_id, transports FROM admin_passkeys WHERE email = ${email}`;
+  if (credentials.length === 0) {
+    return c.json({ error: "No passkeys registered" }, 404);
+  }
+
+  const allowCredentials = credentials.map((row: any) => ({
+    id: row.credential_id,
+    transports: row.transports || [],
+  }));
+
+  const options = await generateAuthenticationOptions({
+    rpID: WEBAUTHN_RP_ID,
+    allowCredentials,
+    userVerification: 'preferred',
+  });
+
+  // Store challenge
+  await kv.set(`passkey-challenge:${email}`, {
+    challenge: options.challenge,
+    type: 'authentication',
+    expires_at: Date.now() + 5 * 60 * 1000,
+  });
+
+  return c.json(options);
+});
+
+// ── Passkey Auth Verify: validate authentication response & issue proof token ──
+app.post("/make-server-49d15288/passkey-auth-verify", async (c) => {
+  const denied = requireAdmin(c);
+  if (denied) return denied;
+
+  const email = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+  const body = await c.req.json();
+
+  // Retrieve challenge
+  const stored = await kv.get(`passkey-challenge:${email}`) as any;
+  if (!stored || stored.type !== 'authentication' || stored.expires_at < Date.now()) {
+    return c.json({ error: "Challenge expired or not found" }, 400);
+  }
+
+  // Find the credential
+  const credentialId = body.response?.id;
+  const rows = await sql`SELECT * FROM admin_passkeys WHERE credential_id = ${credentialId} AND email = ${email}`;
+  if (rows.length === 0) {
+    return c.json({ error: "Credential not found" }, 404);
+  }
+
+  const credentialRow = rows[0];
+
+  try {
+    const verification = await verifyAuthenticationResponse({
+      response: body.response,
+      expectedChallenge: stored.challenge,
+      expectedOrigin: WEBAUTHN_ORIGIN,
+      expectedRPID: WEBAUTHN_RP_ID,
+      credential: {
+        id: credentialRow.credential_id,
+        publicKey: decodeBase64(credentialRow.public_key),
+        counter: Number(credentialRow.counter),
+        transports: credentialRow.transports as AuthenticatorTransportFuture[],
+      },
+    });
+
+    if (!verification.verified) {
+      return c.json({ error: "Authentication failed" }, 400);
+    }
+
+    // Update counter and last_used_at
+    await sql`UPDATE admin_passkeys SET counter = ${verification.authenticationInfo.newCounter}, last_used_at = now() WHERE credential_id = ${credentialId}`;
+
+    // Clean up challenge
+    await kv.del(`passkey-challenge:${email}`);
+
+    // Generate proof token (same as /admin-reauth)
+    const token = crypto.randomUUID();
+    const expires_at = Date.now() + 5 * 60 * 1000;
+    await kv.set(`reauth:${token}`, { email, expires_at, created_at: Date.now() });
+
+    return c.json({ proof_token: token, expires_in: 300 });
+  } catch (err: any) {
+    console.error("[passkey-auth] Error:", err);
+    return c.json({ error: err.message || "Authentication verification failed" }, 400);
   }
 });
 
@@ -4507,6 +4777,8 @@ app.post("/make-server-49d15288/expire-transaction", async (c) => {
 app.post("/make-server-49d15288/reset-tokens", async (c) => {
   const denied = requireAdmin(c);
   if (denied) return denied;
+  const reauthDenied = await requireReauth(c);
+  if (reauthDenied) return reauthDenied;
   try {
     console.log("[reset-tokens] Starting soft token reset...");
 
@@ -4609,6 +4881,8 @@ app.post("/make-server-49d15288/reset-tokens", async (c) => {
 app.post("/make-server-49d15288/reset-network", async (c) => {
   const denied = requireAdmin(c);
   if (denied) return denied;
+  const reauthDenied = await requireReauth(c);
+  if (reauthDenied) return reauthDenied;
   try {
     console.log("[reset-network] Starting full network reset...");
 
