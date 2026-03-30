@@ -1049,7 +1049,7 @@ export function AgentTerminal() {
   const RIGHT_SIDEBAR_W = 320;
 
   return (
-    <div className="flex h-full -mt-4 -mr-4 -mb-4" style={{ height: 'calc(100vh - 1rem)' }}>
+    <div className="flex h-full -mt-4 -mr-4 -mb-4" style={{ height: 'calc(100vh - 3.5rem)' }}>
       {/* ═══════════════════════════════════════════════════════
           CENTER: Agent Communication Feed
           ═══════════════════════════════════════════════════════ */}
@@ -1226,7 +1226,7 @@ export function AgentTerminal() {
           RIGHT SIDEBAR: Floating Transaction Panel
           ═══════════════════════════════════════════════════════ */}
       <div
-        className="fixed right-4 top-4 bottom-4 z-50"
+        className={`fixed right-4 bottom-4 z-50 ${import.meta.env.VITE_SERVER_BASE_URL ? 'top-4' : 'top-[52px]'}`}
         style={{ width: RIGHT_SIDEBAR_W }}
       >
         <div className="h-full flex flex-col liquid-glass-elevated squircle-sm overflow-hidden">
