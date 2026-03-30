@@ -6,10 +6,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from './motion-shim';
 import { Link, Navigate } from 'react-router';
-import { useIsAdmin } from '../hooks/useIsAdmin';
-import { PageShell } from './PageShell';
 import { WidgetShell } from './dashboard/WidgetShell';
-import type { PageStat } from './PageShell';
 import { useBanks } from '../contexts/BanksContext';
 import { callServer } from '../supabaseClient';
 import { useSWRCache, writeSWRCache, readSWRCache, evictSWRCache } from '../hooks/useSWRCache';
@@ -90,8 +87,7 @@ function formatEta(ms: number): string {
 
 // ── Main Component ──────────────────────────────────────────
 
-export function ProvingGround() {
-  const isAdmin = useIsAdmin();
+export function ProvingGroundContent() {
   const { banks } = useBanks();
   const activeBanks = (banks || []).filter((b) => b.status === 'active');
 
@@ -453,48 +449,32 @@ export function ProvingGround() {
   const showRunAllProgress = isRunningAll && runAllProgress;
   const showIdle = !showCompareSummary && !showSingleSummary && !showCompareScorecard && !showSingleScorecard && !showRunAllProgress && !currentRunningId;
 
-  if (!isAdmin) return <Navigate to="/" replace />;
-
   // ── No active banks state ─────────────────────────────────
   if (activeBanks.length === 0 && !loadError) {
     return (
-      <PageShell
-        title="Solstice Proving Ground"
-        subtitle="Adversarial scenario testing for agent pipeline resilience"
-      >
-        <div className="liquid-glass-card squircle p-12 flex flex-col items-center justify-center text-center" style={{ minHeight: '400px' }}>
-          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
-            <AlertCircle size={28} className="text-coda-text-muted" />
-          </div>
-          <p className="text-sm font-medium text-coda-text mb-1">No Active Banks</p>
-          <p className="text-xs text-coda-text-muted mb-4">
-            Onboard at least one bank before running adversarial tests.
-          </p>
-          <Link
-            to="/setup"
-            className="px-4 py-2 rounded-lg bg-black/[0.06] dark:bg-white/[0.08] text-coda-text text-xs font-medium hover:bg-black/[0.10] dark:hover:bg-white/[0.12] transition-colors"
-          >
-            Go to Setup
-          </Link>
+      <div className="liquid-glass-card squircle p-12 flex flex-col items-center justify-center text-center" style={{ minHeight: '400px' }}>
+        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+          <AlertCircle size={28} className="text-coda-text-muted" />
         </div>
-      </PageShell>
+        <p className="text-sm font-medium text-coda-text mb-1">No Active Banks</p>
+        <p className="text-xs text-coda-text-muted mb-4">
+          Onboard at least one bank before running adversarial tests.
+        </p>
+        <Link
+          to="/admin?tab=setup"
+          className="px-4 py-2 rounded-lg bg-black/[0.06] dark:bg-white/[0.08] text-coda-text text-xs font-medium hover:bg-black/[0.10] dark:hover:bg-white/[0.12] transition-colors"
+        >
+          Go to Setup
+        </Link>
+      </div>
     );
   }
 
-  const pageStats: PageStat[] = [
-    { icon: Building2, value: activeBanks.length, label: 'Active Banks' },
-    { icon: FlaskConical, value: CATEGORIES.length, label: 'Test Categories' },
-  ];
-
   return (
-    <PageShell
-      title="Solstice Proving Ground"
-      subtitle="Adversarial scenario testing for agent pipeline resilience"
-      stats={pageStats}
-    >
+    <div className="space-y-4">
 
       {/* Toolbar — mode toggle, bank selector, actions */}
-      <div className="liquid-glass-card squircle p-2 flex items-center gap-2 overflow-x-auto">
+      <div className="liquid-glass-card squircle p-2 flex items-center gap-2 overflow-x-auto sticky top-0 z-10">
         {/* Mode toggle */}
         <div className="flex items-center bg-white/5 rounded-lg border border-white/10 p-0.5">
           <button
@@ -900,7 +880,7 @@ export function ProvingGround() {
           </div>
         )}
       </div>
-    </PageShell>
+    </div>
   );
 }
 
@@ -919,4 +899,8 @@ function ResultBadge({ result }: { result: string }) {
   );
 }
 
-export default ProvingGround;
+// ── Redirect wrapper (legacy route) ─────────────────────────
+
+export default function ProvingGround() {
+  return <Navigate to="/admin?tab=proving-ground" replace />;
+}

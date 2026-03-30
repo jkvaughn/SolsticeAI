@@ -6,6 +6,34 @@
 
 ---
 
+## Task 144: Solstice Core XD Design System
+
+---TASK_COMPLETE---
+Step: Task 144 — Solstice Core XD Design System
+Timestamp: 2026-03-24T18:00:00Z
+Status: DONE
+
+### Summary:
+Applied comprehensive Solstice Core XD design system across Treasury Ops, Transaction Monitor, Transaction Detail, and layout components. LiquidGlass elevated cards, squircle borders, frosted glass effects, consistent typography, and unified widget styling throughout the app.
+
+---END_TASK---
+
+---
+
+## Task 143: Animated Lottie Icon System + Sidebar Integration
+
+---TASK_COMPLETE---
+Step: Task 143 — Animated Lottie Icon System + Sidebar Integration
+Timestamp: 2026-03-24T12:00:00Z
+Status: DONE
+
+### Summary:
+Built a reusable `LottieIcon` component and integrated 61+ animated Iconly Pro Lottie icons into the codebase. Replaced all 11 static lucide-react sidebar nav icons with animated Lottie equivalents featuring hover-triggered playback, per-icon scale normalization, dark mode inversion, and smooth section heading transitions.
+
+---END_TASK---
+
+---
+
 ## Task 142: Solstice Network Production Integration
 
 ---TASK_COMPLETE---

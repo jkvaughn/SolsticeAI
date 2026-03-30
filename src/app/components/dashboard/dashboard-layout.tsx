@@ -10,13 +10,11 @@ import { LottieIcon } from "../icons/LottieIcon";
 import {
   dashboard as dashboardAnim,
   aiNeuralNetworks as treasuryAnim,
-  networkWorldOpen as networkCmdAnim,
   transfer as transferAnim,
   eye3 as escalationsAnim,
   blockchainExplorer as explorerAnim,
   networkSquare as networkSetupAnim,
   nodes as agentConfigAnim,
-  platform as platformAnim,
   settings as settingsAnim,
   userProfile as userProfileAnim,
   sidebarOpen as sidebarOpenAnim,
@@ -86,17 +84,19 @@ interface DashboardLayoutProps {
 const opsNav: NavItem[] = [
   { id: 'dashboard',    label: 'Dashboard',       lottieData: dashboardAnim,     lottieScale: 1.05, route: '/' },
   { id: 'treasury-ops', label: 'Treasury Ops',    lottieData: treasuryAnim,      lottieScale: 1.3,  route: '/treasury-ops' },
-  { id: 'network-cmd',  label: 'Network Command', lottieData: networkCmdAnim,    lottieScale: 1.1,  route: '/network-command' },
   { id: 'transactions', label: 'Transactions',    lottieData: transferAnim,      lottieScale: 1.25, route: '/transactions' },
   { id: 'escalations',  label: 'Escalations',     lottieData: escalationsAnim,   lottieScale: 1.35, route: '/escalations' },
   { id: 'visualizer',   label: 'Visualizer',      lottieData: explorerAnim,      lottieScale: 1.2,  route: '/visualizer' },
 ];
 
-// Configuration & Testing — setup, tune, QA
+// Admin — consolidated admin-only tools (visible only to admins)
+const adminNav: NavItem[] = [
+  { id: 'admin', label: 'Admin Console', lottieData: networkSetupAnim, lottieScale: 1.2, route: '/admin' },
+];
+
+// Configuration — agent tuning (visible to all)
 const configNav: NavItem[] = [
-  { id: 'network',        label: 'Network Setup',  lottieData: networkSetupAnim, lottieScale: 1.2,  route: '/setup' },
-  { id: 'agent-config',   label: 'Agent Config',   lottieData: agentConfigAnim,  lottieScale: 1.15, route: '/agent-config' },
-  { id: 'proving-ground', label: 'Proving Ground', lottieData: platformAnim,     lottieScale: 1.25, route: '/proving-ground' },
+  { id: 'agent-config', label: 'Agent Config', lottieData: agentConfigAnim, lottieScale: 1.15, route: '/agent-config' },
 ];
 
 // Bottom — utilities
@@ -108,9 +108,9 @@ const bottomNav: NavItem[] = [
 // PERSONA NAV DIMMING (Task 126)
 // ============================================================
 const PERSONA_PRIMARY_ITEMS: Record<Exclude<PersonaType, null>, string[]> = {
-  compliance: ['escalations', 'transactions', 'proving-ground'],
+  compliance: ['escalations', 'transactions', 'admin'],
   treasury: ['treasury-ops', 'agent-config', 'transactions'],
-  leadership: ['dashboard', 'visualizer', 'network-cmd'],
+  leadership: ['dashboard', 'visualizer', 'admin'],
 };
 
 function isNavDimmed(persona: PersonaType, itemId: string): boolean {
@@ -357,7 +357,22 @@ export function DashboardLayout({
                 {opsNav.map(renderNavButton)}
               </div>
 
-              {/* Divider between ops and config */}
+              {/* Divider between ops and admin */}
+              {isAdmin && (
+                <>
+                  <div className="my-3 mx-1 border-t border-black/[0.06] dark:border-white/[0.06]" />
+                  <div className={`overflow-hidden transition-all duration-500 ease-out ${
+                    sidebarExpanded ? 'max-h-6 opacity-100 mb-2' : 'max-h-0 opacity-0 mb-0'
+                  }`}>
+                    <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3">Admin</p>
+                  </div>
+                  <div className="space-y-1">
+                    {adminNav.map(renderNavButton)}
+                  </div>
+                </>
+              )}
+
+              {/* Divider between admin/ops and config */}
               <div className="my-3 mx-1 border-t border-black/[0.06] dark:border-white/[0.06]" />
 
               <div className={`overflow-hidden transition-all duration-500 ease-out ${
@@ -366,7 +381,7 @@ export function DashboardLayout({
                 <p className="text-[9px] font-mono uppercase tracking-widest text-black/30 dark:text-white/25 px-3">Config</p>
               </div>
               <div className="space-y-1">
-                {configNav.filter(item => isAdmin || item.id === 'agent-config').map(renderNavButton)}
+                {configNav.map(renderNavButton)}
               </div>
             </div>
 
