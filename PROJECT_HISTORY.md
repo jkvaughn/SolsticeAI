@@ -1722,3 +1722,137 @@ Extracted the design system from the Solstice Core XD prototype and applied it a
 | `PROJECT_HISTORY.md` | Appended Task 144 |
 
 ---END_TASK---
+
+---
+
+## Task 145: Visualizer Redesign: Single-Column Manhattan Routing (2026-03-29)
+
+---TASK_COMPLETE---
+Step: Task 145 — Visualizer Redesign: Single-Column Manhattan Routing
+Timestamp: 2026-03-29T12:00:00Z
+Status: DONE
+
+### Summary:
+Complete redesign of the Visualizer page. Replaced the 4+3 grid layout with a single-column bank layout (alphabetically ordered) with infrastructure nodes (Yield Vault, Solstice) on the right side. Implemented clean Manhattan routing with V-H-V (vertical-horizontal-vertical) paths for cross-row bank connections through column gap channels. Fee lines (dashed) route through a separate right-side channel to avoid overlap with settled lines. Added consistent arrow sizing with `markerUnits="userSpaceOnUse"`, proper padding between arrow tips and cards, and neatly nested parallel lines. Transaction Log restyled to match Agent Feed design with clickable rows linking to Transaction Detail pages.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `src/app/components/Visualizer.tsx` | Complete rewrite: single-column layout, V-H-V Manhattan routing, alphabetical bank ordering, Yield Vault/Solstice right-side positioning, fee line separation, Transaction Log restyle with navigation links |
+
+---END_TASK---
+
+---
+
+## Task 146: Scope liquid-button to Admin Actions + Login Page Polish (2026-03-29)
+
+---TASK_COMPLETE---
+Step: Task 146 — Scope liquid-button to Admin Actions + Login Page Polish
+Timestamp: 2026-03-29T14:00:00Z
+Status: DONE
+
+### Summary:
+Reverted `liquid-button` frosted glass style from ~60+ buttons across the app, keeping it only on standalone admin action buttons (Refresh, Add Bank, Reset Tokens, Reset Network, Save agent config, Sign Out). Restored contextual button styles (filled primary, ghost, destructive) for forms, dialogs, toggles, and inline actions. Fixed Login page button spacing, icon alignment, and coloring. Applied liquid-button to SettingsPage danger zone buttons and AgentConfig save buttons.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `src/app/components/LoginPage.tsx` | Removed liquid-button, fixed icon/text spacing and colors |
+| `src/app/components/AgentConfig.tsx` | Removed liquid-button from most buttons, re-added to Save buttons only |
+| `src/app/components/EscalationDashboard.tsx` | Removed liquid-button |
+| `src/app/components/ProfilePage.tsx` | Removed liquid-button from most, kept on Sign Out |
+| `src/app/components/SettingsPage.tsx` | Re-added liquid-button to Reset Tokens/Network buttons |
+| `src/app/components/Dashboard.tsx` | Removed liquid-button |
+| `src/app/components/HeartbeatIndicator.tsx` | Removed liquid-button |
+| `src/app/components/aria/GlobalInputBar.tsx` | Removed liquid-button |
+| `src/app/components/agent/RichMessage.tsx` | Removed liquid-button |
+| `src/app/components/agent/ActionGuide.tsx` | Removed liquid-button |
+| `src/app/components/agent/TransactionSidebar.tsx` | Removed liquid-button |
+| `src/app/components/proving-ground/ScenarioCard.tsx` | Removed liquid-button |
+| `src/app/components/SettlementLifecycle.tsx` | Removed liquid-button |
+| `src/app/components/AgentTerminal.tsx` | Removed liquid-button |
+
+---END_TASK---
+
+---
+
+## Task 147: Profile Page Stats + Layout Polish (2026-03-29)
+
+---TASK_COMPLETE---
+Step: Task 147 — Profile Page Stats + Layout Polish
+Timestamp: 2026-03-29T16:00:00Z
+Status: DONE
+
+### Summary:
+Replaced Session Start and Network Uptime stats on Profile page with Total Volume (aggregated settled transaction value) and Pending Actions (active lockups + unresolved escalations). Reordered stats: Total Volume first. Removed `max-w-5xl` width constraint for full-width layout. Added overlay scrollbar CSS globally to prevent content shift. Moved Sign Out button inside the profile card. Fixed PersonaSwitcher active state from `shadow-lg` to subtle brand border. Restored sidebar collapse/expand button animation synced with CODA logo fade.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `src/app/components/ProfilePage.tsx` | New stats (Total Volume, Pending Actions), reordered, full-width layout, Sign Out in card, PersonaSwitcher border fix |
+| `src/app/components/dashboard/dashboard-layout.tsx` | Sidebar button animation restored |
+| `src/app/styles/globals.css` | Overlay scrollbar CSS for all scrollable containers |
+
+---END_TASK---
+
+---
+
+## Task 148: Environment Banner + Layout Alignment (2026-03-29)
+
+---TASK_COMPLETE---
+Step: Task 148 — Environment Banner + Layout Alignment
+Timestamp: 2026-03-29T18:00:00Z
+Status: DONE
+
+### Summary:
+Polished the LOCAL/STAGING environment banner with rounded corners, proper margins, sticky positioning, and frosted glass effect. Fixed Transaction sidebar top offset to account for banner height. Made content area top padding environment-aware: `pt-4` in prod (no banner, aligns with sidebar top-4) vs `pt-2` in staging (banner provides spacing). Ensured consistent alignment across all pages between sidebar nav and main content area.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `src/app/components/dashboard/dashboard-layout.tsx` | Banner: rounded-xl, mt-4, sticky, frosted glass. Content: env-aware pt-4/pt-2 |
+| `src/app/components/AgentTerminal.tsx` | Transaction sidebar top-[52px] for staging to clear banner |
+
+---END_TASK---
+
+---
+
+## Task 149 Phase 1: Admin Console Consolidation (2026-03-30)
+
+---TASK_COMPLETE---
+Step: Task 149 Phase 1 — Admin Console Consolidation
+Timestamp: 2026-03-30T06:00:00Z
+Status: DONE
+
+### Summary:
+Consolidated four separate admin pages (SetupPage, ProvingGround, NetworkCommand, Danger Zone from Settings) into a unified Admin Console at `/admin` with Radix Tabs navigation. Reorganized sidebar nav into three sections (OPS / ADMIN / CONFIG). Added backward-compatible redirects from legacy routes (`/setup`, `/proving-ground`, `/network-command`) to `/admin` with appropriate tab preselection.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `src/app/components/AdminConsole.tsx` | NEW: Unified admin console with Radix Tabs (Setup, Proving Ground, Network Command, Danger Zone) |
+| `src/app/routes.tsx` | Added `/admin` route, redirect routes for `/setup`, `/proving-ground`, `/network-command` |
+| `src/app/components/dashboard/dashboard-layout.tsx` | Reorganized sidebar nav into OPS / ADMIN / CONFIG sections |
+
+---END_TASK---
+
+---
+
+## Task 149 Phase 2: Re-Auth Gate for Sensitive Admin Actions (2026-03-30)
+
+---TASK_COMPLETE---
+Step: Task 149 Phase 2 — Re-Auth Gate for Sensitive Admin Actions
+Timestamp: 2026-03-30T12:00:00Z
+Status: DONE
+
+### Summary:
+Added `/admin-reauth` backend endpoint with KV-stored proof tokens (5-minute TTL) for re-authentication before sensitive admin actions. Implemented `requireReauth` middleware on 4 sensitive endpoints (`/faucet`, `/reassign-custodian`, `/reset-tokens`, `/reset-network`). Built `ReAuthDialog` frontend component and `useReAuthAction` hook for seamless re-auth flow. Staging environment bypasses re-auth gate for development convenience.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `supabase/functions/server/index.tsx` | Added `/admin-reauth` endpoint, `requireReauth` middleware on 4 sensitive routes, KV proof token storage with 5min TTL |
+| `src/app/components/ReAuthDialog.tsx` | NEW: Re-authentication dialog component |
+| `src/app/hooks/useReAuthAction.ts` | NEW: Hook for wrapping admin actions with re-auth gate, staging bypass |
+
+---END_TASK---

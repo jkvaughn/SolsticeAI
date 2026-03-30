@@ -1,9 +1,9 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-03-29T18:00:00Z
-> Phase: Visualizer redesign (Task 145), UI polish + button scoping (Task 146), Profile page stats (Task 147), Layout alignment fixes (Task 148)
+> Last updated: 2026-03-30T12:00:00Z
+> Phase: Admin Console + Security Hardening (Task 149 — Phase 1 DONE, Phase 2 DONE, Phase 3 WebAuthn Passkey MFA IN PROGRESS)
 > Server version: v7 Task-125 (lockup-route-dedup-iso20022-fix)
-> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-144)
+> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-148)
 
 ---
 
@@ -716,3 +716,46 @@ Polished the LOCAL/STAGING environment banner with rounded corners, proper margi
 | `src/app/components/AgentTerminal.tsx` | Transaction sidebar top-[52px] for staging to clear banner |
 
 ---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 149 Phase 1 — Admin Console Consolidation
+Timestamp: 2026-03-30T06:00:00Z
+Status: DONE
+
+### Summary:
+Consolidated four separate admin pages (SetupPage, ProvingGround, NetworkCommand, Danger Zone from Settings) into a unified Admin Console at `/admin` with Radix Tabs navigation. Reorganized sidebar nav into three sections (OPS / ADMIN / CONFIG). Added backward-compatible redirects from legacy routes (`/setup`, `/proving-ground`, `/network-command`) to `/admin` with appropriate tab preselection.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `src/app/components/AdminConsole.tsx` | NEW: Unified admin console with Radix Tabs (Setup, Proving Ground, Network Command, Danger Zone) |
+| `src/app/routes.tsx` | Added `/admin` route, redirect routes for `/setup`, `/proving-ground`, `/network-command` |
+| `src/app/components/dashboard/dashboard-layout.tsx` | Reorganized sidebar nav into OPS / ADMIN / CONFIG sections |
+
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 149 Phase 2 — Re-Auth Gate for Sensitive Admin Actions
+Timestamp: 2026-03-30T12:00:00Z
+Status: DONE
+
+### Summary:
+Added `/admin-reauth` backend endpoint with KV-stored proof tokens (5-minute TTL) for re-authentication before sensitive admin actions. Implemented `requireReauth` middleware on 4 sensitive endpoints (`/faucet`, `/reassign-custodian`, `/reset-tokens`, `/reset-network`). Built `ReAuthDialog` frontend component and `useReAuthAction` hook for seamless re-auth flow. Staging environment bypasses re-auth gate for development convenience.
+
+### Files modified:
+| File | Change |
+|------|--------|
+| `supabase/functions/server/index.tsx` | Added `/admin-reauth` endpoint, `requireReauth` middleware on 4 sensitive routes, KV proof token storage with 5min TTL |
+| `src/app/components/ReAuthDialog.tsx` | NEW: Re-authentication dialog component |
+| `src/app/hooks/useReAuthAction.ts` | NEW: Hook for wrapping admin actions with re-auth gate, staging bypass |
+
+---END_TASK---
+
+---TASK_IN_PROGRESS---
+Step: Task 149 Phase 3 — WebAuthn Passkey MFA
+Status: IN PROGRESS
+
+### Notes:
+WebAuthn passkey-based multi-factor authentication for admin re-auth flow. Will integrate with the Phase 2 re-auth gate to allow passkey verification as an alternative to password re-entry.
+
+---END_TASK_IN_PROGRESS---

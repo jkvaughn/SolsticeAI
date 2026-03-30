@@ -2,6 +2,9 @@ import { useState, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../ThemeProvider';
 import { adminCallServer } from '../../lib/adminClient';
+import { useReAuthAction } from '../../hooks/useReAuthAction';
+import { ReAuthDialog } from './ReAuthDialog';
+import { PasskeyRegistration } from './PasskeyRegistration';
 import { RotateCcw, Trash2 } from 'lucide-react';
 
 // ============================================================
@@ -66,33 +69,38 @@ export function DangerZoneContent() {
   const { userEmail } = useAuth();
   const { resolved } = useTheme();
   const isDark = resolved === 'dark';
+  const { executeWithReAuth, dialogOpen, setDialogOpen, onAuthenticated, actionDescription } = useReAuthAction();
 
   const [resettingTokens, setResettingTokens] = useState(false);
   const [resettingNetwork, setResettingNetwork] = useState(false);
 
-  const handleResetTokens = useCallback(async () => {
-    if (!window.confirm('Reset all tokens? This will clear cached token metadata and balances. This action cannot be undone.')) return;
-    setResettingTokens(true);
-    try {
-      await adminCallServer('/reset-tokens', undefined, 3, userEmail);
-    } catch (err) {
-      console.error('[DangerZone] Failed to reset tokens:', err);
-    } finally {
-      setResettingTokens(false);
-    }
-  }, [userEmail]);
+  const handleResetTokens = useCallback(() => {
+    executeWithReAuth('Reset Tokens', async (token) => {
+      if (!window.confirm('Reset all tokens? This will clear cached token metadata and balances. This action cannot be undone.')) return;
+      setResettingTokens(true);
+      try {
+        await adminCallServer('/reset-tokens', undefined, 3, userEmail, { 'X-Reauth-Token': token });
+      } catch (err) {
+        console.error('[DangerZone] Failed to reset tokens:', err);
+      } finally {
+        setResettingTokens(false);
+      }
+    });
+  }, [userEmail, executeWithReAuth]);
 
-  const handleResetNetwork = useCallback(async () => {
-    if (!window.confirm('Reset network configuration? This will restore default Devnet settings and clear all cached RPC state. This action cannot be undone.')) return;
-    setResettingNetwork(true);
-    try {
-      await adminCallServer('/reset-network', undefined, 3, userEmail);
-    } catch (err) {
-      console.error('[DangerZone] Failed to reset network:', err);
-    } finally {
-      setResettingNetwork(false);
-    }
-  }, [userEmail]);
+  const handleResetNetwork = useCallback(() => {
+    executeWithReAuth('Reset Network', async (token) => {
+      if (!window.confirm('Reset network configuration? This will restore default Devnet settings and clear all cached RPC state. This action cannot be undone.')) return;
+      setResettingNetwork(true);
+      try {
+        await adminCallServer('/reset-network', undefined, 3, userEmail, { 'X-Reauth-Token': token });
+      } catch (err) {
+        console.error('[DangerZone] Failed to reset network:', err);
+      } finally {
+        setResettingNetwork(false);
+      }
+    });
+  }, [userEmail, executeWithReAuth]);
 
   return (
     <div className="space-y-3">
@@ -117,6 +125,13 @@ export function DangerZoneContent() {
       <p className="text-[10px] text-coda-text-muted mt-3 leading-relaxed">
         These actions are irreversible. Cached data will be rebuilt on next agent cycle.
       </p>
+      <ReAuthDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onAuthenticated={onAuthenticated}
+        actionDescription={actionDescription}
+      />
+      <PasskeyRegistration />
     </div>
   );
 }
