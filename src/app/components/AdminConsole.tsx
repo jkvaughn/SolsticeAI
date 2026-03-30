@@ -1,19 +1,27 @@
 import { useSearchParams, Navigate } from 'react-router';
 import { useIsAdmin } from '../hooks/useIsAdmin';
-import { PageShell } from './PageShell';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
+import { PageShell, type PageStat, type PageTab } from './PageShell';
 import { SetupPageContent } from './SetupPage';
 import { ProvingGroundContent } from './ProvingGround';
 import { NetworkCommandContent } from './NetworkCommand';
 import DangerZoneContent from './admin/DangerZoneContent';
-import { Settings, Network, FlaskConical, Globe, AlertTriangle } from 'lucide-react';
+import { useBanks } from '../contexts/BanksContext';
+import { Building2, Coins, FlaskConical, Shield } from 'lucide-react';
 
 const VALID_TABS = ['setup', 'proving-ground', 'network-command', 'danger-zone'] as const;
 type AdminTab = (typeof VALID_TABS)[number];
 
+const TABS: PageTab[] = [
+  { id: 'setup', label: 'Network Setup' },
+  { id: 'proving-ground', label: 'Proving Ground' },
+  { id: 'network-command', label: 'Network Command' },
+  { id: 'danger-zone', label: 'Danger Zone' },
+];
+
 export function AdminConsole() {
   const isAdmin = useIsAdmin();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { banks } = useBanks();
 
   if (!isAdmin) return <Navigate to="/" replace />;
 
@@ -22,57 +30,33 @@ export function AdminConsole() {
     ? (rawTab as AdminTab)
     : 'setup';
 
-  const handleTabChange = (value: string) => {
-    setSearchParams({ tab: value }, { replace: true });
+  const handleTabChange = (tabId: string) => {
+    setSearchParams({ tab: tabId }, { replace: true });
   };
 
-  const triggerClass = [
-    'relative px-4 py-2 text-sm font-medium rounded-none border-b-2 border-transparent',
-    'text-coda-text-muted hover:text-coda-text transition-colors duration-200',
-    'data-[state=active]:border-black data-[state=active]:text-coda-text',
-    'dark:data-[state=active]:border-white dark:data-[state=active]:text-coda-text',
-    'bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none',
-    'cursor-pointer',
-  ].join(' ');
+  const activeBanks = banks?.filter((b: any) => b.status === 'active') ?? [];
+  const totalLiquidity = activeBanks.reduce((sum: number, b: any) => sum + (b.balance ?? 0), 0);
+
+  const stats: PageStat[] = [
+    { icon: Building2, value: activeBanks.length, label: 'Active Banks' },
+    { icon: Coins, value: `$${(totalLiquidity / 1_000_000).toFixed(0)}M`, label: 'Total Liquidity' },
+    { icon: FlaskConical, value: '4', label: 'Test Categories' },
+    { icon: Shield, value: 'Admin', label: 'Access Level' },
+  ];
 
   return (
     <PageShell
       title="Admin Console"
       subtitle="Network configuration, testing, and maintenance"
+      stats={stats}
+      tabs={TABS}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
     >
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="w-full justify-start gap-1 bg-transparent border-b border-black/[0.06] dark:border-white/[0.06] rounded-none px-0 pb-0 h-auto">
-          <TabsTrigger value="setup" className={triggerClass}>
-            <Network size={14} className="mr-1.5 opacity-60" />
-            Network Setup
-          </TabsTrigger>
-          <TabsTrigger value="proving-ground" className={triggerClass}>
-            <FlaskConical size={14} className="mr-1.5 opacity-60" />
-            Proving Ground
-          </TabsTrigger>
-          <TabsTrigger value="network-command" className={triggerClass}>
-            <Globe size={14} className="mr-1.5 opacity-60" />
-            Network Command
-          </TabsTrigger>
-          <TabsTrigger value="danger-zone" className={triggerClass}>
-            <AlertTriangle size={14} className="mr-1.5 opacity-60" />
-            Danger Zone
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="setup" className="mt-4">
-          <SetupPageContent />
-        </TabsContent>
-        <TabsContent value="proving-ground" className="mt-4">
-          <ProvingGroundContent />
-        </TabsContent>
-        <TabsContent value="network-command" className="mt-4">
-          <NetworkCommandContent containerMode />
-        </TabsContent>
-        <TabsContent value="danger-zone" className="mt-4">
-          <DangerZoneContent />
-        </TabsContent>
-      </Tabs>
+      {activeTab === 'setup' && <SetupPageContent />}
+      {activeTab === 'proving-ground' && <ProvingGroundContent />}
+      {activeTab === 'network-command' && <NetworkCommandContent containerMode />}
+      {activeTab === 'danger-zone' && <DangerZoneContent />}
     </PageShell>
   );
 }
