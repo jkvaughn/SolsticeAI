@@ -3,15 +3,18 @@ import { useTheme, type ThemePreference } from './ThemeProvider';
 import { PageShell } from './PageShell';
 import type { PageStat } from './PageShell';
 import { WidgetShell } from './dashboard/WidgetShell';
+import { SecuritySection } from './settings/SecuritySection';
 import {
   Sun, Moon, Monitor, Wifi, Globe,
   Bell, BellOff,
-  Timer,
+  Timer, Shield,
   Layers, Maximize2, Minimize2,
 } from 'lucide-react';
+import { userCallServer } from '../lib/userClient';
+import { useAuth } from '../contexts/AuthContext';
 
 // ============================================================
-// Settings Page — Appearance, Network, Notifications, Danger Zone
+// Settings Page — Security, Appearance, Network, Notifications
 // ============================================================
 
 // ── Types ──
@@ -66,6 +69,16 @@ function loadRefreshInterval(): RefreshInterval {
 export function SettingsPage() {
   const { resolved, preference, setTheme } = useTheme();
   const isDark = resolved === 'dark';
+  const { userEmail } = useAuth();
+
+  // ── Security stat ──
+  const [passkeyCount, setPasskeyCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!userEmail) return;
+    userCallServer<{ has_passkeys: boolean; passkeys: unknown[] }>('/user/passkey-status', userEmail)
+      .then(data => setPasskeyCount(data.passkeys?.length ?? 0))
+      .catch(() => setPasskeyCount(null));
+  }, [userEmail]);
 
   // ── Appearance state ──
   const [density, setDensityState] = useState<Density>(loadDensity);
@@ -100,6 +113,8 @@ export function SettingsPage() {
   }, []);
 
   // ── Notification state ──
+  // TODO: Wire notification prefs through useUserPreferences for server sync.
+  // Currently uses localStorage only; server sync will be added in a future pass.
   const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(loadNotificationPrefs);
 
   const toggleNotif = useCallback((key: keyof NotificationPrefs) => {
@@ -134,23 +149,29 @@ export function SettingsPage() {
   ];
 
   const themeLabel = preference === 'dark' ? 'Dark' : preference === 'light' ? 'Light' : 'Auto';
+  const securityValue = passkeyCount === null ? 'Not set up' : passkeyCount === 0 ? 'Not set up' : `${passkeyCount} passkey${passkeyCount > 1 ? 's' : ''}`;
   const pageStats: PageStat[] = [
     { icon: Sun, value: themeLabel, label: 'Theme' },
     { icon: Globe, value: isProductionCluster ? 'Solstice' : 'Devnet', label: 'Network' },
-    { icon: Timer, value: refreshInterval === 'off' ? 'Off' : `${refreshInterval}s`, label: 'Auto Refresh' },
+    { icon: Shield, value: securityValue, label: 'Security' },
   ];
 
   return (
     <div className="pb-12">
       <PageShell
         title="Settings"
-        subtitle="Appearance, network, notifications, and maintenance"
+        subtitle="Security, appearance, network, and notifications"
         stats={pageStats}
       >
         <div className="space-y-5">
 
         {/* ─────────────────────────────────────────────────────── */}
-        {/* 1. Appearance                                          */}
+        {/* 1. Security                                            */}
+        {/* ─────────────────────────────────────────────────────── */}
+        <SecuritySection />
+
+        {/* ─────────────────────────────────────────────────────── */}
+        {/* 2. Appearance                                          */}
         {/* ─────────────────────────────────────────────────────── */}
         <WidgetShell title="Appearance" icon={Layers} collapsible defaultOpen>
           {/* Theme selector */}
@@ -244,7 +265,7 @@ export function SettingsPage() {
         </WidgetShell>
 
         {/* ─────────────────────────────────────────────────────── */}
-        {/* 2. Network                                             */}
+        {/* 3. Network                                             */}
         {/* ─────────────────────────────────────────────────────── */}
         <WidgetShell title="Network" icon={Wifi} collapsible defaultOpen>
           {/* Network environment (read-only, determined by build config) */}
@@ -329,7 +350,7 @@ export function SettingsPage() {
         </WidgetShell>
 
         {/* ─────────────────────────────────────────────────────── */}
-        {/* 3. Notifications                                       */}
+        {/* 4. Notifications                                       */}
         {/* ─────────────────────────────────────────────────────── */}
         <WidgetShell title="Notifications" icon={Bell} collapsible defaultOpen={false}>
           <div className="space-y-1">

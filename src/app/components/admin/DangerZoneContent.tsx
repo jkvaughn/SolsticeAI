@@ -4,7 +4,7 @@ import { useTheme } from '../ThemeProvider';
 import { adminCallServer } from '../../lib/adminClient';
 import { useReAuthAction } from '../../hooks/useReAuthAction';
 import { ReAuthDialog } from './ReAuthDialog';
-import { PasskeyRegistration } from './PasskeyRegistration';
+// PasskeyRegistration moved to Settings > Security (Task 150)
 import { RotateCcw, Trash2 } from 'lucide-react';
 
 // ============================================================
@@ -131,7 +131,6 @@ export function DangerZoneContent() {
         onAuthenticated={onAuthenticated}
         actionDescription={actionDescription}
       />
-      <PasskeyRegistration />
     </div>
   );
 }

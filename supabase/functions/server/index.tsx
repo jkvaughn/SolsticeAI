@@ -262,7 +262,7 @@ app.use(
   "/*",
   cors({
     origin: "*",
-    allowHeaders: ["Content-Type", "Authorization", "X-Admin-Email", "X-Reauth-Token"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Admin-Email", "X-Reauth-Token", "X-User-Email"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     exposeHeaders: ["Content-Length"],
     maxAge: 600,
@@ -311,6 +311,39 @@ async function requireReauth(c: any): Promise<Response | null> {
   }
 
   return null; // authorized
+}
+
+// ── User identity helpers ──
+function getUserEmail(c: any): string | null {
+  return (c.req.header("X-User-Email") || "").toLowerCase().trim() || null;
+}
+
+function requireUser(c: any): Response | null {
+  const email = getUserEmail(c);
+  if (!email) {
+    return c.json({ error: "Unauthorized — user email required" }, 401);
+  }
+  return null;
+}
+
+async function logAuditEvent(
+  email: string,
+  action: string,
+  resourceType?: string | null,
+  resourceId?: string | null,
+  details?: Record<string, unknown> | null,
+  ipAddress?: string | null,
+  userAgent?: string | null,
+): Promise<void> {
+  try {
+    await sql`
+      INSERT INTO user_audit_logs (email, action, resource_type, resource_id, details, ip_address, user_agent)
+      VALUES (${email}, ${action}, ${resourceType ?? null}, ${resourceId ?? null},
+              ${details ? JSON.stringify(details) : null}::jsonb, ${ipAddress ?? null}, ${userAgent ?? null})
+    `;
+  } catch (err) {
+    console.error(`[audit] Failed to log ${action} for ${email}:`, err);
+  }
 }
 
 // Agent ID helper
@@ -846,6 +879,9 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
 
         console.log(`[setup-bank] ${codeUpper} activated — mint: ${result.tokenMintAddress}`);
 
+        const activateEmail = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+        logAuditEvent(activateEmail, "admin.setup_bank", "banks", codeUpper, { stage: "activated" }, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
+
         // Re-fetch full bank
         const [updatedBankRow] = await sql`SELECT * FROM banks WHERE id = ${existing.id}`;
         const updatedBankWallets = await sql`SELECT * FROM wallets WHERE bank_id = ${existing.id}`;
@@ -937,6 +973,9 @@ app.post("/make-server-49d15288/setup-bank", async (c) => {
 
       console.log(`[setup-bank] ✓ ${codeUpper} wallet stage complete — bank=${newBankId}, pubkey=${walletResult.walletPubkey}`);
 
+      const setupEmail = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+      logAuditEvent(setupEmail, "admin.setup_bank", "banks", codeUpper, { stage: "wallet_created" }, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
+
       return c.json({
         stage: "wallet_created",
         public_key: walletResult.walletPubkey,
@@ -988,6 +1027,11 @@ app.post("/make-server-49d15288/faucet", async (c) => {
     console.log(`[faucet] ▶ Request: ${amountSol} SOL/SNT to ${wallet_address}`);
 
     const result = await requestFaucet(wallet_address, amountSol);
+
+    const pubkey = wallet_address;
+    const gasToken = amountSol;
+    const faucetEmail = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+    logAuditEvent(faucetEmail, "admin.faucet", "wallets", pubkey, { amount: amountSol, gasToken }, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
 
     return c.json({
       status: "funded",
@@ -1320,6 +1364,9 @@ app.post("/make-server-49d15288/reassign-custodian", async (c) => {
     await kv.set(`infra:custodian:${newCode}`, JSON.stringify(record));
     console.log(`[reassign-custodian] ✓ Custodian reassigned to ${newCode} (${bank.name})`);
 
+    const reassignEmail = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+    logAuditEvent(reassignEmail, "admin.reassign_custodian", "network_wallets", null, { new_custodian: newCode }, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
+
     // Get SOL balance
     let solBalance = 0;
     try { solBalance = await getSolBalance(bank.solana_wallet_pubkey); } catch (_e) { /* non-blocking */ }
@@ -1359,6 +1406,8 @@ app.post("/make-server-49d15288/admin-reauth", async (c) => {
   const expires_at = Date.now() + 5 * 60 * 1000;
 
   await kv.set(`reauth:${token}`, { email, expires_at, created_at: Date.now() });
+
+  logAuditEvent(email, "auth.reauth", null, null, null, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
 
   return c.json({ proof_token: token, expires_in: 300 });
 });
@@ -1458,6 +1507,8 @@ app.post("/make-server-49d15288/passkey-register-verify", async (c) => {
     // Clean up challenge
     await kv.del(`passkey-challenge:${email}`);
 
+    logAuditEvent(email, "security.passkey_registered", "admin_passkeys", credential.id, { device_type: credentialDeviceType }, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
+
     return c.json({ success: true, credential_id: credential.id });
   } catch (err: any) {
     console.error("[passkey-register] Error:", err);
@@ -1551,11 +1602,217 @@ app.post("/make-server-49d15288/passkey-auth-verify", async (c) => {
     const expires_at = Date.now() + 5 * 60 * 1000;
     await kv.set(`reauth:${token}`, { email, expires_at, created_at: Date.now() });
 
+    logAuditEvent(email, "security.passkey_authenticated", "admin_passkeys", credentialId, null, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
+
     return c.json({ proof_token: token, expires_in: 300 });
   } catch (err: any) {
     console.error("[passkey-auth] Error:", err);
     return c.json({ error: err.message || "Authentication verification failed" }, 400);
   }
+});
+
+// ═══════════════════════════════════════════════════════
+// User Profile & Preferences
+// ═══════════════════════════════════════════════════════
+
+app.get(`/${PREFIX}/user/profile`, async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+
+  let rows = await sql`SELECT * FROM user_profiles WHERE email = ${email}`;
+  if (rows.length === 0) {
+    rows = await sql`INSERT INTO user_profiles (email) VALUES (${email}) RETURNING *`;
+  }
+  return c.json(rows[0]);
+});
+
+app.put(`/${PREFIX}/user/profile`, async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+  const body = await c.req.json();
+  const { full_name, title, department, phone, timezone, institution } = body;
+
+  const rows = await sql`
+    INSERT INTO user_profiles (email, full_name, title, department, phone, timezone, institution)
+    VALUES (${email}, ${full_name ?? null}, ${title ?? null}, ${department ?? null},
+            ${phone ?? null}, ${timezone ?? null}, ${institution ?? null})
+    ON CONFLICT (email) DO UPDATE SET
+      full_name = COALESCE(${full_name ?? null}, user_profiles.full_name),
+      title = COALESCE(${title ?? null}, user_profiles.title),
+      department = COALESCE(${department ?? null}, user_profiles.department),
+      phone = COALESCE(${phone ?? null}, user_profiles.phone),
+      timezone = COALESCE(${timezone ?? null}, user_profiles.timezone),
+      institution = COALESCE(${institution ?? null}, user_profiles.institution)
+    RETURNING *
+  `;
+
+  const ip = c.req.header("x-forwarded-for") || null;
+  const ua = c.req.header("user-agent") || null;
+  logAuditEvent(email, "profile.update", "user_profiles", rows[0]?.id, body, ip, ua);
+
+  return c.json(rows[0]);
+});
+
+app.get(`/${PREFIX}/user/preferences`, async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+
+  let rows = await sql`SELECT * FROM user_preferences WHERE email = ${email}`;
+  if (rows.length === 0) {
+    rows = await sql`INSERT INTO user_preferences (email) VALUES (${email}) RETURNING *`;
+  }
+  return c.json(rows[0]);
+});
+
+app.put(`/${PREFIX}/user/preferences`, async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+  const body = await c.req.json();
+  const { theme, density, refresh_interval, default_persona, default_bank, notification_prefs } = body;
+
+  const rows = await sql`
+    INSERT INTO user_preferences (email, theme, density, refresh_interval, default_persona, default_bank, notification_prefs)
+    VALUES (${email}, ${theme ?? 'auto'}, ${density ?? 'default'}, ${refresh_interval ?? '10'},
+            ${default_persona ?? ''}, ${default_bank ?? ''}, ${notification_prefs ? JSON.stringify(notification_prefs) : '{}'}::jsonb)
+    ON CONFLICT (email) DO UPDATE SET
+      theme = COALESCE(${theme ?? null}, user_preferences.theme),
+      density = COALESCE(${density ?? null}, user_preferences.density),
+      refresh_interval = COALESCE(${refresh_interval ?? null}, user_preferences.refresh_interval),
+      default_persona = COALESCE(${default_persona ?? null}, user_preferences.default_persona),
+      default_bank = COALESCE(${default_bank ?? null}, user_preferences.default_bank),
+      notification_prefs = CASE WHEN ${notification_prefs ? JSON.stringify(notification_prefs) : null}::jsonb IS NOT NULL
+        THEN ${notification_prefs ? JSON.stringify(notification_prefs) : '{}'}::jsonb
+        ELSE user_preferences.notification_prefs END
+    RETURNING *
+  `;
+
+  const ip = c.req.header("x-forwarded-for") || null;
+  const ua = c.req.header("user-agent") || null;
+  logAuditEvent(email, "settings.update", "user_preferences", rows[0]?.id, body, ip, ua);
+
+  return c.json(rows[0]);
+});
+
+// ═══════════════════════════════════════════════════════
+// Session Management
+// ═══════════════════════════════════════════════════════
+
+app.post(`/${PREFIX}/user/sessions`, async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+  const ua = c.req.header("user-agent") || "";
+  const ip = c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || "";
+
+  // Parse device name from User-Agent
+  let deviceName = "Unknown device";
+  if (ua.includes("Mac")) deviceName = "macOS";
+  else if (ua.includes("Windows")) deviceName = "Windows";
+  else if (ua.includes("Linux")) deviceName = "Linux";
+  else if (ua.includes("iPhone")) deviceName = "iPhone";
+  else if (ua.includes("Android")) deviceName = "Android";
+  if (ua.includes("Chrome")) deviceName += " / Chrome";
+  else if (ua.includes("Firefox")) deviceName += " / Firefox";
+  else if (ua.includes("Safari")) deviceName += " / Safari";
+
+  const sessionToken = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+  const rows = await sql`
+    INSERT INTO user_sessions (email, session_token, device_name, user_agent, ip_address, expires_at)
+    VALUES (${email}, ${sessionToken}, ${deviceName}, ${ua}, ${ip}, ${expiresAt.toISOString()})
+    RETURNING *
+  `;
+
+  logAuditEvent(email, "auth.login", "user_sessions", rows[0]?.id, { device_name: deviceName, ip_address: ip }, ip, ua);
+
+  return c.json({ session_token: sessionToken, session: rows[0] });
+});
+
+app.get(`/${PREFIX}/user/sessions`, async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+
+  const rows = await sql`
+    SELECT id, device_name, ip_address, last_activity, created_at, expires_at, session_token
+    FROM user_sessions
+    WHERE email = ${email} AND (expires_at IS NULL OR expires_at > now())
+    ORDER BY last_activity DESC
+  `;
+
+  return c.json({ sessions: rows });
+});
+
+app.delete(`/${PREFIX}/user/sessions/:id`, async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+  const sessionId = c.req.param("id");
+
+  await sql`DELETE FROM user_sessions WHERE id = ${sessionId} AND email = ${email}`;
+
+  const ip = c.req.header("x-forwarded-for") || null;
+  const ua = c.req.header("user-agent") || null;
+  logAuditEvent(email, "session.revoked", "user_sessions", sessionId, null, ip, ua);
+
+  return c.json({ success: true });
+});
+
+app.post(`/${PREFIX}/user/sessions/heartbeat`, async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+  const body = await c.req.json();
+  const { session_token } = body;
+
+  if (session_token) {
+    await sql`UPDATE user_sessions SET last_activity = now() WHERE session_token = ${session_token} AND email = ${email}`;
+  }
+
+  return c.json({ ok: true });
+});
+
+// ═══════════════════════════════════════════════════════
+// Audit Log
+// ═══════════════════════════════════════════════════════
+
+app.get(`/${PREFIX}/user/audit-log`, async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+  const limit = Math.min(parseInt(c.req.query("limit") || "50"), 100);
+  const offset = parseInt(c.req.query("offset") || "0");
+
+  const rows = await sql`
+    SELECT id, action, resource_type, resource_id, details, ip_address, created_at
+    FROM user_audit_logs
+    WHERE email = ${email}
+    ORDER BY created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+
+  return c.json({ entries: rows, limit, offset });
+});
+
+app.get(`/${PREFIX}/user/login-history`, async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+
+  const rows = await sql`
+    SELECT id, action, details, ip_address, user_agent, created_at
+    FROM user_audit_logs
+    WHERE email = ${email} AND action LIKE 'auth.%'
+    ORDER BY created_at DESC
+    LIMIT 10
+  `;
+
+  return c.json({ entries: rows });
 });
 
 // ============================================================
@@ -4862,6 +5119,9 @@ app.post("/make-server-49d15288/reset-tokens", async (c) => {
 
     console.log("[reset-tokens] Soft reset complete — banks need re-activation (Stage 2)");
 
+    const resetTokensEmail = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+    logAuditEvent(resetTokensEmail, "admin.reset_tokens", null, null, null, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
+
     return c.json({
       status: "tokens_reset",
       banks_preserved: bankCount,
@@ -4927,6 +5187,9 @@ app.post("/make-server-49d15288/reset-network", async (c) => {
     }
 
     console.log("[reset-network] Network reset complete");
+
+    const resetNetEmail = (c.req.header("X-Admin-Email") || "").toLowerCase().trim();
+    logAuditEvent(resetNetEmail, "admin.reset_network", null, null, null, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
 
     return c.json({
       status: "reset_complete",

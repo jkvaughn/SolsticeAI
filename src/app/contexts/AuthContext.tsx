@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
 import { supabase, serverBaseUrl, publicAnonKey } from '../supabaseClient';
+import { userCallServer } from '../lib/userClient';
 import type { Session, User } from '@supabase/supabase-js';
 
 // ============================================================
@@ -91,6 +92,39 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
       });
   }, []);
 
+  // Session registration — fire when user transitions from null to authenticated
+  const azurePrevUser = useRef<string | null>(null);
+  useEffect(() => {
+    const email = state.user?.email ?? null;
+    if (email && !azurePrevUser.current) {
+      (async () => {
+        try {
+          const res = await userCallServer<{ id: string; session_token: string }>(
+            '/user/sessions', email, 'POST',
+          );
+          sessionStorage.setItem('coda-session-token', res.session_token);
+          sessionStorage.setItem('coda-session-id', res.id);
+        } catch {
+          // Session registration is non-blocking
+        }
+      })();
+    }
+    azurePrevUser.current = email;
+  }, [state.user]);
+
+  // Heartbeat — ping every 5 minutes while authenticated
+  useEffect(() => {
+    const email = state.user?.email;
+    if (!email) return;
+    const interval = setInterval(() => {
+      const token = sessionStorage.getItem('coda-session-token');
+      if (token) {
+        userCallServer('/user/sessions/heartbeat', email, 'POST', { session_token: token }).catch(() => {});
+      }
+    }, 300_000);
+    return () => clearInterval(interval);
+  }, [state.user]);
+
   // Azure auth is handled by redirects — these are no-ops for the form
   const signIn = useCallback(async () => {
     window.location.href = '/.auth/login/aad?post_login_redirect_uri=/';
@@ -103,8 +137,19 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    try {
+      const sessionId = sessionStorage.getItem('coda-session-id');
+      const email = state.user?.email;
+      if (sessionId && email) {
+        await userCallServer('/user/sessions/' + sessionId, email, 'DELETE');
+      }
+    } catch {
+      // Session cleanup is non-blocking
+    }
+    sessionStorage.removeItem('coda-session-token');
+    sessionStorage.removeItem('coda-session-id');
     window.location.href = '/.auth/logout?post_logout_redirect_uri=/login';
-  }, []);
+  }, [state.user]);
 
   const signInWithGoogle = useCallback(async () => {
     window.location.href = '/.auth/login/google?post_login_redirect_uri=/';
@@ -171,6 +216,39 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Session registration — fire when user transitions from null to authenticated
+  const sbPrevUser = useRef<string | null>(null);
+  useEffect(() => {
+    const email = state.user?.email ?? null;
+    if (email && !sbPrevUser.current) {
+      (async () => {
+        try {
+          const res = await userCallServer<{ id: string; session_token: string }>(
+            '/user/sessions', email, 'POST',
+          );
+          sessionStorage.setItem('coda-session-token', res.session_token);
+          sessionStorage.setItem('coda-session-id', res.id);
+        } catch {
+          // Session registration is non-blocking
+        }
+      })();
+    }
+    sbPrevUser.current = email;
+  }, [state.user]);
+
+  // Heartbeat — ping every 5 minutes while authenticated
+  useEffect(() => {
+    const email = state.user?.email;
+    if (!email) return;
+    const interval = setInterval(() => {
+      const token = sessionStorage.getItem('coda-session-token');
+      if (token) {
+        userCallServer('/user/sessions/heartbeat', email, 'POST', { session_token: token }).catch(() => {});
+      }
+    }, 300_000);
+    return () => clearInterval(interval);
+  }, [state.user]);
+
   const signIn = useCallback(async (email: string, password: string) => {
     setState(prev => ({ ...prev, loading: true, error: null }));
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -229,9 +307,20 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    try {
+      const sessionId = sessionStorage.getItem('coda-session-id');
+      const email = state.user?.email;
+      if (sessionId && email) {
+        await userCallServer('/user/sessions/' + sessionId, email, 'DELETE');
+      }
+    } catch {
+      // Session cleanup is non-blocking
+    }
+    sessionStorage.removeItem('coda-session-token');
+    sessionStorage.removeItem('coda-session-id');
     await supabase.auth.signOut();
     setState({ user: null, supabaseUser: null, session: null, loading: false, error: null });
-  }, []);
+  }, [state.user]);
 
   const accessToken = state.session?.access_token ?? null;
 
