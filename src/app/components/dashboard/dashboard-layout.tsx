@@ -44,7 +44,7 @@ function EnvironmentBanner() {
   const dotColor = isLocal ? '#b45309' : '#2563eb';
 
   return (
-    <div className="mb-4 py-1.5 px-5 flex items-center justify-center gap-2 rounded-full border border-white/70 dark:border-white/10">
+    <div className="sticky top-0 z-30 ml-0 mr-[10px] mt-4 py-1.5 flex items-center justify-center gap-2 rounded-xl border border-white/70 dark:border-white/10 bg-white/20 dark:bg-white/[0.02] backdrop-blur-sm">
       <span
         className="inline-block w-1.5 h-1.5 rounded-full"
         style={{ background: dotColor, boxShadow: `0 0 6px ${dotColor}40` }}
@@ -425,9 +425,11 @@ export function DashboardLayout({
             sidebarExpanded ? 'pl-[312px]' : 'pl-[102px]'
           }`}
         >
-          <div className="pt-8 pb-4 pr-[10px] relative z-10 min-h-full">
+          <div className="flex flex-col min-h-full">
             <EnvironmentBanner />
-            {children}
+            <div className="flex-1 pt-4 pb-4 pr-[10px] relative z-10 min-h-0">
+              {children}
+            </div>
           </div>
         </div>
       </LayoutProvider>
