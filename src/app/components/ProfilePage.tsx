@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,22 +6,21 @@ import { useBanks } from '../contexts/BanksContext';
 import { usePersona } from '../contexts/PersonaContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useIsAdmin } from '../hooks/useIsAdmin';
+import { useUserProfile } from '../hooks/useUserProfile';
 import { PageShell } from './PageShell';
 import type { PageStat } from './PageShell';
 import { PersonaSwitcher } from './PersonaSwitcher';
+import { ProfileEditor } from './profile/ProfileEditor';
+import { ActivityTimeline } from './profile/ActivityTimeline';
 import { WidgetShell } from './dashboard/WidgetShell';
 import { motion } from './motion-shim';
 import { supabase } from '../supabaseClient';
 import {
   LogOut,
-  UserCircle,
   ShieldCheck,
   BarChart3,
   Clock,
   Activity,
-  Building2,
-  ChevronDown,
-  Pencil,
   Check,
   Copy,
 } from 'lucide-react';
@@ -30,7 +29,6 @@ import {
 // Profile Page — Operator identity, activity stats & preferences
 // ============================================================
 
-const NAME_STORAGE_KEY = 'coda-operator-name';
 const DEFAULT_PERSONA_KEY = 'coda-default-persona';
 const DEFAULT_BANK_KEY = 'coda-default-bank';
 
@@ -48,29 +46,9 @@ export function ProfilePage() {
   const { activeBanks, banks } = useBanks();
   const currentUser = useCurrentUser();
   const isAdmin = useIsAdmin();
+  const { profile, updateProfile } = useUserProfile();
   const navigate = useNavigate();
   const [signOutConfirm, setSignOutConfirm] = useState(false);
-
-  // ── Editable name ──
-  const [name, setName] = useState(() =>
-    localStorage.getItem(NAME_STORAGE_KEY) || currentUser.name,
-  );
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editBuffer, setEditBuffer] = useState(name);
-  const nameInputRef = useRef<HTMLInputElement>(null);
-
-  const commitName = useCallback(() => {
-    const trimmed = editBuffer.trim();
-    if (trimmed) {
-      setName(trimmed);
-      localStorage.setItem(NAME_STORAGE_KEY, trimmed);
-    }
-    setIsEditingName(false);
-  }, [editBuffer]);
-
-  useEffect(() => {
-    if (isEditingName) nameInputRef.current?.focus();
-  }, [isEditingName]);
 
   // ── Stats from Supabase ──
   const [escalations, setEscalations] = useState<number | null>(null);
@@ -192,7 +170,13 @@ export function ProfilePage() {
   }, [signOut, navigate]);
 
   // ── Initials ──
-  const initials = currentUser.avatarInitials;
+  const profileName = profile?.full_name || currentUser.name;
+  const initials = profileName
+    .split(' ')
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || currentUser.avatarInitials;
 
   const formatVolume = (raw: number) => {
     const v = raw / 1_000_000; // raw amounts are in token micro-units
@@ -234,77 +218,44 @@ export function ProfilePage() {
               </span>
             </div>
 
-            {/* Editable name */}
             <div className="space-y-2 flex flex-col items-center">
-              {isEditingName ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={nameInputRef}
-                    value={editBuffer}
-                    onChange={e => setEditBuffer(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') commitName();
-                      if (e.key === 'Escape') setIsEditingName(false);
-                    }}
-                    className="text-xl font-semibold font-sans text-coda-text bg-transparent border-b-2 border-coda-brand outline-none text-center px-1"
-                  />
-                  <button
-                    onClick={commitName}
-                    className="p-1 cursor-pointer"
-                  >
-                    <Check size={16} className="text-coda-brand" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => { setEditBuffer(name); setIsEditingName(true); }}
-                  className="group relative cursor-pointer bg-transparent border-none"
-                >
-                  <h3 className="text-xl font-semibold font-sans text-coda-text text-center">
-                    {name}
-                  </h3>
-                  <Pencil
-                    size={14}
-                    className="absolute -right-5 top-1/2 -translate-y-1/2 text-coda-text-muted opacity-0 group-hover:opacity-100 transition-opacity"
-                  />
-                </button>
-              )}
+              {/* Name from profile */}
+              <h3 className="text-xl font-semibold font-sans text-coda-text text-center">
+                {profileName}
+              </h3>
 
               {/* Email */}
               <p className="text-coda-text-muted font-mono text-[11px]">
                 {currentUser.email}
               </p>
 
-              {/* Badges */}
+              {/* Auth provider badge */}
               <div className="flex items-center justify-center gap-2 flex-wrap">
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-coda-brand/10 text-coda-brand">
-                  Network Administrator
-                </span>
+                {profile?.title && (
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-coda-brand/10 text-coda-brand">
+                    {profile.title}
+                  </span>
+                )}
                 <span
-                className={`inline-block px-3 py-1 rounded-full text-[10px] font-medium ${
-                  currentUser.provider === 'Azure Entra ID'
-                    ? 'bg-coda-brand/10 text-coda-brand'
-                    : 'bg-emerald-500/10 text-emerald-500'
-                }`}
-              >
-                {currentUser.provider}
-              </span>
+                  className={`inline-block px-3 py-1 rounded-full text-[10px] font-medium ${
+                    currentUser.provider === 'Azure Entra ID'
+                      ? 'bg-coda-brand/10 text-coda-brand'
+                      : 'bg-emerald-500/10 text-emerald-500'
+                  }`}
+                >
+                  {currentUser.provider}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Institution */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Building2 size={16} className="text-coda-text-muted shrink-0" />
-              <div>
-                <p className="text-sm font-sans text-coda-text">
-                  Rimark Technology / Solstice Network
-                </p>
-                <p className="text-xs text-coda-text-muted">Institution</p>
-              </div>
-            </div>
+          {/* Profile Editor — editable fields */}
+          {profile && (
+            <ProfileEditor profile={profile} onUpdate={updateProfile} />
+          )}
 
+          {/* Account info */}
+          <div className="space-y-3">
             {/* Account ID */}
             {currentUser.userId && (
               <div className="flex items-center gap-3">
@@ -387,6 +338,11 @@ export function ProfilePage() {
           transition={{ duration: 0.35, delay: 0.08 }}
           className="space-y-6"
         >
+          {/* ── Activity Timeline ── */}
+          <WidgetShell title="Activity" icon={Clock}>
+            <ActivityTimeline />
+          </WidgetShell>
+
           {/* ── Recent Escalations ── */}
           {recentEscalations.length > 0 && (
             <WidgetShell title="Recent Escalations">
