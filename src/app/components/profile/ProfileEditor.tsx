@@ -75,7 +75,7 @@ function FormField({
           disabled={saving || readOnly}
           readOnly={readOnly}
           placeholder={placeholder || `Enter ${label.toLowerCase()}`}
-          className={`w-full px-4 py-3 text-[14px] font-sans text-black/70 dark:text-white/70 border-none rounded-lg outline-none transition-colors placeholder:text-black/20 dark:placeholder:text-white/20 ${
+          className={`w-full px-4 py-3 text-[14px] font-sans text-black/70 dark:text-white/70 border-none rounded-lg outline-none transition-colors placeholder:text-black/30 dark:placeholder:text-white/30 ${
             readOnly
               ? 'bg-black/[0.03] dark:bg-white/[0.04] cursor-default'
               : 'bg-black/[0.03] dark:bg-white/[0.04] focus:bg-black/[0.05] dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-black/10 dark:focus:ring-white/10'

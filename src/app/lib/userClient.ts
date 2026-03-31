@@ -9,12 +9,9 @@
  * server URL. Sends X-User-Email on every request for backend identity.
  */
 
-// Build the server base URL from the same env vars as supabaseClient.ts
-const serverBaseUrl =
-  import.meta.env.VITE_SERVER_BASE_URL ||
-  `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/${import.meta.env.VITE_SUPABASE_FUNCTION_NAME}`;
-
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+// Import the canonical server URL and anon key from supabaseClient
+// to ensure userClient always points to the same backend.
+import { serverBaseUrl, publicAnonKey as anonKey } from '../supabaseClient';
 
 // Route prefix — must match the Hono app mount in index.tsx
 const PREFIX = 'make-server-49d15288';
