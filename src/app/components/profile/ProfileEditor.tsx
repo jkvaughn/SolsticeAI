@@ -65,7 +65,7 @@ function FormField({
 
   return (
     <div className="flex-1 min-w-0">
-      <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">{label}</label>
+      <label className="block text-[12px] font-normal text-coda-text-muted mb-2">{label}</label>
       <div className="relative">
         <input
           value={localValue}
@@ -75,10 +75,10 @@ function FormField({
           disabled={saving || readOnly}
           readOnly={readOnly}
           placeholder={placeholder || `Enter ${label.toLowerCase()}`}
-          className={`w-full px-3 py-2.5 text-sm font-sans text-coda-text border border-black/[0.06] dark:border-white/[0.08] rounded-xl outline-none transition-colors placeholder:text-coda-text-muted/50 ${
+          className={`w-full px-4 py-3 text-[14px] font-sans text-coda-text border border-black/[0.08] dark:border-white/[0.08] rounded-2xl outline-none transition-colors placeholder:text-coda-text-muted/40 ${
             readOnly
-              ? 'bg-black/[0.02] dark:bg-white/[0.03] cursor-default'
-              : 'bg-black/[0.03] dark:bg-white/[0.05] focus:border-coda-brand/40 focus:bg-transparent'
+              ? 'bg-black/[0.015] dark:bg-white/[0.02] cursor-default'
+              : 'bg-black/[0.02] dark:bg-white/[0.03] focus:border-coda-brand/40 focus:bg-white/50 dark:focus:bg-white/[0.05]'
           }`}
         />
         {saved && (
@@ -120,13 +120,14 @@ export function ProfileEditor({ profile, onUpdate, email }: ProfileEditorProps) 
       {/* Email with verified badge */}
       {email && (
         <div>
-          <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">Email</label>
+          <label className="block text-[12px] font-normal text-coda-text-muted mb-2">Email</label>
           <div className="flex items-center gap-3">
-            <div className="flex-1 px-3 py-2.5 text-sm text-coda-text bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] rounded-xl">
+            <div className="flex-1 px-4 py-3 text-[14px] text-coda-text bg-black/[0.015] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl">
               {email}
             </div>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-500 whitespace-nowrap">
-              <Check size={10} /> Verified
+            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-medium border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+              <span className="w-4 h-4 rounded-full bg-emerald-500/15 flex items-center justify-center"><Check size={10} className="text-emerald-500" /></span>
+              Email verified
             </span>
           </div>
         </div>
