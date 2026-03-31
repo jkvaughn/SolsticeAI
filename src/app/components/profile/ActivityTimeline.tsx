@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Shield, Settings, AlertTriangle, ArrowRightLeft, Fingerprint, Monitor, Loader2 } from 'lucide-react';
+import { Shield, Settings, AlertTriangle, ArrowRightLeft, Fingerprint, Monitor } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { userCallServer } from '../../lib/userClient';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSWRCache } from '../../hooks/useSWRCache';
 
 // ============================================================
 // ActivityTimeline — Recent audit log entries for the user
@@ -63,29 +63,46 @@ function getLabel(action: string): string {
   return ACTION_LABELS[action] || action.replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+// ── Skeleton ──
+
+function ActivitySkeleton() {
+  return (
+    <div className="relative animate-pulse">
+      <div className="absolute left-[15px] top-2 bottom-2 w-px bg-black/[0.06] dark:bg-white/[0.06]" />
+      <div className="space-y-0.5">
+        {[0, 1, 2, 3, 4].map(i => (
+          <div key={i} className="relative flex items-start gap-3 py-2">
+            <div className="w-[30px] h-[30px] rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex-shrink-0" />
+            <div className="flex-1 pt-1 space-y-1.5">
+              <div className="h-3 w-28 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
+              <div className="h-2.5 w-14 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ActivityTimeline() {
   const { userEmail } = useAuth();
-  const [entries, setEntries] = useState<AuditEntry[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!userEmail) return;
-    userCallServer<{ entries: AuditEntry[] }>('/user/audit-log?limit=10', userEmail)
-      .then(data => setEntries(data.entries))
-      .catch(() => setEntries([]))
-      .finally(() => setLoading(false));
-  }, [userEmail]);
+  const { data: entries, isValidating } = useSWRCache<AuditEntry[]>({
+    key: `activity-timeline-${userEmail ?? 'none'}`,
+    fetcher: async () => {
+      if (!userEmail) throw new Error('No user email');
+      const data = await userCallServer<{ entries: AuditEntry[] }>('/user/audit-log?limit=10', userEmail);
+      return data.entries;
+    },
+  });
+
+  const loading = isValidating && !entries;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center gap-2 text-xs text-coda-text-muted py-8">
-        <Loader2 size={14} className="animate-spin" />
-        Loading activity...
-      </div>
-    );
+    return <ActivitySkeleton />;
   }
 
-  if (entries.length === 0) {
+  if (!entries || entries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-coda-text-muted">
         <Shield size={24} className="mb-2 opacity-40" />
@@ -95,7 +112,7 @@ export function ActivityTimeline() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative animate-fadeIn">
       {/* Vertical timeline line */}
       <div className="absolute left-[15px] top-2 bottom-2 w-px bg-black/[0.06] dark:bg-white/[0.06]" />
 

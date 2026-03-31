@@ -6,6 +6,7 @@ import { usePersona } from '../contexts/PersonaContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useIsAdmin } from '../hooks/useIsAdmin';
 import { useUserProfile } from '../hooks/useUserProfile';
+import { useSWRCache } from '../hooks/useSWRCache';
 import { PageShell } from './PageShell';
 import type { PageStat, PageTab } from './PageShell';
 import { PersonaSwitcher } from './PersonaSwitcher';
@@ -97,58 +98,50 @@ export function SettingsPage() {
 
   const [section, setSection] = useState<SettingsSection>('profile');
 
-  // ── Profile stats ──
-  const [escalations, setEscalations] = useState<number | null>(null);
-  const [settlements, setSettlements] = useState<number | null>(null);
-  const [pendingActions, setPendingActions] = useState<number | null>(null);
-  const [totalVolume, setTotalVolume] = useState<number | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchStats() {
+  // ── Profile stats (SWR-cached) ──
+  interface ProfileStats { escalations: number; settlements: number; pendingActions: number; totalVolume: number; }
+  const { data: statsData, isValidating: statsLoading } = useSWRCache<ProfileStats>({
+    key: 'settings-profile-stats',
+    fetcher: async () => {
       const [escRes, settRes, pendingRes, volumeRes] = await Promise.all([
         supabase.from('lockup_tokens').select('id', { count: 'exact', head: true }).like('resolved_by', 'operator:%'),
         supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('status', 'settled'),
         supabase.from('transactions').select('id', { count: 'exact', head: true }).in('status', ['pending', 'processing', 'lockup']),
         supabase.from('transactions').select('amount').eq('status', 'settled'),
       ]);
-      if (cancelled) return;
-      setEscalations(escRes.count ?? 0);
-      setSettlements(settRes.count ?? 0);
-      setPendingActions(pendingRes.count ?? 0);
       const vol = (volumeRes.data ?? []).reduce((sum: number, t: any) => sum + (Number(t.amount) || 0), 0);
-      setTotalVolume(vol);
-    }
-    fetchStats();
-    return () => { cancelled = true; };
-  }, []);
+      return { escalations: escRes.count ?? 0, settlements: settRes.count ?? 0, pendingActions: pendingRes.count ?? 0, totalVolume: vol };
+    },
+  });
+  const escalations = statsData?.escalations ?? null;
+  const settlements = statsData?.settlements ?? null;
+  const totalVolume = statsData?.totalVolume ?? null;
 
-  // ── Security stat ──
-  const [passkeyCount, setPasskeyCount] = useState<number | null>(null);
-  useEffect(() => {
-    if (!userEmail) return;
-    userCallServer<{ has_passkeys: boolean; passkeys: unknown[] }>('/user/passkey-status', userEmail)
-      .then(data => setPasskeyCount(data.passkeys?.length ?? 0))
-      .catch(() => setPasskeyCount(null));
-  }, [userEmail]);
+  // ── Security stat (SWR-cached) ──
+  const { data: passkeyData } = useSWRCache<{ count: number }>({
+    key: `settings-passkey-${userEmail ?? 'none'}`,
+    fetcher: async () => {
+      if (!userEmail) throw new Error('No user email');
+      const data = await userCallServer<{ has_passkeys: boolean; passkeys: unknown[] }>('/user/passkey-status', userEmail);
+      return { count: data.passkeys?.length ?? 0 };
+    },
+  });
+  const passkeyCount = passkeyData?.count ?? null;
 
-  // ── Recent escalations ──
+  // ── Recent escalations (SWR-cached) ──
   interface EscalationRow { id: string; sender_bank_id: string; receiver_bank_id: string; resolution: string; resolved_at: string; }
-  const [recentEscalations, setRecentEscalations] = useState<EscalationRow[]>([]);
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchEsc() {
+  const { data: recentEscalations, isValidating: escalationsLoading } = useSWRCache<EscalationRow[]>({
+    key: 'settings-recent-escalations',
+    fetcher: async () => {
       const { data } = await supabase
         .from('lockup_tokens')
         .select('id, transaction_id, sender_bank_id, receiver_bank_id, resolution, resolved_at')
         .like('resolved_by', 'operator:%')
         .order('resolved_at', { ascending: false })
         .limit(5);
-      if (!cancelled && data) setRecentEscalations(data as EscalationRow[]);
-    }
-    fetchEsc();
-    return () => { cancelled = true; };
-  }, []);
+      return (data as EscalationRow[]) ?? [];
+    },
+  });
 
   const bankCode = useCallback((id: string) => banks.find(b => b.id === id)?.short_code ?? id.slice(0, 6), [banks]);
 
@@ -277,7 +270,7 @@ export function SettingsPage() {
                     <div className="w-48 shrink-0 pt-0">
                       <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Account</h4>
                     </div>
-                    <div className="flex-1 space-y-4">
+                    <div className="flex-1 space-y-4 animate-fadeIn">
                       <div className="flex gap-4">
                         {currentUser.userId && (
                           <div className="flex-1">
@@ -345,12 +338,21 @@ export function SettingsPage() {
                   </div>
 
                   {/* ── Recent Escalations ── */}
-                  {recentEscalations.length > 0 && (
+                  {(escalationsLoading && !recentEscalations) ? (
                     <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
                       <div className="w-48 shrink-0 pt-0">
                         <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Recent Escalations</h4>
                       </div>
                       <div className="flex-1">
+                        <EscalationsSkeleton />
+                      </div>
+                    </div>
+                  ) : (recentEscalations && recentEscalations.length > 0) && (
+                    <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+                      <div className="w-48 shrink-0 pt-0">
+                        <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Recent Escalations</h4>
+                      </div>
+                      <div className="flex-1 animate-fadeIn">
                         <table className="w-full text-[11px] font-mono">
                           <thead>
                             <tr className="text-coda-text-muted">
@@ -584,6 +586,30 @@ function ProfileSkeleton() {
         <SkeletonField half />
         <SkeletonField half />
       </div>
+    </div>
+  );
+}
+
+// ============================================================
+// EscalationsSkeleton — shimmer table while escalations load
+// ============================================================
+
+function EscalationsSkeleton() {
+  return (
+    <div className="space-y-3 animate-pulse">
+      {/* Header row */}
+      <div className="flex gap-4 pb-2">
+        <div className="h-3 w-16 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
+        <div className="h-3 w-24 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
+        <div className="ml-auto h-3 w-12 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
+      </div>
+      {[0, 1, 2].map(i => (
+        <div key={i} className="flex gap-4 py-2 border-t border-black/[0.04] dark:border-white/[0.04]">
+          <div className="h-3 w-24 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
+          <div className="h-3 w-20 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
+          <div className="ml-auto h-3 w-16 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
+        </div>
+      ))}
     </div>
   );
 }

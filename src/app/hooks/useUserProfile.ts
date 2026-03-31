@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { userCallServer, userCallServerPost } from '../lib/userClient';
 import { useAuth } from '../contexts/AuthContext';
+import { useSWRCache, writeSWRCache } from './useSWRCache';
 
 interface UserProfile {
   id: string;
@@ -17,36 +18,29 @@ interface UserProfile {
 
 export function useUserProfile() {
   const { userEmail } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchProfile = useCallback(async () => {
-    if (!userEmail) return;
-    try {
-      const data = await userCallServer<UserProfile>('/user/profile', userEmail);
-      setProfile(data);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userEmail]);
+  const cacheKey = `user-profile-${userEmail ?? 'none'}`;
 
-  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  const { data: profile, isValidating, error, invalidate } = useSWRCache<UserProfile>({
+    key: cacheKey,
+    fetcher: async () => {
+      if (!userEmail) throw new Error('No user email');
+      return userCallServer<UserProfile>('/user/profile', userEmail);
+    },
+    ttl: 5 * 60 * 1000,
+  });
 
   const updateProfile = useCallback(async (fields: Partial<UserProfile>) => {
     if (!userEmail) return;
-    try {
-      const data = await userCallServerPost<UserProfile>('/user/profile-update', userEmail, fields as Record<string, unknown>);
-      setProfile(data);
-      return data;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    }
-  }, [userEmail]);
+    const data = await userCallServerPost<UserProfile>('/user/profile-update', userEmail, fields as Record<string, unknown>);
+    // Write the updated profile directly into the SWR cache
+    writeSWRCache(cacheKey, data);
+    invalidate();
+    return data;
+  }, [userEmail, cacheKey, invalidate]);
 
-  return { profile, isLoading, error, updateProfile, refetch: fetchProfile };
+  // isLoading: true only when validating AND no cached data yet
+  const isLoading = isValidating && !profile;
+
+  return { profile, isLoading, error: error?.message ?? null, updateProfile, refetch: invalidate };
 }
