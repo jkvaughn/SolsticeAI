@@ -257,8 +257,8 @@ export function SettingsPage() {
                 <div className="space-y-0">
                   {/* ── Personal Information ── */}
                   <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
-                    <div className="w-44 shrink-0 pt-1">
-                      <h4 className="text-[15px] font-semibold text-coda-text">Personal Information</h4>
+                    <div className="w-48 shrink-0 pt-0">
+                      <h4 className="text-[15px] font-medium text-black/80 dark:text-white/80">Personal Information</h4>
                     </div>
                     <div className="flex-1">
                       {profile ? (
@@ -271,15 +271,15 @@ export function SettingsPage() {
 
                   {/* ── Account ── */}
                   <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
-                    <div className="w-44 shrink-0 pt-1">
-                      <h4 className="text-[15px] font-semibold text-coda-text">Account</h4>
+                    <div className="w-48 shrink-0 pt-0">
+                      <h4 className="text-[15px] font-medium text-black/80 dark:text-white/80">Account</h4>
                     </div>
                     <div className="flex-1 space-y-4">
                       <div className="flex gap-4">
                         {currentUser.userId && (
                           <div className="flex-1">
-                            <label className="block text-[12px] font-normal text-coda-text-muted mb-2">Account ID</label>
-                            <div className="flex items-center gap-2 px-4 py-3 bg-black/[0.015] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl">
+                            <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">Account ID</label>
+                            <div className="flex items-center gap-2 px-4 py-3 bg-black/[0.03] dark:bg-white/[0.04] rounded-lg">
                               <span className="font-mono text-sm text-coda-text-secondary">
                                 {currentUser.userId.slice(0, 8)}...{currentUser.userId.slice(-4)}
                               </span>
@@ -290,8 +290,8 @@ export function SettingsPage() {
                           </div>
                         )}
                         <div className="flex-1">
-                          <label className="block text-[12px] font-normal text-coda-text-muted mb-2">Auth Provider</label>
-                          <div className="flex items-center gap-2 px-4 py-3 bg-black/[0.015] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl">
+                          <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">Auth Provider</label>
+                          <div className="flex items-center gap-2 px-4 py-3 bg-black/[0.03] dark:bg-white/[0.04] rounded-lg">
                             <span className="text-sm text-coda-text">{currentUser.provider}</span>
                             {isAdmin && (
                               <span className="text-[8px] font-bold text-coda-brand bg-coda-brand/10 px-1.5 py-0.5 rounded ml-auto">ADMIN</span>
@@ -301,8 +301,8 @@ export function SettingsPage() {
                       </div>
                       <div className="flex gap-4">
                         <div className="flex-1">
-                          <label className="block text-[12px] font-normal text-coda-text-muted mb-2">Status</label>
-                          <div className="flex items-center gap-2 px-4 py-3 bg-black/[0.015] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl">
+                          <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">Status</label>
+                          <div className="flex items-center gap-2 px-4 py-3 bg-black/[0.03] dark:bg-white/[0.04] rounded-lg">
                             <span className="relative flex h-3 w-3 items-center justify-center">
                               <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75" />
                               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
@@ -317,8 +317,8 @@ export function SettingsPage() {
 
                   {/* ── Activity ── */}
                   <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
-                    <div className="w-44 shrink-0 pt-1">
-                      <h4 className="text-[15px] font-semibold text-coda-text">Activity</h4>
+                    <div className="w-48 shrink-0 pt-0">
+                      <h4 className="text-[15px] font-medium text-black/80 dark:text-white/80">Activity</h4>
                     </div>
                     <div className="flex-1">
                       <ActivityTimeline />
@@ -358,8 +358,8 @@ export function SettingsPage() {
 
                   {/* ── Defaults & Preferences ── */}
                   <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
-                    <div className="w-44 shrink-0 pt-1">
-                      <h4 className="text-[15px] font-semibold text-coda-text">Defaults & Preferences</h4>
+                    <div className="w-48 shrink-0 pt-0">
+                      <h4 className="text-[15px] font-medium text-black/80 dark:text-white/80">Defaults & Preferences</h4>
                     </div>
                     <div className="flex-1">
                       <PersonaSwitcher />
@@ -547,21 +547,21 @@ function ProfileEditorFallback({ name, email }: { name: string; email: string })
   const firstName = parts[0] || '';
   const lastName = parts.slice(1).join(' ') || '';
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex gap-4">
         <div className="flex-1">
-          <label className="block text-[12px] font-normal text-coda-text-muted mb-2">First Name</label>
-          <div className="px-4 py-3 text-[14px] text-coda-text bg-black/[0.015] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl">{firstName || '—'}</div>
+          <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">First Name</label>
+          <div className="px-4 py-3 text-[14px] text-black/70 dark:text-white/70 bg-black/[0.03] dark:bg-white/[0.04] rounded-lg">{firstName || '—'}</div>
         </div>
         <div className="flex-1">
-          <label className="block text-[12px] font-normal text-coda-text-muted mb-2">Last Name</label>
-          <div className="px-4 py-3 text-[14px] text-coda-text bg-black/[0.015] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl">{lastName || '—'}</div>
+          <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">Last Name</label>
+          <div className="px-4 py-3 text-[14px] text-black/70 dark:text-white/70 bg-black/[0.03] dark:bg-white/[0.04] rounded-lg">{lastName || '—'}</div>
         </div>
       </div>
       <div>
-        <label className="block text-[12px] font-normal text-coda-text-muted mb-2">Email</label>
+        <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">Email</label>
         <div className="flex items-center gap-3">
-          <div className="flex-1 px-4 py-3 text-[14px] text-coda-text bg-black/[0.015] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl">{email}</div>
+          <div className="flex-1 px-4 py-3 text-[14px] text-black/70 dark:text-white/70 bg-black/[0.03] dark:bg-white/[0.04] rounded-lg">{email}</div>
           <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-medium border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
             <span className="w-4 h-4 rounded-full bg-emerald-500/15 flex items-center justify-center"><Check size={10} className="text-emerald-500" /></span>
             Email verified

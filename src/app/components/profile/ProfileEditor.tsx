@@ -65,7 +65,7 @@ function FormField({
 
   return (
     <div className="flex-1 min-w-0">
-      <label className="block text-[12px] font-normal text-coda-text-muted mb-2">{label}</label>
+      <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">{label}</label>
       <div className="relative">
         <input
           value={localValue}
@@ -75,10 +75,10 @@ function FormField({
           disabled={saving || readOnly}
           readOnly={readOnly}
           placeholder={placeholder || `Enter ${label.toLowerCase()}`}
-          className={`w-full px-4 py-3 text-[14px] font-sans text-coda-text border border-black/[0.08] dark:border-white/[0.08] rounded-2xl outline-none transition-colors placeholder:text-coda-text-muted/40 ${
+          className={`w-full px-4 py-3 text-[14px] font-sans text-black/70 dark:text-white/70 border-none rounded-lg outline-none transition-colors placeholder:text-black/20 dark:placeholder:text-white/20 ${
             readOnly
-              ? 'bg-black/[0.015] dark:bg-white/[0.02] cursor-default'
-              : 'bg-black/[0.02] dark:bg-white/[0.03] focus:border-coda-brand/40 focus:bg-white/50 dark:focus:bg-white/[0.05]'
+              ? 'bg-black/[0.03] dark:bg-white/[0.04] cursor-default'
+              : 'bg-black/[0.03] dark:bg-white/[0.04] focus:bg-black/[0.05] dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-black/10 dark:focus:ring-white/10'
           }`}
         />
         {saved && (
@@ -110,7 +110,7 @@ export function ProfileEditor({ profile, onUpdate, email }: ProfileEditorProps) 
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* First Name / Last Name */}
       <div className="flex gap-4">
         <FormField label="First Name" value={firstName} field="first_name" placeholder="First name" onSave={handleNameSave} />
@@ -120,9 +120,9 @@ export function ProfileEditor({ profile, onUpdate, email }: ProfileEditorProps) 
       {/* Email with verified badge */}
       {email && (
         <div>
-          <label className="block text-[12px] font-normal text-coda-text-muted mb-2">Email</label>
+          <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">Email</label>
           <div className="flex items-center gap-3">
-            <div className="flex-1 px-4 py-3 text-[14px] text-coda-text bg-black/[0.015] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl">
+            <div className="flex-1 px-4 py-3 text-[14px] text-black/70 dark:text-white/70 bg-black/[0.03] dark:bg-white/[0.04] rounded-lg">
               {email}
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-medium border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
