@@ -87,20 +87,33 @@ export function SecuritySection() {
   return (
     <div className="space-y-0">
       {/* Passkey Management */}
-      <div className="py-6">
-        <PasskeyRegistration />
+      <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+        <div className="w-48 shrink-0 pt-0">
+          <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Authentication</h4>
+        </div>
+        <div className="flex-1">
+          <PasskeyRegistration />
+        </div>
       </div>
 
       {/* Active Sessions */}
-      <div className="py-6 border-t border-black/[0.06] dark:border-white/[0.06]">
-        <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-3">Active Sessions</p>
-        <SessionManager />
+      <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+        <div className="w-48 shrink-0 pt-0">
+          <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Active Sessions</h4>
+        </div>
+        <div className="flex-1">
+          <SessionManager />
+        </div>
       </div>
 
       {/* Login History */}
-      <div className="py-6 border-t border-black/[0.06] dark:border-white/[0.06]">
-        <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-3">Recent Login History</p>
-        <LoginHistory />
+      <div className="flex gap-8 py-8">
+        <div className="w-48 shrink-0 pt-0">
+          <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Login History</h4>
+        </div>
+        <div className="flex-1">
+          <LoginHistory />
+        </div>
       </div>
     </div>
   );

@@ -372,7 +372,7 @@ export function SettingsPage() {
                   )}
 
                   {/* ── Defaults & Preferences ── */}
-                  <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+                  <div className="flex gap-8 py-8">
                     <div className="w-48 shrink-0 pt-0">
                       <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Defaults & Preferences</h4>
                     </div>
@@ -380,7 +380,6 @@ export function SettingsPage() {
                       <PersonaSwitcher />
                     </div>
                   </div>
-
                 </div>
               )}
 
@@ -390,62 +389,70 @@ export function SettingsPage() {
               {/* ── Appearance ── */}
               {section === 'appearance' && (
                 <div className="space-y-0">
-                  <div className="py-6">
-                    <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-4">Theme</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      {themeOptions.map(opt => {
-                        const Icon = opt.icon;
-                        const active = preference === opt.pref;
-                        return (
-                          <button
-                            key={opt.pref}
-                            onClick={() => setTheme(opt.pref)}
-                            className={`relative flex flex-col items-center gap-3 p-5 rounded-xl transition-colors cursor-pointer ${
-                              active ? (isDark ? 'bg-white/10' : 'bg-black/[0.04]') : 'bg-transparent hover:text-coda-text'
-                            }`}
-                          >
-                            {active && <div className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full ${opt.dotColor}`} />}
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                              active ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text' : (isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted')
-                            }`}><Icon size={20} /></div>
-                            <div className="text-center">
-                              <p className={`text-[13px] font-medium ${active ? 'text-coda-text' : 'text-coda-text-secondary'}`}>{opt.label}</p>
-                              <p className="text-[10px] text-coda-text-muted mt-1">{opt.desc}</p>
-                            </div>
-                          </button>
-                        );
-                      })}
+                  <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+                    <div className="w-48 shrink-0 pt-0">
+                      <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Theme</h4>
+                    </div>
+                    <div className="flex-1">
+                      <div className="grid grid-cols-3 gap-3">
+                        {themeOptions.map(opt => {
+                          const Icon = opt.icon;
+                          const active = preference === opt.pref;
+                          return (
+                            <button
+                              key={opt.pref}
+                              onClick={() => setTheme(opt.pref)}
+                              className={`relative flex flex-col items-center gap-3 p-5 rounded-xl transition-colors cursor-pointer ${
+                                active ? (isDark ? 'bg-white/10' : 'bg-black/[0.04]') : 'bg-transparent hover:text-coda-text'
+                              }`}
+                            >
+                              {active && <div className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full ${opt.dotColor}`} />}
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                active ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text' : (isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted')
+                              }`}><Icon size={20} /></div>
+                              <div className="text-center">
+                                <p className={`text-[13px] font-medium ${active ? 'text-coda-text' : 'text-coda-text-secondary'}`}>{opt.label}</p>
+                                <p className="text-[10px] text-coda-text-muted mt-1">{opt.desc}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="py-6 border-t border-black/[0.06] dark:border-white/[0.06]">
-                    <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-4">Density</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {([
-                        { value: 'default' as Density, icon: Maximize2, label: 'Default', desc: 'Standard spacing and padding' },
-                        { value: 'compact' as Density, icon: Minimize2, label: 'Compact', desc: 'Tighter layout for power users' },
-                      ]).map(opt => {
-                        const Icon = opt.icon;
-                        const active = density === opt.value;
-                        return (
-                          <button
-                            key={opt.value}
-                            onClick={() => setDensity(opt.value)}
-                            className={`relative flex items-center gap-3 p-5 text-left rounded-xl transition-colors cursor-pointer ${
-                              active ? (isDark ? 'bg-white/10' : 'bg-black/[0.04]') : 'bg-transparent hover:text-coda-text'
-                            }`}
-                          >
-                            {active && <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-emerald-400" />}
-                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                              active ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text' : (isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted')
-                            }`}><Icon size={18} /></div>
-                            <div>
-                              <p className={`text-[13px] font-medium ${active ? 'text-coda-text' : 'text-coda-text-secondary'}`}>{opt.label}</p>
-                              <p className="text-[10px] text-coda-text-muted mt-1">{opt.desc}</p>
-                            </div>
-                          </button>
-                        );
-                      })}
+                  <div className="flex gap-8 py-8">
+                    <div className="w-48 shrink-0 pt-0">
+                      <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Density</h4>
+                    </div>
+                    <div className="flex-1">
+                      <div className="grid grid-cols-2 gap-3">
+                        {([
+                          { value: 'default' as Density, icon: Maximize2, label: 'Default', desc: 'Standard spacing and padding' },
+                          { value: 'compact' as Density, icon: Minimize2, label: 'Compact', desc: 'Tighter layout for power users' },
+                        ]).map(opt => {
+                          const Icon = opt.icon;
+                          const active = density === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              onClick={() => setDensity(opt.value)}
+                              className={`relative flex items-center gap-3 p-5 text-left rounded-xl transition-colors cursor-pointer ${
+                                active ? (isDark ? 'bg-white/10' : 'bg-black/[0.04]') : 'bg-transparent hover:text-coda-text'
+                              }`}
+                            >
+                              {active && <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-emerald-400" />}
+                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                active ? 'bg-black/[0.08] dark:bg-white/[0.10] text-coda-text' : (isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted')
+                              }`}><Icon size={18} /></div>
+                              <div>
+                                <p className={`text-[13px] font-medium ${active ? 'text-coda-text' : 'text-coda-text-secondary'}`}>{opt.label}</p>
+                                <p className="text-[10px] text-coda-text-muted mt-1">{opt.desc}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -454,8 +461,11 @@ export function SettingsPage() {
               {/* ── Network ── */}
               {section === 'network' && (
                 <div className="space-y-0">
-                  <div className="py-6">
-                    <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-3">Environment</p>
+                  <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+                    <div className="w-48 shrink-0 pt-0">
+                      <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Environment</h4>
+                    </div>
+                    <div className="flex-1">
                     <div className="flex items-center gap-3 py-2">
                       <div className="relative flex-shrink-0">
                         <div className={`w-2.5 h-2.5 rounded-full ${isProductionCluster ? 'bg-coda-brand' : 'bg-emerald-500'}`} />
@@ -485,9 +495,13 @@ export function SettingsPage() {
                         </div>
                       ))}
                     </div>
+                    </div>
                   </div>
-                  <div className="py-6 border-t border-black/[0.06] dark:border-white/[0.06]">
-                    <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-3">Transaction Monitor Refresh</p>
+                  <div className="flex gap-8 py-8">
+                    <div className="w-48 shrink-0 pt-0">
+                      <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Auto Refresh</h4>
+                    </div>
+                    <div className="flex-1">
                     <div className="grid grid-cols-4 gap-2">
                       {refreshOptions.map(opt => {
                         const active = refreshInterval === opt.value;
@@ -503,14 +517,20 @@ export function SettingsPage() {
                       })}
                     </div>
                     <p className="text-[10px] text-black/30 dark:text-white/30 mt-3 leading-relaxed">Controls how often the Transaction Monitor auto-polls for new settlements.</p>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* ── Notifications ── */}
               {section === 'notifications' && (
-                <div className="py-6">
-                  <div className="space-y-1">
+                <div className="space-y-0">
+                  <div className="flex gap-8 py-8">
+                    <div className="w-48 shrink-0 pt-0">
+                      <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Alerts</h4>
+                    </div>
+                    <div className="flex-1">
+                      <div className="space-y-1">
                     {notifItems.map(item => (
                       <NotificationToggle
                         key={item.key}
@@ -521,10 +541,12 @@ export function SettingsPage() {
                         isDark={isDark}
                       />
                     ))}
+                      </div>
+                      <p className="text-[10px] text-black/30 dark:text-white/30 mt-3 leading-relaxed">
+                        Notifications appear as in-app toasts. No external push or email delivery is configured.
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-black/30 dark:text-white/30 mt-3 leading-relaxed">
-                    Notifications appear as in-app toasts. No external push or email delivery is configured.
-                  </p>
                 </div>
               )}
             </motion.div>
