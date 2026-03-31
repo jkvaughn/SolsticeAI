@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { userCallServer } from '../lib/userClient';
+import { userCallServer, userCallServerPost } from '../lib/userClient';
 import { useAuth } from '../contexts/AuthContext';
 
 interface UserPreferences {
@@ -51,8 +51,8 @@ export function useUserPreferences() {
         if (lsBank) localPrefs.default_bank = lsBank;
 
         if (Object.keys(localPrefs).length > 0) {
-          const merged = await userCallServer<UserPreferences>(
-            '/user/preferences', userEmail, 'PUT', localPrefs as Record<string, unknown>,
+          const merged = await userCallServerPost<UserPreferences>(
+            '/user/preferences-update', userEmail, localPrefs as Record<string, unknown>,
           );
           setPreferences(merged);
           return;
@@ -100,7 +100,7 @@ export function useUserPreferences() {
     debounceRef.current = setTimeout(async () => {
       setIsSyncing(true);
       try {
-        await userCallServer('/user/preferences', userEmail, 'PUT', { [key]: value } as Record<string, unknown>);
+        await userCallServerPost('/user/preferences-update', userEmail, { [key]: value } as Record<string, unknown>);
       } catch {
         // Silent fail — localStorage is the fallback
       } finally {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { userCallServer } from '../lib/userClient';
+import { userCallServer, userCallServerPost } from '../lib/userClient';
 import { useAuth } from '../contexts/AuthContext';
 
 interface UserProfile {
@@ -39,7 +39,7 @@ export function useUserProfile() {
   const updateProfile = useCallback(async (fields: Partial<UserProfile>) => {
     if (!userEmail) return;
     try {
-      const data = await userCallServer<UserProfile>('/user/profile', userEmail, 'PUT', fields as Record<string, unknown>);
+      const data = await userCallServerPost<UserProfile>('/user/profile-update', userEmail, fields as Record<string, unknown>);
       setProfile(data);
       return data;
     } catch (err: any) {

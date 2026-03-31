@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Monitor, Loader2, LogOut, Smartphone, Globe } from 'lucide-react';
-import { userCallServer } from '../../lib/userClient';
+import { userCallServer, userCallServerPost } from '../../lib/userClient';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface Session {
@@ -61,7 +61,7 @@ export function SessionManager() {
     if (!userEmail) return;
     setRevokingId(id);
     try {
-      await userCallServer('/user/sessions/' + id, userEmail, 'DELETE');
+      await userCallServerPost('/user/sessions-revoke', userEmail, { session_id: id });
       setSessions(prev => prev.filter(s => s.id !== id));
     } catch {
       // Silent fail

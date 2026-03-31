@@ -1627,7 +1627,7 @@ app.get("/make-server-49d15288/user/profile", async (c) => {
   return c.json(rows[0]);
 });
 
-app.put("/make-server-49d15288/user/profile", async (c) => {
+app.post("/make-server-49d15288/user/profile-update", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1667,7 +1667,7 @@ app.get("/make-server-49d15288/user/preferences", async (c) => {
   return c.json(rows[0]);
 });
 
-app.put("/make-server-49d15288/user/preferences", async (c) => {
+app.post("/make-server-49d15288/user/preferences-update", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1748,11 +1748,12 @@ app.get("/make-server-49d15288/user/sessions", async (c) => {
   return c.json({ sessions: rows });
 });
 
-app.delete("/make-server-49d15288/user/sessions/:id", async (c) => {
+app.post("/make-server-49d15288/user/sessions-revoke", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
-  const sessionId = c.req.param("id");
+  const body = await c.req.json();
+  const sessionId = body.session_id;
 
   await sql`DELETE FROM user_sessions WHERE id = ${sessionId} AND email = ${email}`;
 
