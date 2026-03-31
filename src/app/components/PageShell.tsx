@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useRef, useState, useEffect, useCallback } from 'react';
 import { motion } from './motion-shim';
 import { LottieIcon } from './icons/LottieIcon';
 import { useTheme } from './ThemeProvider';
@@ -159,40 +159,9 @@ export function PageShell({
 
       {/* ─── Tab Bar + Action ─── */}
       {tabs && tabs.length > 0 && (
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-1 relative">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange?.(tab.id)}
-                className="relative px-4 py-1.5 rounded-full text-sm cursor-pointer transition-colors duration-200"
-              >
-                {activeTab === tab.id && (
-                  <motion.div
-                    layoutId="settings-tab-pill"
-                    className="absolute inset-0 bg-black dark:bg-white rounded-full"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
-                <span className={`relative z-10 transition-colors duration-200 ${
-                  activeTab === tab.id
-                    ? 'text-white dark:text-black'
-                    : 'text-coda-text-muted hover:text-coda-text'
-                }`}>
-                  {tab.label}
-                  {tab.count !== undefined && (
-                    <span className="ml-1.5 text-xs opacity-60">{tab.count}</span>
-                  )}
-                </span>
-              </button>
-            ))}
-          </div>
-          {tabAction && (
-            <div className="flex items-center gap-2">
-              {tabAction}
-            </div>
-          )}
-        </div>
+        <TabBar tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} isDark={isDark}>
+          {tabAction}
+        </TabBar>
       )}
 
       {/* ─── Page Content ─── */}
@@ -234,6 +203,88 @@ function StatMetric({ stat }: { stat: PageStat }) {
         </div>
         <div className="text-[11px] text-coda-text-muted leading-tight mt-0.5">{stat.label}</div>
       </div>
+    </div>
+  );
+}
+
+// ============================================================
+// TabBar — Sliding pill indicator that measures button positions
+// ============================================================
+
+function TabBar({
+  tabs,
+  activeTab,
+  onTabChange,
+  isDark,
+  children,
+}: {
+  tabs: PageTab[];
+  activeTab?: string;
+  onTabChange?: (id: string) => void;
+  isDark: boolean;
+  children?: ReactNode;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [pillStyle, setPillStyle] = useState<{ left: number; width: number } | null>(null);
+
+  const measure = useCallback(() => {
+    if (!activeTab || !containerRef.current) return;
+    const btn = buttonRefs.current.get(activeTab);
+    if (!btn) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    setPillStyle({
+      left: btnRect.left - containerRect.left,
+      width: btnRect.width,
+    });
+  }, [activeTab]);
+
+  useEffect(() => {
+    measure();
+  }, [measure]);
+
+  // Re-measure on resize
+  useEffect(() => {
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [measure]);
+
+  return (
+    <div className="flex items-center justify-between px-1">
+      <div ref={containerRef} className="flex items-center gap-1 relative">
+        {/* Sliding pill background */}
+        {pillStyle && (
+          <div
+            className="absolute top-0 h-full rounded-full bg-black dark:bg-white transition-all duration-300 ease-out"
+            style={{ left: pillStyle.left, width: pillStyle.width }}
+          />
+        )}
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            ref={el => { if (el) buttonRefs.current.set(tab.id, el); }}
+            onClick={() => onTabChange?.(tab.id)}
+            className="relative z-10 px-4 py-1.5 rounded-full text-sm cursor-pointer transition-colors duration-200"
+          >
+            <span className={`transition-colors duration-200 ${
+              activeTab === tab.id
+                ? 'text-white dark:text-black'
+                : 'text-coda-text-muted hover:text-coda-text'
+            }`}>
+              {tab.label}
+              {tab.count !== undefined && (
+                <span className="ml-1.5 text-xs opacity-60">{tab.count}</span>
+              )}
+            </span>
+          </button>
+        ))}
+      </div>
+      {children && (
+        <div className="flex items-center gap-2">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
