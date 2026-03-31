@@ -1,4 +1,4 @@
-import { Shield, Landmark, BarChart3, Eye, Building2 } from 'lucide-react';
+import { Shield, Landmark, BarChart3, Eye, Building2, Check } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { usePersona } from '../contexts/PersonaContext';
 import { useBanks } from '../contexts/BanksContext';
@@ -7,8 +7,8 @@ import { useIsAdmin } from '../hooks/useIsAdmin';
 import type { PersonaType } from '../types';
 
 // ============================================================
-// Persona Switcher (Task 126 + Task 130)
-// Role selector + bank scope dropdown.
+// Persona Switcher (XD "Users" table style)
+// Clean row-based role selector + bank scope dropdown.
 // ============================================================
 
 const PERSONA_OPTIONS: {
@@ -16,8 +16,6 @@ const PERSONA_OPTIONS: {
   label: string;
   desc: string;
   icon: React.ElementType;
-  color: string;
-  dot: string;
   defaultRoute: string;
 }[] = [
   {
@@ -25,8 +23,6 @@ const PERSONA_OPTIONS: {
     label: 'All Views',
     desc: 'Full navigation — all pages visible',
     icon: Eye,
-    color: '',
-    dot: 'bg-coda-text-muted',
     defaultRoute: '/',
   },
   {
@@ -34,8 +30,6 @@ const PERSONA_OPTIONS: {
     label: 'Compliance Officer',
     desc: 'Escalations, transactions, proving ground',
     icon: Shield,
-    color: 'text-coda-brand',
-    dot: 'bg-coda-brand',
     defaultRoute: '/escalations',
   },
   {
@@ -43,8 +37,6 @@ const PERSONA_OPTIONS: {
     label: 'Treasury Manager',
     desc: 'Treasury ops, agent config, transactions',
     icon: Landmark,
-    color: 'text-emerald-600 dark:text-emerald-400',
-    dot: 'bg-emerald-500',
     defaultRoute: '/treasury-ops',
   },
   {
@@ -52,8 +44,6 @@ const PERSONA_OPTIONS: {
     label: 'Executive',
     desc: 'Dashboard, visualizer, network command',
     icon: BarChart3,
-    color: 'text-blue-600 dark:text-blue-400',
-    dot: 'bg-blue-500',
     defaultRoute: '/',
   },
 ];
@@ -71,43 +61,45 @@ export function PersonaSwitcher() {
     navigate(opt.defaultRoute);
   };
 
-  // Build display label for sidebar pill
-  const activeOpt = PERSONA_OPTIONS.find(o => o.value === persona);
   const activeBank = activeBanks.find(b => b.id === selectedBankId);
 
+  const visibleOptions = PERSONA_OPTIONS.filter(opt => opt.value !== null || isAdmin);
+
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        {PERSONA_OPTIONS.filter(opt => opt.value !== null || isAdmin).map(opt => {
-          const Icon = opt.icon;
+    <div className="space-y-5">
+      {/* Table header */}
+      <div className="flex items-center gap-4 px-1 text-[11px] font-normal text-black/30 dark:text-white/30 uppercase tracking-wider">
+        <span className="flex-1">Role</span>
+        <span className="w-64 text-left">Scope</span>
+        <span className="w-16 text-right">Status</span>
+      </div>
+
+      {/* Persona rows */}
+      <div>
+        {visibleOptions.map((opt, i) => {
           const active = opt.value === persona;
           return (
             <button
               key={opt.value ?? 'all'}
               onClick={() => handleSelect(opt)}
-              className={`relative flex flex-col items-start p-4 text-left rounded-xl transition-all duration-200 cursor-pointer ${
-                active
-                  ? 'bg-white/60 dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.1]'
-                  : 'bg-transparent border border-transparent hover:bg-black/[0.02] dark:hover:bg-white/[0.03] hover:text-coda-text'
-              }`}
+              className={`w-full flex items-center gap-4 px-1 py-4 text-left cursor-pointer transition-colors ${
+                i > 0 ? 'border-t border-black/[0.04] dark:border-white/[0.04]' : ''
+              } ${active ? '' : 'hover:bg-black/[0.01] dark:hover:bg-white/[0.02]'}`}
             >
-              {active && (
-                <div className={`absolute top-3 right-3 w-2 h-2 rounded-full ${opt.dot}`} />
-              )}
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                active
-                  ? opt.value
-                    ? `${opt.color.includes('coda-brand') ? 'bg-coda-brand/10' : opt.color.includes('emerald') ? 'bg-emerald-500/10' : opt.color.includes('blue') ? 'bg-blue-500/10' : 'bg-coda-brand/10'} ${opt.color}`
-                    : 'bg-coda-brand/10 text-coda-brand'
-                  : isDark ? 'bg-white/5 text-coda-text-muted' : 'bg-black/[0.04] text-coda-text-muted'
-              }`}>
-                <Icon size={18} />
-              </div>
-              <div>
-                <p className={`text-[13px] font-medium ${active ? 'text-coda-text' : 'text-coda-text-secondary'}`}>
+              <div className="flex-1 min-w-0">
+                <p className={`text-[14px] ${active ? 'text-black/80 dark:text-white/80' : 'text-black/50 dark:text-white/50'}`}>
                   {opt.label}
                 </p>
-                <p className="text-[10px] text-coda-text-muted mt-0.5 leading-relaxed">{opt.desc}</p>
+              </div>
+              <div className="w-64">
+                <p className="text-[12px] text-black/35 dark:text-white/35">{opt.desc}</p>
+              </div>
+              <div className="w-16 flex justify-end">
+                {active && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+                    <Check size={9} /> Active
+                  </span>
+                )}
               </div>
             </button>
           );
@@ -116,23 +108,14 @@ export function PersonaSwitcher() {
 
       {/* Bank scope selector — only visible when a persona is active */}
       {persona && (
-        <div className={`rounded-xl border p-3 ${
-          isDark ? 'bg-white/[0.03] border-white/[0.06]' : 'bg-black/[0.02] border-black/[0.04]'
-        }`}>
-          <div className="flex items-center gap-2 mb-2">
-            <Building2 size={13} className="text-coda-text-muted" />
-            <span className="text-[10px] uppercase tracking-wider text-coda-text-muted font-medium">
-              Bank Scope
-            </span>
-          </div>
+        <div className="pt-2">
+          <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">
+            Bank Scope
+          </label>
           <select
             value={selectedBankId ?? ''}
             onChange={e => setSelectedBankId(e.target.value || null)}
-            className={`w-full text-[12px] font-medium rounded-lg px-3 py-2 cursor-pointer transition-all ${
-              isDark
-                ? 'bg-white/[0.06] border-white/[0.1] text-coda-text'
-                : 'bg-white/50 border-black/[0.08] text-coda-text'
-            } border focus:outline-none focus:ring-2 focus:ring-coda-brand/30`}
+            className="w-full max-w-xs text-[14px] rounded-lg px-4 py-3 cursor-pointer transition-all bg-black/[0.03] dark:bg-white/[0.04] border-none text-black/70 dark:text-white/70 focus:outline-none focus:ring-1 focus:ring-black/10 dark:focus:ring-white/10"
           >
             <option value="">All Banks</option>
             {activeBanks.map(bank => (
@@ -142,7 +125,7 @@ export function PersonaSwitcher() {
             ))}
           </select>
           {activeBank && (
-            <p className="text-[10px] text-coda-text-muted mt-1.5">
+            <p className="text-[11px] text-black/30 dark:text-white/30 mt-1.5">
               Filtering to {activeBank.short_code} transactions
             </p>
           )}
