@@ -7,7 +7,8 @@
 
 import { callServer } from '../supabaseClient';
 
-const PREFIX = '/make-server-49d15288';
+// NOTE: callServer already prepends serverBaseUrl which includes the route prefix.
+// Routes here should NOT include /make-server-49d15288/ — just the path after it.
 
 /**
  * Send a GET request to a user-scoped server route.
@@ -17,7 +18,7 @@ export async function userCallServer<T = unknown>(
   route: string,
   email: string,
 ): Promise<T> {
-  const fullRoute = `${PREFIX}${route}`;
+  const fullRoute = route;
   return callServer<T>(fullRoute, undefined, 3, {
     headers: { 'X-User-Email': email },
   });
@@ -31,7 +32,7 @@ export async function userCallServerPost<T = unknown>(
   email: string,
   body: Record<string, unknown>,
 ): Promise<T> {
-  const fullRoute = `${PREFIX}${route}`;
+  const fullRoute = route;
   return callServer<T>(fullRoute, body, 3, {
     headers: { 'X-User-Email': email },
   });
