@@ -93,7 +93,7 @@ export function SettingsPage() {
   const { banks } = useBanks();
   const currentUser = useCurrentUser();
   const isAdmin = useIsAdmin();
-  const { profile, updateProfile } = useUserProfile();
+  const { profile, isLoading: profileLoading, updateProfile } = useUserProfile();
 
   const [section, setSection] = useState<SettingsSection>('profile');
 
@@ -260,8 +260,12 @@ export function SettingsPage() {
                       <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Personal Information</h4>
                     </div>
                     <div className="flex-1">
-                      {profile ? (
-                        <ProfileEditor profile={profile} onUpdate={updateProfile} email={currentUser.email} />
+                      {profileLoading ? (
+                        <ProfileSkeleton />
+                      ) : profile ? (
+                        <div className="animate-fadeIn">
+                          <ProfileEditor profile={profile} onUpdate={updateProfile} email={currentUser.email} />
+                        </div>
                       ) : (
                         <ProfileEditorFallback name={profileName} email={currentUser.email} />
                       )}
@@ -546,6 +550,40 @@ export function SettingsPage() {
             </motion.div>
         </div>
       </PageShell>
+    </div>
+  );
+}
+
+// ============================================================
+// ProfileSkeleton — shimmer placeholders while loading
+// ============================================================
+
+function SkeletonField({ half }: { half?: boolean }) {
+  return (
+    <div className={half ? 'flex-1' : 'w-full'}>
+      <div className="h-3 w-16 rounded bg-black/[0.04] dark:bg-white/[0.04] mb-2 animate-pulse" />
+      <div className="h-12 rounded-lg bg-black/[0.03] dark:bg-white/[0.03] animate-pulse" />
+    </div>
+  );
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-4">
+        <SkeletonField half />
+        <SkeletonField half />
+      </div>
+      <SkeletonField />
+      <div className="flex gap-4">
+        <SkeletonField half />
+        <SkeletonField half />
+      </div>
+      <SkeletonField />
+      <div className="flex gap-4">
+        <SkeletonField half />
+        <SkeletonField half />
+      </div>
     </div>
   );
 }
