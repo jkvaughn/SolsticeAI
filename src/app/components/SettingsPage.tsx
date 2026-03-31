@@ -252,66 +252,138 @@ export function SettingsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
             >
-              {/* ── Profile ── */}
+              {/* ── Profile (XD-style horizontal form layout) ── */}
               {section === 'profile' && (
-                <div className="space-y-6">
-                  {/* Identity card */}
-                  <div className="liquid-glass-card squircle p-6 space-y-6">
-                    <div className="flex flex-col items-center text-center space-y-4">
-                      <div className="w-20 h-20 rounded-full bg-coda-brand flex items-center justify-center shadow-lg">
-                        <span className="text-2xl font-sans font-bold text-white select-none">{initials}</span>
+                <div className="space-y-0">
+                  {/* ── Personal Information ── */}
+                  <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+                    <div className="w-44 shrink-0 pt-1">
+                      <h4 className="text-sm font-medium text-coda-text">Personal Information</h4>
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <div className="flex items-center gap-4 mb-2">
+                        <div className="w-14 h-14 rounded-full bg-coda-brand flex items-center justify-center">
+                          <span className="text-lg font-sans font-bold text-white select-none">{initials}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-coda-text">{profileName}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                              currentUser.provider === 'Azure Entra ID' ? 'bg-coda-brand/10 text-coda-brand' : 'bg-emerald-500/10 text-emerald-500'
+                            }`}>{currentUser.provider}</span>
+                            {isAdmin && (
+                              <span className="text-[8px] font-bold text-coda-brand bg-coda-brand/10 px-1.5 py-0.5 rounded">ADMIN</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="space-y-2 flex flex-col items-center">
-                        <h3 className="text-xl font-semibold font-sans text-coda-text text-center">{profileName}</h3>
-                        <p className="text-coda-text-muted font-mono text-[11px]">{currentUser.email}</p>
-                        <div className="flex items-center justify-center gap-2 flex-wrap">
-                          {profile?.title && (
-                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-coda-brand/10 text-coda-brand">{profile.title}</span>
-                          )}
-                          <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-medium ${
-                            currentUser.provider === 'Azure Entra ID' ? 'bg-coda-brand/10 text-coda-brand' : 'bg-emerald-500/10 text-emerald-500'
-                          }`}>{currentUser.provider}</span>
+                      {profile && <ProfileEditor profile={profile} onUpdate={updateProfile} />}
+                      {!profile && (
+                        <div className="space-y-4">
+                          <ProfileReadOnlyField label="Email" value={currentUser.email} verified />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ── Account ── */}
+                  <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+                    <div className="w-44 shrink-0 pt-1">
+                      <h4 className="text-sm font-medium text-coda-text">Account</h4>
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <ProfileReadOnlyField label="Email" value={currentUser.email} verified />
+                      {currentUser.userId && (
+                        <div>
+                          <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">Account ID</label>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm text-coda-text-secondary">
+                              {currentUser.userId.slice(0, 8)}...{currentUser.userId.slice(-4)}
+                            </span>
+                            <button onClick={copyUserId} className="p-1 cursor-pointer" title="Copy account ID">
+                              {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-coda-text-muted" />}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      <div>
+                        <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">Status</label>
+                        <div className="flex items-center gap-2">
+                          <span className="relative flex h-3 w-3 items-center justify-center">
+                            <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+                          </span>
+                          <span className="text-sm text-coda-text">Online</span>
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Editable profile fields */}
-                    {profile && <ProfileEditor profile={profile} onUpdate={updateProfile} />}
-
-                    {/* Account info row */}
-                    <div className="flex items-center justify-between pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
-                      <div className="flex items-center gap-3">
-                        <span className="relative flex h-4 w-4 items-center justify-center shrink-0">
-                          <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-green-400 opacity-75" />
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-                        </span>
-                        <span className="text-sm font-sans text-coda-text-secondary">Online</span>
-                        {isAdmin && (
-                          <span className="text-[8px] font-bold text-coda-brand bg-coda-brand/10 px-1.5 py-0.5 rounded">ADMIN</span>
-                        )}
-                      </div>
-                      {currentUser.userId && (
-                        <button onClick={copyUserId} className="flex items-center gap-1.5 p-0.5 cursor-pointer" title="Copy account ID">
-                          <span className="font-mono text-[10px] text-coda-text-muted">
-                            {currentUser.userId.slice(0, 8)}...{currentUser.userId.slice(-4)}
-                          </span>
-                          {copied ? <Check size={10} className="text-coda-brand" /> : <Copy size={10} className="text-coda-text-muted" />}
-                        </button>
-                      )}
+                  {/* ── Activity ── */}
+                  <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+                    <div className="w-44 shrink-0 pt-1">
+                      <h4 className="text-sm font-medium text-coda-text">Activity</h4>
                     </div>
+                    <div className="flex-1">
+                      <ActivityTimeline />
+                    </div>
+                  </div>
 
-                    {/* Sign out */}
-                    <div className="-mx-6 -mb-6 px-6 py-3 border-t border-black/[0.06] dark:border-white/[0.06]">
+                  {/* ── Recent Escalations ── */}
+                  {recentEscalations.length > 0 && (
+                    <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+                      <div className="w-44 shrink-0 pt-1">
+                        <h4 className="text-sm font-medium text-coda-text">Recent Escalations</h4>
+                      </div>
+                      <div className="flex-1">
+                        <table className="w-full text-[11px] font-mono">
+                          <thead>
+                            <tr className="text-coda-text-muted">
+                              <th className="text-left pb-2 font-medium">Route</th>
+                              <th className="text-left pb-2 font-medium">Resolution</th>
+                              <th className="text-right pb-2 font-medium">Time</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-coda-text-secondary">
+                            {recentEscalations.map(row => (
+                              <tr key={row.id} className="border-t border-black/[0.04] dark:border-white/[0.04]">
+                                <td className="py-2">{bankCode(row.sender_bank_id)} &rarr; {bankCode(row.receiver_bank_id)}</td>
+                                <td className="py-2">{row.resolution}</td>
+                                <td className="py-2 text-right text-coda-text-muted">
+                                  {row.resolved_at ? new Date(row.resolved_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Defaults & Preferences ── */}
+                  <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
+                    <div className="w-44 shrink-0 pt-1">
+                      <h4 className="text-sm font-medium text-coda-text">Defaults & Preferences</h4>
+                    </div>
+                    <div className="flex-1">
+                      <PersonaSwitcher />
+                    </div>
+                  </div>
+
+                  {/* ── Sign Out ── */}
+                  <div className="flex gap-8 py-8">
+                    <div className="w-44 shrink-0" />
+                    <div className="flex-1">
                       {!signOutConfirm ? (
                         <button
                           onClick={() => setSignOutConfirm(true)}
-                          className="liquid-button w-full flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium text-coda-text-muted cursor-pointer"
+                          className="liquid-button flex items-center gap-2 px-5 py-2 text-sm font-medium text-coda-text-muted cursor-pointer"
                         >
                           <LogOut size={15} />
                           <span>Sign Out</span>
                         </button>
                       ) : (
-                        <div className="flex items-center justify-center gap-3">
+                        <div className="flex items-center gap-3">
                           <span className="text-xs text-red-500">End session?</span>
                           <button onClick={() => setSignOutConfirm(false)} className="px-3 py-1.5 text-xs font-medium text-coda-text-secondary cursor-pointer"><span>Cancel</span></button>
                           <button onClick={handleSignOut} className="px-3 py-1.5 text-xs font-medium bg-red-500/15 text-red-400 cursor-pointer rounded-lg"><span>Sign Out</span></button>
@@ -319,42 +391,6 @@ export function SettingsPage() {
                       )}
                     </div>
                   </div>
-
-                  {/* Activity */}
-                  <WidgetShell title="Activity" icon={Clock}>
-                    <ActivityTimeline />
-                  </WidgetShell>
-
-                  {/* Recent Escalations */}
-                  {recentEscalations.length > 0 && (
-                    <WidgetShell title="Recent Escalations">
-                      <table className="w-full text-[10px] font-mono">
-                        <thead>
-                          <tr className="text-coda-text-muted">
-                            <th className="text-left pb-1.5 font-medium">Route</th>
-                            <th className="text-left pb-1.5 font-medium">Resolution</th>
-                            <th className="text-right pb-1.5 font-medium">Time</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-coda-text-secondary">
-                          {recentEscalations.map(row => (
-                            <tr key={row.id} className="border-t border-coda-border/10">
-                              <td className="py-1.5">{bankCode(row.sender_bank_id)} &rarr; {bankCode(row.receiver_bank_id)}</td>
-                              <td className="py-1.5">{row.resolution}</td>
-                              <td className="py-1.5 text-right text-coda-text-muted">
-                                {row.resolved_at ? new Date(row.resolved_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </WidgetShell>
-                  )}
-
-                  {/* Preferences */}
-                  <WidgetShell title="Defaults & Preferences">
-                    <PersonaSwitcher />
-                  </WidgetShell>
                 </div>
               )}
 
@@ -502,6 +538,26 @@ export function SettingsPage() {
             </motion.div>
         </div>
       </PageShell>
+    </div>
+  );
+}
+
+// ============================================================
+// ProfileReadOnlyField — XD-style read-only field with optional badge
+// ============================================================
+
+function ProfileReadOnlyField({ label, value, verified }: { label: string; value: string; verified?: boolean }) {
+  return (
+    <div>
+      <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">{label}</label>
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-coda-text">{value}</span>
+        {verified && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-500">
+            <Check size={10} /> Verified
+          </span>
+        )}
+      </div>
     </div>
   );
 }
