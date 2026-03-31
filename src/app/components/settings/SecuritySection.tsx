@@ -86,7 +86,7 @@ function LoginHistory() {
 
 export function SecuritySection() {
   return (
-    <WidgetShell title="Security" icon={Shield} collapsible defaultOpen={false}>
+    <WidgetShell title="Security" icon={Shield}>
       <div className="space-y-6">
         {/* Passkey Management */}
         <div>
