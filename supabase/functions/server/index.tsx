@@ -1615,7 +1615,7 @@ app.post("/make-server-49d15288/passkey-auth-verify", async (c) => {
 // User Profile & Preferences
 // ═══════════════════════════════════════════════════════
 
-app.get(`/${PREFIX}/user/profile`, async (c) => {
+app.get("/make-server-49d15288/user/profile", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1627,7 +1627,7 @@ app.get(`/${PREFIX}/user/profile`, async (c) => {
   return c.json(rows[0]);
 });
 
-app.put(`/${PREFIX}/user/profile`, async (c) => {
+app.put("/make-server-49d15288/user/profile", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1655,7 +1655,7 @@ app.put(`/${PREFIX}/user/profile`, async (c) => {
   return c.json(rows[0]);
 });
 
-app.get(`/${PREFIX}/user/preferences`, async (c) => {
+app.get("/make-server-49d15288/user/preferences", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1667,7 +1667,7 @@ app.get(`/${PREFIX}/user/preferences`, async (c) => {
   return c.json(rows[0]);
 });
 
-app.put(`/${PREFIX}/user/preferences`, async (c) => {
+app.put("/make-server-49d15288/user/preferences", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1701,7 +1701,7 @@ app.put(`/${PREFIX}/user/preferences`, async (c) => {
 // Session Management
 // ═══════════════════════════════════════════════════════
 
-app.post(`/${PREFIX}/user/sessions`, async (c) => {
+app.post("/make-server-49d15288/user/sessions", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1733,7 +1733,7 @@ app.post(`/${PREFIX}/user/sessions`, async (c) => {
   return c.json({ session_token: sessionToken, session: rows[0] });
 });
 
-app.get(`/${PREFIX}/user/sessions`, async (c) => {
+app.get("/make-server-49d15288/user/sessions", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1748,7 +1748,7 @@ app.get(`/${PREFIX}/user/sessions`, async (c) => {
   return c.json({ sessions: rows });
 });
 
-app.delete(`/${PREFIX}/user/sessions/:id`, async (c) => {
+app.delete("/make-server-49d15288/user/sessions/:id", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1763,7 +1763,7 @@ app.delete(`/${PREFIX}/user/sessions/:id`, async (c) => {
   return c.json({ success: true });
 });
 
-app.post(`/${PREFIX}/user/sessions/heartbeat`, async (c) => {
+app.post("/make-server-49d15288/user/sessions/heartbeat", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1781,7 +1781,7 @@ app.post(`/${PREFIX}/user/sessions/heartbeat`, async (c) => {
 // Audit Log
 // ═══════════════════════════════════════════════════════
 
-app.get(`/${PREFIX}/user/audit-log`, async (c) => {
+app.get("/make-server-49d15288/user/audit-log", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
@@ -1799,7 +1799,7 @@ app.get(`/${PREFIX}/user/audit-log`, async (c) => {
   return c.json({ entries: rows, limit, offset });
 });
 
-app.get(`/${PREFIX}/user/login-history`, async (c) => {
+app.get("/make-server-49d15288/user/login-history", async (c) => {
   const denied = requireUser(c);
   if (denied) return denied;
   const email = getUserEmail(c)!;
