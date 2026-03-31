@@ -352,27 +352,22 @@ export function SettingsPage() {
                       <div className="w-48 shrink-0 pt-0">
                         <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Recent Escalations</h4>
                       </div>
-                      <div className="flex-1 animate-fadeIn">
-                        <table className="w-full text-[11px] font-mono">
-                          <thead>
-                            <tr className="text-coda-text-muted">
-                              <th className="text-left pb-2 font-medium">Route</th>
-                              <th className="text-left pb-2 font-medium">Resolution</th>
-                              <th className="text-right pb-2 font-medium">Time</th>
-                            </tr>
-                          </thead>
-                          <tbody className="text-coda-text-secondary">
-                            {recentEscalations.map(row => (
-                              <tr key={row.id} className="border-t border-black/[0.04] dark:border-white/[0.04]">
-                                <td className="py-2">{bankCode(row.sender_bank_id)} &rarr; {bankCode(row.receiver_bank_id)}</td>
-                                <td className="py-2">{row.resolution}</td>
-                                <td className="py-2 text-right text-coda-text-muted">
-                                  {row.resolved_at ? new Date(row.resolved_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      <div className="flex-1 animate-fadeIn space-y-0">
+                        {recentEscalations.map((row, idx) => (
+                          <div key={row.id} className={`flex items-center gap-3 py-3 ${idx > 0 ? 'border-t border-black/[0.04] dark:border-white/[0.04]' : ''}`}>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-[13px] text-black/60 dark:text-white/60">
+                                {bankCode(row.sender_bank_id)} → {bankCode(row.receiver_bank_id)}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-black/30 dark:text-white/30 font-mono">
+                              {row.resolution === 'operator_settled' ? 'Settled' : row.resolution.replace(/_/g, ' ')}
+                            </span>
+                            <span className="text-[11px] text-black/25 dark:text-white/25 whitespace-nowrap">
+                              {row.resolved_at ? new Date(row.resolved_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
