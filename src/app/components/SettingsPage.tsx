@@ -258,7 +258,7 @@ export function SettingsPage() {
                   {/* ── Personal Information ── */}
                   <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
                     <div className="w-48 shrink-0 pt-0">
-                      <h4 className="text-[15px] font-medium text-black/80 dark:text-white/80">Personal Information</h4>
+                      <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Personal Information</h4>
                     </div>
                     <div className="flex-1">
                       {profile ? (
@@ -272,7 +272,7 @@ export function SettingsPage() {
                   {/* ── Account ── */}
                   <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
                     <div className="w-48 shrink-0 pt-0">
-                      <h4 className="text-[15px] font-medium text-black/80 dark:text-white/80">Account</h4>
+                      <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Account</h4>
                     </div>
                     <div className="flex-1 space-y-4">
                       <div className="flex gap-4">
@@ -318,7 +318,7 @@ export function SettingsPage() {
                   {/* ── Activity ── */}
                   <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
                     <div className="w-48 shrink-0 pt-0">
-                      <h4 className="text-[15px] font-medium text-black/80 dark:text-white/80">Activity</h4>
+                      <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Activity</h4>
                     </div>
                     <div className="flex-1">
                       <ActivityTimeline />
@@ -359,7 +359,7 @@ export function SettingsPage() {
                   {/* ── Defaults & Preferences ── */}
                   <div className="flex gap-8 py-8 border-b border-black/[0.06] dark:border-white/[0.06]">
                     <div className="w-48 shrink-0 pt-0">
-                      <h4 className="text-[15px] font-medium text-black/80 dark:text-white/80">Defaults & Preferences</h4>
+                      <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Defaults & Preferences</h4>
                     </div>
                     <div className="flex-1">
                       <PersonaSwitcher />
