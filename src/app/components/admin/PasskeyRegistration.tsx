@@ -72,7 +72,7 @@ export function PasskeyRegistration() {
 
   if (!isProduction) {
     return (
-      <div className="space-y-3 pt-4 border-t border-black/[0.06] dark:border-white/[0.06]">
+      <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Fingerprint size={16} className="text-coda-text-muted" />
           <span className="text-sm font-medium text-coda-text">Passkey Authentication</span>
