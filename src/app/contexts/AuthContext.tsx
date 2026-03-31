@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
 import { supabase, serverBaseUrl, publicAnonKey } from '../supabaseClient';
-import { userCallServer } from '../lib/userClient';
+import { userCallServer, userCallServerPost } from '../lib/userClient';
 import type { Session, User } from '@supabase/supabase-js';
 
 // ============================================================
@@ -99,8 +99,8 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
     if (email && !azurePrevUser.current) {
       (async () => {
         try {
-          const res = await userCallServer<{ id: string; session_token: string }>(
-            '/user/sessions', email, 'POST',
+          const res = await userCallServerPost<{ id: string; session_token: string }>(
+            '/user/sessions', email, {},
           );
           sessionStorage.setItem('coda-session-token', res.session_token);
           sessionStorage.setItem('coda-session-id', res.id);
@@ -119,7 +119,7 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(() => {
       const token = sessionStorage.getItem('coda-session-token');
       if (token) {
-        userCallServer('/user/sessions/heartbeat', email, 'POST', { session_token: token }).catch(() => {});
+        userCallServerPost('/user/sessions/heartbeat', email, { session_token: token }).catch(() => {});
       }
     }, 300_000);
     return () => clearInterval(interval);
@@ -141,7 +141,7 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
       const sessionId = sessionStorage.getItem('coda-session-id');
       const email = state.user?.email;
       if (sessionId && email) {
-        await userCallServer('/user/sessions/' + sessionId, email, 'DELETE');
+        await userCallServerPost('/user/sessions-revoke', email, { session_id: sessionId });
       }
     } catch {
       // Session cleanup is non-blocking
@@ -223,8 +223,8 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     if (email && !sbPrevUser.current) {
       (async () => {
         try {
-          const res = await userCallServer<{ id: string; session_token: string }>(
-            '/user/sessions', email, 'POST',
+          const res = await userCallServerPost<{ id: string; session_token: string }>(
+            '/user/sessions', email, {},
           );
           sessionStorage.setItem('coda-session-token', res.session_token);
           sessionStorage.setItem('coda-session-id', res.id);
@@ -243,7 +243,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(() => {
       const token = sessionStorage.getItem('coda-session-token');
       if (token) {
-        userCallServer('/user/sessions/heartbeat', email, 'POST', { session_token: token }).catch(() => {});
+        userCallServerPost('/user/sessions/heartbeat', email, { session_token: token }).catch(() => {});
       }
     }, 300_000);
     return () => clearInterval(interval);
@@ -311,7 +311,7 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       const sessionId = sessionStorage.getItem('coda-session-id');
       const email = state.user?.email;
       if (sessionId && email) {
-        await userCallServer('/user/sessions/' + sessionId, email, 'DELETE');
+        await userCallServerPost('/user/sessions-revoke', email, { session_id: sessionId });
       }
     } catch {
       // Session cleanup is non-blocking
