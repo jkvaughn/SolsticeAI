@@ -7,7 +7,7 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useIsAdmin } from '../hooks/useIsAdmin';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { PageShell } from './PageShell';
-import type { PageStat } from './PageShell';
+import type { PageStat, PageTab } from './PageShell';
 import { WidgetShell } from './dashboard/WidgetShell';
 import { PersonaSwitcher } from './PersonaSwitcher';
 import { ProfileEditor } from './profile/ProfileEditor';
@@ -17,7 +17,7 @@ import { motion } from './motion-shim';
 import { supabase } from '../supabaseClient';
 import { userCallServer } from '../lib/userClient';
 import {
-  User, Shield, Layers, Wifi, Bell, BellOff,
+  Shield, Layers, Wifi, Bell, BellOff,
   Sun, Moon, Monitor, Globe,
   Timer, Maximize2, Minimize2,
   LogOut, ShieldCheck, BarChart3, Clock, Activity,
@@ -47,14 +47,14 @@ const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
   treasuryCycleCompletions: false,
 };
 
-// ── Navigation items ──
+// ── Tab definitions (reuses PageShell pill tabs) ──
 
-const NAV_ITEMS: { id: SettingsSection; label: string; icon: React.ElementType }[] = [
-  { id: 'profile',       label: 'Profile',       icon: User },
-  { id: 'security',      label: 'Security',      icon: Shield },
-  { id: 'appearance',    label: 'Appearance',     icon: Layers },
-  { id: 'network',       label: 'Network',        icon: Wifi },
-  { id: 'notifications', label: 'Notifications',  icon: Bell },
+const SETTINGS_TABS: PageTab[] = [
+  { id: 'profile',       label: 'Profile' },
+  { id: 'security',      label: 'Security' },
+  { id: 'appearance',    label: 'Appearance' },
+  { id: 'network',       label: 'Network' },
+  { id: 'notifications', label: 'Notifications' },
 ];
 
 // ── localStorage helpers ──
@@ -237,33 +237,15 @@ export function SettingsPage() {
 
   return (
     <div className="pb-12">
-      <PageShell title="Settings" subtitle="Profile, security, and preferences" stats={pageStats}>
-        <div className="flex gap-6 min-h-[600px]">
-
-          {/* ══ Left sidebar nav ══ */}
-          <nav className="w-48 shrink-0 space-y-1">
-            {NAV_ITEMS.map(item => {
-              const Icon = item.icon;
-              const active = section === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left rounded-xl transition-colors cursor-pointer ${
-                    active
-                      ? 'bg-black/[0.05] dark:bg-white/[0.08] text-coda-text font-medium'
-                      : 'bg-transparent text-coda-text-secondary hover:text-coda-text hover:bg-black/[0.02] dark:hover:bg-white/[0.03]'
-                  }`}
-                >
-                  <Icon size={16} className={active ? 'text-coda-text' : 'text-coda-text-muted'} />
-                  <span className="text-[13px]">{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* ══ Right content panel ══ */}
-          <div className="flex-1 min-w-0">
+      <PageShell
+        title="Settings"
+        subtitle="Profile, security, and preferences"
+        stats={pageStats}
+        tabs={SETTINGS_TABS}
+        activeTab={section}
+        onTabChange={id => setSection(id as SettingsSection)}
+      >
+        <div>
             <motion.div
               key={section}
               initial={{ opacity: 0, y: 8 }}
@@ -518,7 +500,6 @@ export function SettingsPage() {
                 </WidgetShell>
               )}
             </motion.div>
-          </div>
         </div>
       </PageShell>
     </div>
