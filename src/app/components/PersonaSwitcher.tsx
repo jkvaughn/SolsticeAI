@@ -1,4 +1,4 @@
-import { Shield, Landmark, BarChart3, Eye, Building2, Check } from 'lucide-react';
+import { Shield, Landmark, BarChart3, Eye, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { usePersona } from '../contexts/PersonaContext';
 import { useBanks } from '../contexts/BanksContext';
@@ -7,8 +7,7 @@ import { useIsAdmin } from '../hooks/useIsAdmin';
 import type { PersonaType } from '../types';
 
 // ============================================================
-// Persona Switcher (XD "Users" table style)
-// Clean row-based role selector + bank scope dropdown.
+// Persona Switcher (XD "Transfers – Send" card grid style)
 // ============================================================
 
 const PERSONA_OPTIONS: {
@@ -27,14 +26,14 @@ const PERSONA_OPTIONS: {
   },
   {
     value: 'compliance',
-    label: 'Compliance Officer',
+    label: 'Compliance',
     desc: 'Escalations, transactions, proving ground',
     icon: Shield,
     defaultRoute: '/escalations',
   },
   {
     value: 'treasury',
-    label: 'Treasury Manager',
+    label: 'Treasury',
     desc: 'Treasury ops, agent config, transactions',
     icon: Landmark,
     defaultRoute: '/treasury-ops',
@@ -62,45 +61,32 @@ export function PersonaSwitcher() {
   };
 
   const activeBank = activeBanks.find(b => b.id === selectedBankId);
-
   const visibleOptions = PERSONA_OPTIONS.filter(opt => opt.value !== null || isAdmin);
 
   return (
     <div className="space-y-5">
-      {/* Table header */}
-      <div className="flex items-center gap-4 px-1 text-[11px] font-normal text-black/30 dark:text-white/30 uppercase tracking-wider">
-        <span className="flex-1">Role</span>
-        <span className="w-64 text-left">Scope</span>
-        <span className="w-16 text-right">Status</span>
-      </div>
-
-      {/* Persona rows */}
-      <div>
-        {visibleOptions.map((opt, i) => {
+      {/* Card grid — XD Transfers Send style */}
+      <div className={`grid gap-4 ${visibleOptions.length <= 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>
+        {visibleOptions.map(opt => {
+          const Icon = opt.icon;
           const active = opt.value === persona;
           return (
             <button
               key={opt.value ?? 'all'}
               onClick={() => handleSelect(opt)}
-              className={`w-full flex items-center gap-4 px-1 py-4 text-left cursor-pointer transition-colors ${
-                i > 0 ? 'border-t border-black/[0.04] dark:border-white/[0.04]' : ''
-              } ${active ? '' : 'hover:bg-black/[0.01] dark:hover:bg-white/[0.02]'}`}
+              className={`relative flex flex-col items-start p-5 text-left rounded-xl cursor-pointer transition-all duration-200 ${
+                active
+                  ? 'bg-black/[0.04] dark:bg-white/[0.06] ring-1 ring-black/[0.08] dark:ring-white/[0.1]'
+                  : 'bg-transparent hover:bg-black/[0.02] dark:hover:bg-white/[0.03] ring-1 ring-black/[0.04] dark:ring-white/[0.04] hover:ring-black/[0.08] dark:hover:ring-white/[0.08]'
+              }`}
             >
-              <div className="flex-1 min-w-0">
-                <p className={`text-[14px] ${active ? 'text-black/80 dark:text-white/80' : 'text-black/50 dark:text-white/50'}`}>
-                  {opt.label}
-                </p>
-              </div>
-              <div className="w-64">
-                <p className="text-[12px] text-black/35 dark:text-white/35">{opt.desc}</p>
-              </div>
-              <div className="w-16 flex justify-end">
-                {active && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
-                    <Check size={9} /> Active
-                  </span>
-                )}
-              </div>
+              <Icon size={20} className={`mb-3 ${active ? 'text-black/70 dark:text-white/70' : 'text-black/25 dark:text-white/25'}`} />
+              <p className={`text-[15px] mb-1 ${active ? 'font-medium text-black/80 dark:text-white/80' : 'text-black/50 dark:text-white/50'}`}>
+                {opt.label}
+              </p>
+              <p className={`text-[11px] leading-relaxed ${active ? 'text-black/40 dark:text-white/40' : 'text-black/25 dark:text-white/25'}`}>
+                {opt.desc}
+              </p>
             </button>
           );
         })}
@@ -108,7 +94,7 @@ export function PersonaSwitcher() {
 
       {/* Bank scope selector — only visible when a persona is active */}
       {persona && (
-        <div className="pt-2">
+        <div>
           <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">
             Bank Scope
           </label>
