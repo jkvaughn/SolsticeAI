@@ -260,28 +260,11 @@ export function SettingsPage() {
                     <div className="w-44 shrink-0 pt-1">
                       <h4 className="text-sm font-medium text-coda-text">Personal Information</h4>
                     </div>
-                    <div className="flex-1 space-y-4">
-                      <div className="flex items-center gap-4 mb-2">
-                        <div className="w-14 h-14 rounded-full bg-coda-brand flex items-center justify-center">
-                          <span className="text-lg font-sans font-bold text-white select-none">{initials}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-coda-text">{profileName}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                              currentUser.provider === 'Azure Entra ID' ? 'bg-coda-brand/10 text-coda-brand' : 'bg-emerald-500/10 text-emerald-500'
-                            }`}>{currentUser.provider}</span>
-                            {isAdmin && (
-                              <span className="text-[8px] font-bold text-coda-brand bg-coda-brand/10 px-1.5 py-0.5 rounded">ADMIN</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      {profile && <ProfileEditor profile={profile} onUpdate={updateProfile} />}
-                      {!profile && (
-                        <div className="space-y-4">
-                          <ProfileReadOnlyField label="Email" value={currentUser.email} verified />
-                        </div>
+                    <div className="flex-1">
+                      {profile ? (
+                        <ProfileEditor profile={profile} onUpdate={updateProfile} email={currentUser.email} />
+                      ) : (
+                        <ProfileEditorFallback name={profileName} email={currentUser.email} />
                       )}
                     </div>
                   </div>
@@ -292,29 +275,42 @@ export function SettingsPage() {
                       <h4 className="text-sm font-medium text-coda-text">Account</h4>
                     </div>
                     <div className="flex-1 space-y-4">
-                      <ProfileReadOnlyField label="Email" value={currentUser.email} verified />
-                      {currentUser.userId && (
-                        <div>
-                          <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">Account ID</label>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm text-coda-text-secondary">
-                              {currentUser.userId.slice(0, 8)}...{currentUser.userId.slice(-4)}
-                            </span>
-                            <button onClick={copyUserId} className="p-1 cursor-pointer" title="Copy account ID">
-                              {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-coda-text-muted" />}
-                            </button>
+                      <div className="flex gap-4">
+                        {currentUser.userId && (
+                          <div className="flex-1">
+                            <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">Account ID</label>
+                            <div className="flex items-center gap-2 px-3 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] rounded-xl">
+                              <span className="font-mono text-sm text-coda-text-secondary">
+                                {currentUser.userId.slice(0, 8)}...{currentUser.userId.slice(-4)}
+                              </span>
+                              <button onClick={copyUserId} className="p-0.5 cursor-pointer ml-auto" title="Copy account ID">
+                                {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-coda-text-muted" />}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">Auth Provider</label>
+                          <div className="flex items-center gap-2 px-3 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] rounded-xl">
+                            <span className="text-sm text-coda-text">{currentUser.provider}</span>
+                            {isAdmin && (
+                              <span className="text-[8px] font-bold text-coda-brand bg-coda-brand/10 px-1.5 py-0.5 rounded ml-auto">ADMIN</span>
+                            )}
                           </div>
                         </div>
-                      )}
-                      <div>
-                        <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">Status</label>
-                        <div className="flex items-center gap-2">
-                          <span className="relative flex h-3 w-3 items-center justify-center">
-                            <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
-                          </span>
-                          <span className="text-sm text-coda-text">Online</span>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">Status</label>
+                          <div className="flex items-center gap-2 px-3 py-2.5 bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] rounded-xl">
+                            <span className="relative flex h-3 w-3 items-center justify-center">
+                              <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+                            </span>
+                            <span className="text-sm text-coda-text">Online</span>
+                          </div>
                         </div>
+                        <div className="flex-1" /> {/* spacer for alignment */}
                       </div>
                     </div>
                   </div>
@@ -538,6 +534,39 @@ export function SettingsPage() {
             </motion.div>
         </div>
       </PageShell>
+    </div>
+  );
+}
+
+// ============================================================
+// ProfileEditorFallback — shown when profile hasn't loaded yet
+// ============================================================
+
+function ProfileEditorFallback({ name, email }: { name: string; email: string }) {
+  const parts = name.split(' ');
+  const firstName = parts[0] || '';
+  const lastName = parts.slice(1).join(' ') || '';
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">First Name</label>
+          <div className="px-3 py-2.5 text-sm text-coda-text bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.06] dark:border-white/[0.08] rounded-xl">{firstName || '—'}</div>
+        </div>
+        <div className="flex-1">
+          <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">Last Name</label>
+          <div className="px-3 py-2.5 text-sm text-coda-text bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.06] dark:border-white/[0.08] rounded-xl">{lastName || '—'}</div>
+        </div>
+      </div>
+      <div>
+        <label className="block text-[11px] font-medium text-coda-text-muted mb-1.5">Email</label>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 px-3 py-2.5 text-sm text-coda-text bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.06] dark:border-white/[0.08] rounded-xl">{email}</div>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-500">
+            <Check size={10} /> Verified
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
