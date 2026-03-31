@@ -299,7 +299,7 @@ export function SettingsPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-4">
+                      <div className="flex gap-4 items-end">
                         <div className="flex-1">
                           <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">Status</label>
                           <div className="flex items-center gap-2 px-4 py-3 bg-black/[0.03] dark:bg-white/[0.04] rounded-lg">
@@ -310,7 +310,23 @@ export function SettingsPage() {
                             <span className="text-sm text-coda-text">Online</span>
                           </div>
                         </div>
-                        <div className="flex-1" /> {/* spacer for alignment */}
+                        <div className="flex-1 flex justify-end">
+                          {!signOutConfirm ? (
+                            <button
+                              onClick={() => setSignOutConfirm(true)}
+                              className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] text-black/30 dark:text-white/30 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
+                            >
+                              <LogOut size={14} />
+                              <span>Sign Out</span>
+                            </button>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-red-500">End session?</span>
+                              <button onClick={() => setSignOutConfirm(false)} className="px-2.5 py-1.5 text-xs text-black/40 dark:text-white/40 cursor-pointer"><span>Cancel</span></button>
+                              <button onClick={handleSignOut} className="px-2.5 py-1.5 text-xs font-medium text-red-500 cursor-pointer"><span>Sign Out</span></button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -366,27 +382,6 @@ export function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* ── Sign Out ── */}
-                  <div className="flex gap-8 py-8">
-                    <div className="w-44 shrink-0" />
-                    <div className="flex-1">
-                      {!signOutConfirm ? (
-                        <button
-                          onClick={() => setSignOutConfirm(true)}
-                          className="liquid-button flex items-center gap-2 px-5 py-2 text-sm font-medium text-coda-text-muted cursor-pointer"
-                        >
-                          <LogOut size={15} />
-                          <span>Sign Out</span>
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-red-500">End session?</span>
-                          <button onClick={() => setSignOutConfirm(false)} className="px-3 py-1.5 text-xs font-medium text-coda-text-secondary cursor-pointer"><span>Cancel</span></button>
-                          <button onClick={handleSignOut} className="px-3 py-1.5 text-xs font-medium bg-red-500/15 text-red-400 cursor-pointer rounded-lg"><span>Sign Out</span></button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
                 </div>
               )}
 
