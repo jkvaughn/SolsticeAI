@@ -392,12 +392,12 @@ export function DashboardLayout({
                 {bottomNav.map(renderNavButton)}
               </div>
 
-              {/* User pill — navigates to Profile */}
+              {/* User pill — navigates to Settings (Profile tab) */}
               {user && (
                 <Tooltip open={sidebarExpanded ? false : undefined}>
                   <TooltipTrigger asChild>
                     <button
-                      onClick={() => handleNavigate('/profile')}
+                      onClick={() => handleNavigate('/settings')}
                       className={`squircle-sm w-full flex items-center gap-3 py-2 duration-500 ease-out cursor-pointer ${
                         isDark
                           ? 'hover:bg-white/[0.06]'

@@ -9,7 +9,7 @@ import { TransactionDetail } from './components/TransactionDetail';
 import { Visualizer } from './components/Visualizer';
 import HeartbeatControl from './components/HeartbeatControl';
 import { SettingsPage } from './components/SettingsPage';
-import { ProfilePage } from './components/ProfilePage';
+import { Navigate } from 'react-router';
 import { AgentConfig } from './components/AgentConfig';
 import ProvingGround from './components/ProvingGround';
 import { AuthGate } from './components/AuthGate';
@@ -62,7 +62,7 @@ export const router = createBrowserRouter([
           { path: 'proving-ground', Component: ProvingGround },
           { path: 'visualizer', Component: Visualizer },
           { path: 'settings', Component: SettingsPage },
-          { path: 'profile', Component: ProfilePage },
+          { path: 'profile', element: <Navigate to="/settings" replace /> },
           { path: '*', Component: NotFound },
         ],
       },
