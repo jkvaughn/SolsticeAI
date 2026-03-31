@@ -99,10 +99,8 @@ const configNav: NavItem[] = [
   { id: 'agent-config', label: 'Agent Config', lottieData: agentConfigAnim, lottieScale: 1.15, route: '/agent-config' },
 ];
 
-// Bottom — utilities
-const bottomNav: NavItem[] = [
-  { id: 'settings', label: 'Settings', lottieData: settingsAnim, lottieScale: 1.25, route: '/settings' },
-];
+// Bottom — utilities (Settings removed; user pill navigates to /settings)
+const bottomNav: NavItem[] = [];
 
 // ============================================================
 // PERSONA NAV DIMMING (Task 126)
@@ -115,7 +113,7 @@ const PERSONA_PRIMARY_ITEMS: Record<Exclude<PersonaType, null>, string[]> = {
 
 function isNavDimmed(persona: PersonaType, itemId: string): boolean {
   if (!persona) return false;
-  if (itemId === 'settings') return false; // Settings always visible
+  // Settings is now on user pill, no longer in nav items
   const primaryIds = PERSONA_PRIMARY_ITEMS[persona];
   return !primaryIds.includes(itemId);
 }
@@ -399,9 +397,9 @@ export function DashboardLayout({
                     <button
                       onClick={() => handleNavigate('/settings')}
                       className={`squircle-sm w-full flex items-center gap-3 py-2 duration-500 ease-out cursor-pointer ${
-                        isDark
-                          ? 'hover:bg-white/[0.06]'
-                          : 'hover:bg-black/[0.04]'
+                        location.pathname === '/settings'
+                          ? isDark ? 'bg-white/[0.10]' : 'bg-black/[0.06]'
+                          : isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.04]'
                       } ${sidebarExpanded ? 'px-3' : 'justify-center px-0'}`}
                     >
                       <LottieIcon
