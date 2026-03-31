@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSWRCache } from '../../hooks/useSWRCache';
 
 // ============================================================
-// ActivityTimeline — Recent audit log entries for the user
+// ActivityTimeline — Recent audit log, grouped and formatted
 // ============================================================
 
 interface AuditEntry {
@@ -13,17 +13,23 @@ interface AuditEntry {
   action: string;
   resource_type: string | null;
   details: Record<string, unknown> | null;
+  ip_address: string | null;
   created_at: string;
 }
 
+interface GroupedEntry {
+  action: string;
+  label: string;
+  icon: LucideIcon;
+  count: number;
+  latest: string;
+  detail: string | null;
+}
+
 const ACTION_ICONS: Record<string, LucideIcon> = {
-  'auth': Shield,
-  'settings': Settings,
-  'admin': AlertTriangle,
-  'transaction': ArrowRightLeft,
-  'security': Fingerprint,
-  'profile': Settings,
-  'session': Monitor,
+  'auth': Shield, 'settings': Settings, 'admin': AlertTriangle,
+  'transaction': ArrowRightLeft, 'security': Fingerprint,
+  'profile': Settings, 'session': Monitor,
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -33,7 +39,7 @@ const ACTION_LABELS: Record<string, string> = {
   'profile.update': 'Updated profile',
   'settings.update': 'Changed settings',
   'security.passkey_registered': 'Registered passkey',
-  'security.passkey_authenticated': 'Authenticated with passkey',
+  'security.passkey_authenticated': 'Passkey auth',
   'admin.reset_tokens': 'Reset tokens',
   'admin.reset_network': 'Reset network',
   'admin.reassign_custodian': 'Reassigned custodian',
@@ -51,35 +57,62 @@ function timeAgo(iso: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString();
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 function getIcon(action: string): LucideIcon {
-  const prefix = action.split('.')[0];
-  return ACTION_ICONS[prefix] || Settings;
+  return ACTION_ICONS[action.split('.')[0]] || Settings;
 }
 
 function getLabel(action: string): string {
   return ACTION_LABELS[action] || action.replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function getDetail(entry: AuditEntry): string | null {
+  const d = entry.details;
+  if (!d) return null;
+  if (d.device_name) return String(d.device_name);
+  if (d.amount) return `${d.amount} ${d.gasToken || 'SOL'}`;
+  if (d.stage) return String(d.stage);
+  if (d.new_custodian) return `→ ${d.new_custodian}`;
+  return null;
+}
+
+/** Group consecutive identical actions */
+function groupEntries(entries: AuditEntry[]): GroupedEntry[] {
+  const groups: GroupedEntry[] = [];
+  for (const entry of entries) {
+    const last = groups[groups.length - 1];
+    if (last && last.action === entry.action) {
+      last.count++;
+    } else {
+      groups.push({
+        action: entry.action,
+        label: getLabel(entry.action),
+        icon: getIcon(entry.action),
+        count: 1,
+        latest: entry.created_at,
+        detail: getDetail(entry),
+      });
+    }
+  }
+  return groups.slice(0, 8);
+}
+
 // ── Skeleton ──
 
 function ActivitySkeleton() {
   return (
-    <div className="relative animate-pulse">
-      <div className="absolute left-[15px] top-2 bottom-2 w-px bg-black/[0.06] dark:bg-white/[0.06]" />
-      <div className="space-y-0.5">
-        {[0, 1, 2, 3, 4].map(i => (
-          <div key={i} className="relative flex items-start gap-3 py-2">
-            <div className="w-[30px] h-[30px] rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex-shrink-0" />
-            <div className="flex-1 pt-1 space-y-1.5">
-              <div className="h-3 w-28 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
-              <div className="h-2.5 w-14 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
-            </div>
+    <div className="animate-pulse space-y-0">
+      {[0, 1, 2, 3].map(i => (
+        <div key={i} className={`flex items-center gap-3 py-3 ${i > 0 ? 'border-t border-black/[0.04] dark:border-white/[0.04]' : ''}`}>
+          <div className="w-8 h-8 rounded-lg bg-black/[0.04] dark:bg-white/[0.04]" />
+          <div className="flex-1 space-y-1">
+            <div className="h-3 w-24 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
           </div>
-        ))}
-      </div>
+          <div className="h-2.5 w-12 rounded bg-black/[0.04] dark:bg-white/[0.04]" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -91,61 +124,61 @@ export function ActivityTimeline() {
     key: `activity-timeline-${userEmail ?? 'none'}`,
     fetcher: async () => {
       if (!userEmail) throw new Error('No user email');
-      const data = await userCallServer<{ entries: AuditEntry[] }>('/user/audit-log?limit=10', userEmail);
+      const data = await userCallServer<{ entries: AuditEntry[] }>('/user/audit-log?limit=20', userEmail);
       return data.entries;
     },
   });
 
   const loading = isValidating && !entries;
 
-  if (loading) {
-    return <ActivitySkeleton />;
-  }
+  if (loading) return <ActivitySkeleton />;
 
   if (!entries || entries.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-coda-text-muted">
-        <Shield size={24} className="mb-2 opacity-40" />
-        <p className="text-xs">No activity recorded yet</p>
+      <div className="flex items-center gap-3 py-4 text-black/30 dark:text-white/30">
+        <Shield size={16} />
+        <p className="text-[12px]">No activity recorded yet</p>
       </div>
     );
   }
 
+  const grouped = groupEntries(entries);
+
   return (
-    <div className="relative animate-fadeIn">
-      {/* Vertical timeline line */}
-      <div className="absolute left-[15px] top-2 bottom-2 w-px bg-black/[0.06] dark:bg-white/[0.06]" />
-
-      <div className="space-y-0.5">
-        {entries.map((entry, idx) => {
-          const Icon = getIcon(entry.action);
-          const label = getLabel(entry.action);
-          const isFirst = idx === 0;
-
-          return (
-            <div key={entry.id} className="relative flex items-start gap-3 py-2">
-              {/* Timeline dot */}
-              <div className={`relative z-10 w-[30px] h-[30px] rounded-lg flex items-center justify-center flex-shrink-0 ${
-                isFirst
-                  ? 'bg-coda-brand/10 text-coda-brand'
-                  : 'bg-black/[0.04] dark:bg-white/[0.06] text-coda-text-muted'
-              }`}>
-                <Icon size={14} />
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0 pt-1">
-                <p className={`text-xs font-medium ${isFirst ? 'text-coda-text' : 'text-coda-text-secondary'}`}>
-                  {label}
-                </p>
-                <p className="text-[10px] text-coda-text-muted mt-0.5">
-                  {timeAgo(entry.created_at)}
-                </p>
-              </div>
+    <div className="animate-fadeIn space-y-0">
+      {grouped.map((group, idx) => {
+        const Icon = group.icon;
+        return (
+          <div
+            key={`${group.action}-${idx}`}
+            className={`flex items-center gap-3 py-3 ${idx > 0 ? 'border-t border-black/[0.04] dark:border-white/[0.04]' : ''}`}
+          >
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+              idx === 0 ? 'bg-coda-brand/10 text-coda-brand' : 'bg-black/[0.03] dark:bg-white/[0.04] text-black/30 dark:text-white/30'
+            }`}>
+              <Icon size={14} />
             </div>
-          );
-        })}
-      </div>
+            <div className="flex-1 min-w-0">
+              <span className={`text-[13px] ${idx === 0 ? 'text-black/70 dark:text-white/70' : 'text-black/50 dark:text-white/50'}`}>
+                {group.label}
+              </span>
+              {group.count > 1 && (
+                <span className="ml-1.5 text-[10px] text-black/25 dark:text-white/25">
+                  ×{group.count}
+                </span>
+              )}
+              {group.detail && (
+                <span className="ml-2 text-[11px] text-black/25 dark:text-white/25 font-mono">
+                  {group.detail}
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] text-black/30 dark:text-white/30 whitespace-nowrap">
+              {timeAgo(group.latest)}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
