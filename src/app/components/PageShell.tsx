@@ -160,21 +160,30 @@ export function PageShell({
       {/* ─── Tab Bar + Action ─── */}
       {tabs && tabs.length > 0 && (
         <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 relative">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => onTabChange?.(tab.id)}
-                className={`px-4 py-1.5 rounded-full text-sm transition-all duration-300 cursor-pointer ${
-                  activeTab === tab.id
-                    ? 'bg-black text-white dark:bg-white dark:text-black font-medium'
-                    : 'text-coda-text-muted hover:text-coda-text hover:bg-black/5 dark:hover:bg-white/5'
-                }`}
+                className="relative px-4 py-1.5 rounded-full text-sm cursor-pointer transition-colors duration-200"
               >
-                {tab.label}
-                {tab.count !== undefined && (
-                  <span className="ml-1.5 text-xs opacity-60">{tab.count}</span>
+                {activeTab === tab.id && (
+                  <motion.div
+                    layoutId="settings-tab-pill"
+                    className="absolute inset-0 bg-black dark:bg-white rounded-full"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
                 )}
+                <span className={`relative z-10 transition-colors duration-200 ${
+                  activeTab === tab.id
+                    ? 'text-white dark:text-black'
+                    : 'text-coda-text-muted hover:text-coda-text'
+                }`}>
+                  {tab.label}
+                  {tab.count !== undefined && (
+                    <span className="ml-1.5 text-xs opacity-60">{tab.count}</span>
+                  )}
+                </span>
               </button>
             ))}
           </div>
