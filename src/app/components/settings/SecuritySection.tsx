@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Shield, Clock, Loader2 } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 import { userCallServer } from '../../lib/userClient';
 import { useAuth } from '../../contexts/AuthContext';
-import { WidgetShell } from '../dashboard/WidgetShell';
 import { PasskeyRegistration } from '../admin/PasskeyRegistration';
 import { SessionManager } from './SessionManager';
 
@@ -86,25 +85,23 @@ function LoginHistory() {
 
 export function SecuritySection() {
   return (
-    <WidgetShell title="Security" icon={Shield}>
-      <div className="space-y-6">
-        {/* Passkey Management */}
-        <div>
-          <PasskeyRegistration />
-        </div>
-
-        {/* Active Sessions */}
-        <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.06]">
-          <p className="text-[11px] font-medium text-coda-text-muted mb-3">Active Sessions</p>
-          <SessionManager />
-        </div>
-
-        {/* Login History */}
-        <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.06]">
-          <p className="text-[11px] font-medium text-coda-text-muted mb-3">Recent Login History</p>
-          <LoginHistory />
-        </div>
+    <div className="space-y-0">
+      {/* Passkey Management */}
+      <div className="py-6">
+        <PasskeyRegistration />
       </div>
-    </WidgetShell>
+
+      {/* Active Sessions */}
+      <div className="py-6 border-t border-black/[0.06] dark:border-white/[0.06]">
+        <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-3">Active Sessions</p>
+        <SessionManager />
+      </div>
+
+      {/* Login History */}
+      <div className="py-6 border-t border-black/[0.06] dark:border-white/[0.06]">
+        <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-3">Recent Login History</p>
+        <LoginHistory />
+      </div>
+    </div>
   );
 }

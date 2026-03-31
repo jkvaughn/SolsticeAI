@@ -8,7 +8,6 @@ import { useIsAdmin } from '../hooks/useIsAdmin';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { PageShell } from './PageShell';
 import type { PageStat, PageTab } from './PageShell';
-import { WidgetShell } from './dashboard/WidgetShell';
 import { PersonaSwitcher } from './PersonaSwitcher';
 import { ProfileEditor } from './profile/ProfileEditor';
 import { ActivityTimeline } from './profile/ActivityTimeline';
@@ -390,8 +389,9 @@ export function SettingsPage() {
 
               {/* ── Appearance ── */}
               {section === 'appearance' && (
-                <div className="space-y-6">
-                  <WidgetShell title="Theme" icon={Sun}>
+                <div className="space-y-0">
+                  <div className="py-6">
+                    <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-4">Theme</p>
                     <div className="grid grid-cols-3 gap-3">
                       {themeOptions.map(opt => {
                         const Icon = opt.icon;
@@ -416,9 +416,10 @@ export function SettingsPage() {
                         );
                       })}
                     </div>
-                  </WidgetShell>
+                  </div>
 
-                  <WidgetShell title="Density" icon={Maximize2}>
+                  <div className="py-6 border-t border-black/[0.06] dark:border-white/[0.06]">
+                    <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-4">Density</p>
                     <div className="grid grid-cols-2 gap-3">
                       {([
                         { value: 'default' as Density, icon: Maximize2, label: 'Default', desc: 'Standard spacing and padding' },
@@ -446,15 +447,15 @@ export function SettingsPage() {
                         );
                       })}
                     </div>
-                  </WidgetShell>
+                  </div>
                 </div>
               )}
 
               {/* ── Network ── */}
               {section === 'network' && (
-                <WidgetShell title="Network" icon={Wifi}>
-                  <div className="mb-4">
-                    <p className="text-[11px] font-medium text-coda-text-muted mb-3">Environment</p>
+                <div className="space-y-0">
+                  <div className="py-6">
+                    <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-3">Environment</p>
                     <div className="flex items-center gap-3 py-2">
                       <div className="relative flex-shrink-0">
                         <div className={`w-2.5 h-2.5 rounded-full ${isProductionCluster ? 'bg-coda-brand' : 'bg-emerald-500'}`} />
@@ -485,8 +486,8 @@ export function SettingsPage() {
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <p className="text-[11px] font-medium text-coda-text-muted mb-3">Transaction Monitor Refresh</p>
+                  <div className="py-6 border-t border-black/[0.06] dark:border-white/[0.06]">
+                    <p className="text-[12px] font-normal text-black/40 dark:text-white/40 mb-3">Transaction Monitor Refresh</p>
                     <div className="grid grid-cols-4 gap-2">
                       {refreshOptions.map(opt => {
                         const active = refreshInterval === opt.value;
@@ -501,14 +502,14 @@ export function SettingsPage() {
                         );
                       })}
                     </div>
-                    <p className="text-[10px] text-coda-text-muted mt-3 leading-relaxed">Controls how often the Transaction Monitor auto-polls for new settlements.</p>
+                    <p className="text-[10px] text-black/30 dark:text-white/30 mt-3 leading-relaxed">Controls how often the Transaction Monitor auto-polls for new settlements.</p>
                   </div>
-                </WidgetShell>
+                </div>
               )}
 
               {/* ── Notifications ── */}
               {section === 'notifications' && (
-                <WidgetShell title="Notifications" icon={Bell}>
+                <div className="py-6">
                   <div className="space-y-1">
                     {notifItems.map(item => (
                       <NotificationToggle
@@ -521,10 +522,10 @@ export function SettingsPage() {
                       />
                     ))}
                   </div>
-                  <p className="text-[10px] text-coda-text-muted mt-3 leading-relaxed">
+                  <p className="text-[10px] text-black/30 dark:text-white/30 mt-3 leading-relaxed">
                     Notifications appear as in-app toasts. No external push or email delivery is configured.
                   </p>
-                </WidgetShell>
+                </div>
               )}
             </motion.div>
         </div>
