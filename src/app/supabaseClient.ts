@@ -24,19 +24,20 @@ const serverBaseUrl = import.meta.env.VITE_SERVER_BASE_URL
   || `${supabaseUrl}/functions/v1/${functionName}`;
 
 // ============================================================
-// Global request queue — serializes ALL outgoing fetch calls to
-// prevent the environment's rate-limiter from returning 429s.
-// Only one request is in-flight at a time, with a small gap
-// between consecutive requests.
-// Production (Container App) needs no throttling — use minimal gap.
-// Staging (Supabase Edge Functions) needs 350ms to avoid 429s.
+// Request throttling — only needed for Supabase Edge Functions
+// which return 429s under concurrent load. Production (Azure
+// Container App) handles concurrent requests fine — no queue.
 // ============================================================
 const isProduction = !!import.meta.env.VITE_SERVER_BASE_URL;
-const REQUEST_GAP_MS = isProduction ? 50 : 350;
+const REQUEST_GAP_MS = 350; // staging only
 
 let requestQueue: Promise<void> = Promise.resolve();
 
 function queuedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  // Production: direct fetch, no queue, full parallelism
+  if (isProduction) return fetch(input, init);
+
+  // Staging: serialize with 350ms gap to avoid Supabase 429s
   return new Promise<Response>((resolve, reject) => {
     requestQueue = requestQueue
       .then(() => sleep(REQUEST_GAP_MS))
