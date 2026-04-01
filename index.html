@@ -5,48 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Solstice AI</title>
     <style>
-      /* Instant loading screen — shows before React loads, hides auth callback flash */
       body { margin: 0; background: #f0f2f5; }
       @media (prefers-color-scheme: dark) { body { background: #0a0a0f; } }
-      #boot-loader {
-        position: fixed; inset: 0; z-index: 99999;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-        background: #f0f2f5;
-        transition: opacity 0.2s ease-out;
-      }
-      #boot-loader.hide { opacity: 0; pointer-events: none; }
-      @media (prefers-color-scheme: dark) { #boot-loader { background: #0a0a0f; } }
-      #boot-loader .logo {
-        width: 48px; height: 48px; border-radius: 14px;
-        background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.06);
-        display: flex; align-items: center; justify-content: center;
-      }
-      @media (prefers-color-scheme: dark) {
-        #boot-loader .logo { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
-      }
-      #boot-loader .spinner {
-        width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.1); border-top-color: #6366f1;
-        border-radius: 50%; animation: boot-spin 0.7s linear infinite;
-      }
-      @media (prefers-color-scheme: dark) {
-        #boot-loader .spinner { border-color: rgba(255,255,255,0.1); border-top-color: #818cf8; }
-      }
-      @keyframes boot-spin { to { transform: rotate(360deg); } }
     </style>
   </head>
 
   <body>
-    <!-- Instant boot screen — visible before any JS loads -->
-    <div id="boot-loader">
-      <div class="logo">
-        <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 10L85 30V70L50 90L15 70V30L50 10Z" stroke="currentColor" stroke-width="6" fill="none" opacity="0.3"/>
-          <path d="M50 25L72 37V63L50 75L28 63V37L50 25Z" stroke="currentColor" stroke-width="5" fill="none" opacity="0.6"/>
-        </svg>
-      </div>
-      <div class="spinner"></div>
-    </div>
-
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
