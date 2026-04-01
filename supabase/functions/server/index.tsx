@@ -7,6 +7,7 @@ import { callGemini, callGeminiJSON } from "./gemini.tsx";
 import { handleProvingGround, setCadenzaDirectHandlers, setAgentDirectHandlers } from "./proving-ground.tsx";
 import { handleAria } from "./aria.tsx";
 import { calculateAccruedYield, formatYieldUsd } from "./yield-engine.tsx";
+import { evaluateRules, type RuleContext } from "./risk-engine.ts";
 import {
   generateWallet,
   activateBank,
@@ -2522,7 +2523,89 @@ async function coreRiskScore(transactionId: string): Promise<any> {
   const senderVol60Min = senderTxns60Min.reduce((sum: number, t: any) => sum + Number(t.amount_display), 0);
 
   const riskConfig = await getBankConfig(tx.receiver_bank_id);
+
+  // ── Deterministic floor (Task 153) ──────────────────────────
+  let floorResult = { floor_score: 0, floor_breakdown: {} as Record<string, number>, rules_fired: [] as string[], hard_overrides: [] as string[] };
+  try {
+    const activeRules = await sql`SELECT * FROM risk_rules WHERE active = true`;
+    const amount = Number(tx.amount) || 0;
+    const sixtyMinAgo = new Date(Date.now() - 60 * 60_000).toISOString();
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60_000).toISOString();
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 3600_000).toISOString();
+
+    const txCount60m = (senderRecentTxns || []).filter((t: any) => t.created_at >= sixtyMinAgo).length;
+    const txBelow10k24h = (senderRecentTxns || []).filter((t: any) =>
+      t.created_at >= twentyFourHoursAgo && Number(t.amount_display || 0) < 10000 && Number(t.amount_display || 0) > 9000
+    ).length;
+    const uniqueCounterparties30m = new Set(
+      (senderRecentTxns || []).filter((t: any) => t.created_at >= thirtyMinAgo).map((t: any) => t.receiver_bank_id)
+    ).size;
+    const corridorAvg = (corridorHistory || []).length > 0
+      ? (corridorHistory || []).reduce((s: number, t: any) => s + (Number(t.amount_display) || 0), 0) / corridorHistory.length
+      : 0;
+
+    let watchlistMatch = false;
+    try {
+      const wRows = await sql`SELECT entity_name FROM simulated_watchlist WHERE status = 'active'`;
+      const wNames = wRows.map((w: any) => (w.entity_name || '').toLowerCase());
+      watchlistMatch = wNames.some((n: string) =>
+        ((tx as any).sender_bank?.name || '').toLowerCase().includes(n) ||
+        ((tx as any).receiver_bank?.name || '').toLowerCase().includes(n)
+      );
+    } catch { /* watchlist table might not exist */ }
+
+    const approvedCodes = riskConfig?.approved_purpose_codes || [];
+    const purposeCodeApproved = approvedCodes.length === 0 || approvedCodes.includes(tx.purpose_code);
+
+    const ruleCtx: RuleContext = {
+      amount,
+      purposeCode: tx.purpose_code || '',
+      senderJurisdiction: (tx as any).sender_bank?.jurisdiction || '',
+      receiverJurisdiction: (tx as any).receiver_bank?.jurisdiction || '',
+      senderTier: (tx as any).sender_bank?.tier || '',
+      receiverTier: (tx as any).receiver_bank?.tier || '',
+      receiverStatus: (tx as any).receiver_bank?.status || '',
+      corridorHistoryCount: (corridorHistory || []).length,
+      corridorAvgAmount: corridorAvg,
+      senderTxCount60m: txCount60m,
+      senderTxBelow10k24h: txBelow10k24h,
+      uniqueCounterparties30m,
+      watchlistMatch,
+      purposeCodeApproved,
+    };
+
+    const riskWeights = {
+      counterparty: Number(riskConfig?.risk_weight_counterparty) || 0.25,
+      jurisdiction: Number(riskConfig?.risk_weight_jurisdiction) || 0.25,
+      asset_type: Number(riskConfig?.risk_weight_asset_type) || 0.25,
+      behavioral: Number(riskConfig?.risk_weight_behavioral) || 0.25,
+    };
+
+    floorResult = evaluateRules(ruleCtx, activeRules as any[], riskWeights);
+    console.log(`[${aid}] │  Floor: ${floorResult.floor_score} | rules fired: ${floorResult.rules_fired.join(', ') || 'none'} | hard: ${floorResult.hard_overrides.join(', ') || 'none'}`);
+
+    // HARD_BLOCK: reject immediately, skip Fermata
+    if (floorResult.hard_overrides.some(id => {
+      const rule = (activeRules as any[]).find((r: any) => r.id === id);
+      return rule?.override_type === 'HARD_BLOCK';
+    })) {
+      const blockReason = `Blocked by deterministic rules: ${floorResult.hard_overrides.join(', ')}`;
+      await sql`UPDATE transactions SET status = 'rejected', risk_level = 'high', risk_score = 100, risk_reasoning = ${blockReason}, risk_scored_at = now() WHERE id = ${transactionId}`;
+      try {
+        await sql`INSERT INTO risk_scores (transaction_id, composite_score, risk_level, reasoning, floor_score, floor_breakdown, rules_fired, hard_overrides) VALUES (${transactionId}, 100, ${'high'}, ${blockReason}, ${floorResult.floor_score}, ${JSON.stringify(floorResult.floor_breakdown)}::jsonb, ${floorResult.rules_fired}, ${floorResult.hard_overrides})`;
+      } catch (e) { console.log(`[${aid}] │  ERROR saving floor risk score: ${(e as any).message}`); }
+      console.log(`[${aid}] └─ HARD BLOCK: ${blockReason}`);
+      return { transaction_id: transactionId, risk_score: { composite_score: 100, risk_level: 'high', reasoning: blockReason, hard_blocked: true } };
+    }
+  } catch (e) {
+    console.log(`[${aid}] │  Floor evaluation error (non-blocking): ${(e as any).message}`);
+  }
+  // ── End deterministic floor ─────────────────────────────────
+
   const networkCtx = await getNetworkModeContext();
+  const floorPromptSuffix = floorResult.floor_score > 0
+    ? `\n\nDETERMINISTIC FLOOR (from rule engine):\nFloor score: ${floorResult.floor_score}/100\nRules fired: ${floorResult.rules_fired.join(', ') || 'none'}\nYour weighted composite score MUST be at least ${Math.round(floorResult.floor_score * 0.70)}/100. Do not score below this floor.`
+    : '';
   const riskPrompt = buildRiskScoringPrompt({
     networkModeContext: networkCtx,
     senderName: (tx as any).sender_bank?.name,
@@ -2558,7 +2641,7 @@ async function coreRiskScore(transactionId: string): Promise<any> {
     risk_level: string;
     finality_recommendation: string;
     reasoning: string;
-  }>(FERMATA_SYSTEM_PROMPT, riskPrompt, {
+  }>(FERMATA_SYSTEM_PROMPT, riskPrompt + floorPromptSuffix, {
     temperature: 0.3,
   });
 
@@ -2568,12 +2651,15 @@ async function coreRiskScore(transactionId: string): Promise<any> {
 
   const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
 
-  const composite = clamp(Math.round(
+  const rawComposite = clamp(Math.round(
     riskResult.counterparty_score * riskConfig.risk_weight_counterparty +
     riskResult.jurisdiction_score * riskConfig.risk_weight_jurisdiction +
     riskResult.asset_type_score * riskConfig.risk_weight_asset_type +
     riskResult.behavioral_score * riskConfig.risk_weight_behavioral
   ));
+  // Apply deterministic floor constraint: final ≥ floor × 0.70
+  const floorConstraint = Math.round(floorResult.floor_score * 0.70);
+  const composite = Math.max(rawComposite, floorConstraint);
 
   let finality: string;
   if (composite <= riskConfig.risk_instant_ceiling) finality = "immediate";
@@ -2582,7 +2668,7 @@ async function coreRiskScore(transactionId: string): Promise<any> {
   else finality = "manual_review";
   const riskLevel = composite <= riskConfig.risk_instant_ceiling ? "low" : composite <= riskConfig.risk_deferred_72h_ceiling ? "medium" : "high";
 
-  const riskScore = {
+  const riskScore: Record<string, any> = {
     id: crypto.randomUUID(),
     transaction_id: transactionId,
     counterparty_score: clamp(riskResult.counterparty_score),
@@ -2593,13 +2679,22 @@ async function coreRiskScore(transactionId: string): Promise<any> {
     risk_level: riskLevel,
     finality_recommendation: finality,
     reasoning: riskResult.reasoning || "",
+    floor_score: floorResult.floor_score,
     created_at: new Date().toISOString(),
   };
+
+  // Floor fields saved separately (JSONB + arrays need special handling)
+  const floorBreakdownJson = JSON.stringify(floorResult.floor_breakdown);
+  const rulesFiredArr = floorResult.rules_fired;
+  const hardOverridesArr = floorResult.hard_overrides;
 
   console.log(`[${aid}] │  Config-adjusted: composite=${composite} (gemini raw: ${riskResult.composite_score}), finality=${finality} (gemini: ${riskResult.finality_recommendation})`);
 
   let rsErr: any = null;
-  try { await sql`INSERT INTO risk_scores ${sql(riskScore, ...Object.keys(riskScore))}` } catch (e) { rsErr = e; }
+  try {
+    await sql`INSERT INTO risk_scores (id, transaction_id, counterparty_score, jurisdiction_score, asset_type_score, behavioral_score, composite_score, risk_level, finality_recommendation, reasoning, floor_score, floor_breakdown, rules_fired, hard_overrides, created_at)
+    VALUES (${riskScore.id}, ${transactionId}, ${riskScore.counterparty_score}, ${riskScore.jurisdiction_score}, ${riskScore.asset_type_score}, ${riskScore.behavioral_score}, ${riskScore.composite_score}, ${riskScore.risk_level}, ${riskScore.finality_recommendation}, ${riskScore.reasoning}, ${riskScore.floor_score}, ${floorBreakdownJson}::jsonb, ${rulesFiredArr}, ${hardOverridesArr}, ${riskScore.created_at})`;
+  } catch (e) { rsErr = e; }
   if (rsErr) {
     console.log(`[${aid}] │  ERROR saving risk score: ${rsErr.message}`);
   }
@@ -2624,6 +2719,12 @@ async function coreRiskScore(transactionId: string): Promise<any> {
 }
 
 // ============================================================
+// 4b-1. Risk rules (read-only, Task 153)
+app.get("/make-server-49d15288/risk-rules", async (c) => {
+  const rows = await sql`SELECT * FROM risk_rules ORDER BY id`;
+  return c.json({ rules: rows });
+});
+
 // 4b. RISK-SCORE route (delegates to coreRiskScore)
 // ============================================================
 app.post("/make-server-49d15288/risk-score", async (c) => {
