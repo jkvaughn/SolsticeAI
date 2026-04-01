@@ -42,9 +42,11 @@ function getInitialBankId(): string | null {
 export function PersonaProvider({ children }: { children: ReactNode }) {
   const { role, setRole } = useUserRole();
   const [selectedBankId, setSelectedBankIdState] = useState<string | null>(getInitialBankId);
+  // Optimistic local role — updates instantly on click, syncs with server role
+  const [optimisticRole, setOptimisticRole] = useState<UserRole | null>(null);
 
-  // Derive persona from role
-  const persona: PersonaType = role;
+  // Derive persona: use optimistic role if set, otherwise server role
+  const persona: PersonaType = optimisticRole ?? role;
 
   // Migrate legacy localStorage on mount
   useEffect(() => {
@@ -78,12 +80,17 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setPersona = useCallback((p: PersonaType) => {
-    if (p === null) {
-      // null = admin = all views
-      setRole('admin');
-    } else {
-      setRole(p as UserRole);
-    }
+    const newRole: UserRole = p === null ? 'admin' : p as UserRole;
+    // Optimistic: update UI immediately
+    setOptimisticRole(newRole);
+    // Sync to server in background
+    setRole(newRole).then(() => {
+      // Clear optimistic override once server confirms
+      setOptimisticRole(null);
+    }).catch(() => {
+      // Revert on failure
+      setOptimisticRole(null);
+    });
   }, [setRole]);
 
   const setSelectedBankId = useCallback((id: string | null) => {
