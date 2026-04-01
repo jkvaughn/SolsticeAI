@@ -1,78 +1,75 @@
-import { Shield, Landmark, BarChart3, Eye, Building2 } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { Shield, Landmark, BarChart3, Eye, ShieldCheck } from 'lucide-react';
+import { useUserRole } from '../hooks/useUserRole';
 import { usePersona } from '../contexts/PersonaContext';
 import { useBanks } from '../contexts/BanksContext';
 import { useTheme } from './ThemeProvider';
-import { useIsAdmin } from '../hooks/useIsAdmin';
-import type { PersonaType } from '../types';
+import type { UserRole } from '../types';
 
 // ============================================================
-// Persona Switcher (XD "Transfers – Send" card grid style)
+// Role Switcher (Task 151 — replaces Persona Switcher)
 // ============================================================
 
-const PERSONA_OPTIONS: {
-  value: PersonaType;
+const ROLE_OPTIONS: {
+  value: UserRole;
   label: string;
   desc: string;
   icon: React.ElementType;
-  defaultRoute: string;
 }[] = [
   {
-    value: null,
-    label: 'All Views',
-    desc: 'Full navigation — all pages visible',
-    icon: Eye,
-    defaultRoute: '/',
-  },
-  {
-    value: 'compliance',
-    label: 'Compliance',
-    desc: 'Escalations, transactions, proving ground',
+    value: 'admin',
+    label: 'Admin',
+    desc: 'Full access \u2014 all pages and actions',
     icon: Shield,
-    defaultRoute: '/escalations',
   },
   {
     value: 'treasury',
     label: 'Treasury',
-    desc: 'Treasury ops, agent config, transactions',
+    desc: 'Mandates, settlements, liquidity',
     icon: Landmark,
-    defaultRoute: '/treasury-ops',
   },
   {
-    value: 'leadership',
+    value: 'compliance',
+    label: 'Compliance',
+    desc: 'Flags, audits, investigations',
+    icon: Eye,
+  },
+  {
+    value: 'bsa_officer',
+    label: 'BSA Officer',
+    desc: 'Compliance authority, approvals',
+    icon: ShieldCheck,
+  },
+  {
+    value: 'executive',
     label: 'Executive',
-    desc: 'Dashboard, visualizer, network command',
+    desc: 'Network overview, KPIs',
     icon: BarChart3,
-    defaultRoute: '/',
   },
 ];
 
 export function PersonaSwitcher() {
-  const { persona, setPersona, selectedBankId, setSelectedBankId } = usePersona();
+  const { role, setRole } = useUserRole();
+  const { selectedBankId, setSelectedBankId } = usePersona();
   const { activeBanks } = useBanks();
   const { resolved } = useTheme();
   const isDark = resolved === 'dark';
-  const navigate = useNavigate();
-  const isAdmin = useIsAdmin();
 
-  const handleSelect = (opt: typeof PERSONA_OPTIONS[number]) => {
-    setPersona(opt.value);
-    navigate(opt.defaultRoute);
+  const handleSelect = (opt: typeof ROLE_OPTIONS[number]) => {
+    setRole(opt.value);
   };
 
   const activeBank = activeBanks.find(b => b.id === selectedBankId);
-  const visibleOptions = PERSONA_OPTIONS.filter(opt => opt.value !== null || isAdmin);
 
   return (
     <div className="space-y-5">
-      {/* Card grid — XD Transfers Send style */}
-      <div className={`grid gap-4 ${visibleOptions.length <= 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>
-        {visibleOptions.map(opt => {
+      {/* Card grid */}
+      <div className="grid gap-4 grid-cols-5">
+        {ROLE_OPTIONS.map(opt => {
           const Icon = opt.icon;
-          const active = opt.value === persona;
+          const active = opt.value === role;
           return (
             <button
-              key={opt.value ?? 'all'}
+              key={opt.value}
               onClick={() => handleSelect(opt)}
               className={`relative flex flex-col items-start p-5 text-left rounded-xl cursor-pointer transition-all duration-200 ${
                 active
@@ -92,8 +89,8 @@ export function PersonaSwitcher() {
         })}
       </div>
 
-      {/* Bank scope selector — only visible when a persona is active */}
-      {persona && (
+      {/* Bank scope selector — visible when a non-admin role is active */}
+      {role !== 'admin' && (
         <div>
           <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">
             Bank Scope
@@ -106,7 +103,7 @@ export function PersonaSwitcher() {
             <option value="">All Banks</option>
             {activeBanks.map(bank => (
               <option key={bank.id} value={bank.id}>
-                {bank.short_code} — {bank.name}
+                {bank.short_code} \u2014 {bank.name}
               </option>
             ))}
           </select>

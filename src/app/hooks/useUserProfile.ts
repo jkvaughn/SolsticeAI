@@ -12,6 +12,7 @@ interface UserProfile {
   phone: string | null;
   institution: string | null;
   timezone: string;
+  role: string;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +27,7 @@ const LOCAL_DEMO_PROFILE: UserProfile = {
   phone: '+14155550100',
   institution: 'Solstice Network',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  role: 'admin',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

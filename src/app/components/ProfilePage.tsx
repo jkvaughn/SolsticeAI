@@ -33,10 +33,11 @@ const DEFAULT_PERSONA_KEY = 'coda-default-persona';
 const DEFAULT_BANK_KEY = 'coda-default-bank';
 
 const PERSONA_OPTIONS = [
-  { value: '', label: 'All Views' },
+  { value: '', label: 'Admin (All Views)' },
   { value: 'compliance', label: 'Compliance' },
   { value: 'treasury', label: 'Treasury' },
-  { value: 'leadership', label: 'Leadership' },
+  { value: 'bsa_officer', label: 'BSA Officer' },
+  { value: 'executive', label: 'Executive' },
 ] as const;
 
 export function ProfilePage() {
@@ -155,7 +156,7 @@ export function ProfilePage() {
   };
 
   const applyPreferences = () => {
-    const personaVal = (defaultPersona === 'compliance' || defaultPersona === 'treasury' || defaultPersona === 'leadership')
+    const personaVal = (defaultPersona === 'compliance' || defaultPersona === 'treasury' || defaultPersona === 'bsa_officer' || defaultPersona === 'executive')
       ? defaultPersona : null;
     setPersona(personaVal);
     setContextBankId(defaultBank || null);

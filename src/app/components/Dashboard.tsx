@@ -127,7 +127,7 @@ export function Dashboard() {
   const [flagCount, setFlagCount] = useState(0);
 
   useEffect(() => {
-    if (persona !== 'compliance' && persona !== 'leadership') return;
+    if (persona !== 'compliance' && persona !== 'executive' && persona !== 'bsa_officer') return;
     Promise.all([
       fetchCount('lockup_tokens', 'status=escalated'),
       fetchCount('cadenza_flags', 'action_taken=null'),
@@ -191,8 +191,8 @@ export function Dashboard() {
       stats={pageStats}
       alert={orphanAlert}
     >
-      {/* Leadership: Executive Summary strip (Task 126) */}
-      {persona === 'leadership' && (
+      {/* Executive: Executive Summary strip (Task 126) */}
+      {persona === 'executive' && (
         <div className="dashboard-card-subtle p-4 mb-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp size={14} className="text-blue-500 dark:text-blue-400" />

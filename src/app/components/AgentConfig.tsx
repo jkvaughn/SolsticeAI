@@ -384,7 +384,7 @@ export function AgentConfig() {
     if (!persona) return undefined; // default behavior
     if (persona === 'compliance') return cardId === 'concord' || cardId === 'cadenza';
     if (persona === 'treasury') return cardId === 'maestro' || cardId === 'treasury';
-    if (persona === 'leadership') return false;
+    if (persona === 'executive') return false;
     return undefined;
   };
 
