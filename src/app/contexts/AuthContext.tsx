@@ -140,15 +140,12 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
     return {};
   }, []);
 
-  const signOut = useCallback(async () => {
-    try {
-      const sessionId = sessionStorage.getItem('coda-session-id');
-      const email = state.user?.email;
-      if (sessionId && email) {
-        await userCallServerPost('/user/sessions-revoke', email, { session_id: sessionId });
-      }
-    } catch {
-      // Session cleanup is non-blocking
+  const signOut = useCallback(() => {
+    // Fire-and-forget session revoke — don't block the redirect
+    const sessionId = sessionStorage.getItem('coda-session-id');
+    const email = state.user?.email;
+    if (sessionId && email) {
+      userCallServerPost('/user/sessions-revoke', email, { session_id: sessionId }).catch(() => {});
     }
     sessionStorage.removeItem('coda-session-token');
     sessionStorage.removeItem('coda-session-id');
@@ -315,14 +312,11 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    try {
-      const sessionId = sessionStorage.getItem('coda-session-id');
-      const email = state.user?.email;
-      if (sessionId && email) {
-        await userCallServerPost('/user/sessions-revoke', email, { session_id: sessionId });
-      }
-    } catch {
-      // Session cleanup is non-blocking
+    // Fire-and-forget session revoke — don't block sign out
+    const sessionId = sessionStorage.getItem('coda-session-id');
+    const email = state.user?.email;
+    if (sessionId && email) {
+      userCallServerPost('/user/sessions-revoke', email, { session_id: sessionId }).catch(() => {});
     }
     sessionStorage.removeItem('coda-session-token');
     sessionStorage.removeItem('coda-session-id');

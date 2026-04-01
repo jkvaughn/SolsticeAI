@@ -28,8 +28,11 @@ const serverBaseUrl = import.meta.env.VITE_SERVER_BASE_URL
 // prevent the environment's rate-limiter from returning 429s.
 // Only one request is in-flight at a time, with a small gap
 // between consecutive requests.
+// Production (Container App) needs no throttling — use minimal gap.
+// Staging (Supabase Edge Functions) needs 350ms to avoid 429s.
 // ============================================================
-const REQUEST_GAP_MS = 350; // minimum ms between request starts
+const isProduction = !!import.meta.env.VITE_SERVER_BASE_URL;
+const REQUEST_GAP_MS = isProduction ? 50 : 350;
 
 let requestQueue: Promise<void> = Promise.resolve();
 
