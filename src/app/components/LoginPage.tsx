@@ -127,7 +127,7 @@ export function LoginPage() {
           {authProvider === 'azure' && (
             <div className="px-8 pb-8 space-y-3">
               <button
-                onClick={() => { window.location.href = '/.auth/login/aad?post_login_redirect_uri=/'; }}
+                onClick={() => { window.location.href = '/.auth/login/aad?post_login_redirect_uri=/auth-callback'; }}
                 className={`w-full py-3.5 text-sm font-medium cursor-pointer flex items-center justify-center gap-2.5 rounded-xl ${
                   isDark
                     ? 'bg-white text-black'
@@ -138,7 +138,7 @@ export function LoginPage() {
                 <span>Sign in with Microsoft</span>
               </button>
               <button
-                onClick={() => { window.location.href = '/.auth/login/google?post_login_redirect_uri=/'; }}
+                onClick={() => { window.location.href = '/.auth/login/google?post_login_redirect_uri=/auth-callback'; }}
                 className={`w-full py-3 text-sm font-medium cursor-pointer flex items-center justify-center gap-2.5 rounded-xl bg-white/50 dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.1] text-coda-text hover:bg-white/70 dark:hover:bg-white/[0.1] transition-colors`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

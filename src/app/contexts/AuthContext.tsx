@@ -131,12 +131,12 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
 
   // Azure auth is handled by redirects — these are no-ops for the form
   const signIn = useCallback(async () => {
-    window.location.href = '/.auth/login/aad?post_login_redirect_uri=/';
+    window.location.href = '/.auth/login/aad?post_login_redirect_uri=/auth-callback';
     return {};
   }, []);
 
   const signUp = useCallback(async () => {
-    window.location.href = '/.auth/login/aad?post_login_redirect_uri=/';
+    window.location.href = '/.auth/login/aad?post_login_redirect_uri=/auth-callback';
     return {};
   }, []);
 
@@ -154,7 +154,7 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
   }, [state.user]);
 
   const signInWithGoogle = useCallback(async () => {
-    window.location.href = '/.auth/login/google?post_login_redirect_uri=/';
+    window.location.href = '/.auth/login/google?post_login_redirect_uri=/auth-callback';
     return {};
   }, []);
 

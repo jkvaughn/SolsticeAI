@@ -16,6 +16,7 @@ import { AuthGate } from './components/AuthGate';
 import { LoginPage } from './components/LoginPage';
 import NetworkCommand from './components/NetworkCommand';
 import { AdminConsole } from './components/AdminConsole';
+import { AuthCallback } from './components/AuthCallback';
 
 const LazyEscalationDashboard = lazy(() =>
   import('./components/EscalationDashboard').then(m => ({ default: m.EscalationDashboard }))
@@ -41,6 +42,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     Component: LoginPage,
+  },
+  {
+    path: '/auth-callback',
+    Component: AuthCallback,
   },
   {
     path: '/',
