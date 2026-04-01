@@ -28,6 +28,8 @@ import { supabase } from "../../supabaseClient";
 import { useRealtimeSubscription } from "../../hooks/useRealtimeSubscription";
 import { usePersona } from "../../contexts/PersonaContext";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
+import { NotificationBell } from "../notifications/NotificationBell";
+import { NotificationPanel } from "../notifications/NotificationPanel";
 import type { PersonaType } from "../../types";
 
 // ============================================================
@@ -334,6 +336,12 @@ export function DashboardLayout({
                     </div>
                   )}
                 </button>
+
+                {/* Notification bell — always visible */}
+                <div className="relative">
+                  <NotificationBell />
+                  <NotificationPanel />
+                </div>
 
                 {/* Expand/Collapse Button - Right Aligned - Only visible when expanded */}
                 {sidebarExpanded && (
