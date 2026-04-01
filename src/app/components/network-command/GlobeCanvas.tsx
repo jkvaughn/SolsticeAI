@@ -23,13 +23,13 @@ export const BANK_COORDS: Record<
   string,
   { lng: number; lat: number; name: string; color: string }
 > = {
-  JPM:  { lng: -74.006,   lat: 40.7128, name: 'JPMorgan',      color: '#94a3b8' },
-  CITI: { lng: -73.9855,  lat: 40.758,  name: 'Citibank',      color: '#94a3b8' },
-  HSBC: { lng: -0.1278,   lat: 51.5074, name: 'HSBC',          color: '#94a3b8' },
-  UBS:  { lng: 8.5417,    lat: 47.3769, name: 'UBS',           color: '#94a3b8' },
-  WFC:  { lng: -122.4194, lat: 37.7749, name: 'Wells Fargo',   color: '#94a3b8' },
-  BNY:  { lng: -74.0445,  lat: 40.6892, name: 'BNY Mellon',    color: '#cbd5e1' },
-  FNBT: { lng: -96.797,  lat: 32.7767, name: 'First Nat TX',  color: '#94a3b8' },
+  JPM:  { lng: -74.006,   lat: 40.7128, name: 'JPMorgan',      color: '#22d3ee' },
+  CITI: { lng: -73.9855,  lat: 40.758,  name: 'Citibank',      color: '#22d3ee' },
+  HSBC: { lng: -0.1278,   lat: 51.5074, name: 'HSBC',          color: '#22d3ee' },
+  UBS:  { lng: 8.5417,    lat: 47.3769, name: 'UBS',           color: '#22d3ee' },
+  WFC:  { lng: -122.4194, lat: 37.7749, name: 'Wells Fargo',   color: '#22d3ee' },
+  BNY:  { lng: -74.0445,  lat: 40.6892, name: 'BNY Mellon',    color: '#67e8f9' },
+  FNBT: { lng: -96.797,  lat: 32.7767, name: 'First Nat TX',  color: '#22d3ee' },
 };
 
 // ── Corridor pairs ───────────────────────────────────────────
@@ -50,12 +50,12 @@ interface Particle {
   reverse: boolean;
 }
 
-// Institutional palette — brighter in dark mode for visibility on dark globe
+// Cyan/teal data palette — high contrast on dark Mapbox globe
 const COLOR_HEX: Record<string, { dark: string; light: string; darkBright: string; lightBright: string }> = {
-  primary:   { dark: '#e2e8f0', light: '#64748b', darkBright: '#f1f5f9', lightBright: '#94a3b8' },
-  secondary: { dark: '#7dd3fc', light: '#0ea5e9', darkBright: '#bae6fd', lightBright: '#38bdf8' },
-  accent:    { dark: '#a5b4fc', light: '#6366f1', darkBright: '#c7d2fe', lightBright: '#818cf8' },
-  alert:     { dark: '#fca5a5', light: '#ef4444', darkBright: '#fecaca', lightBright: '#f87171' },
+  primary:   { dark: '#22d3ee', light: '#0891b2', darkBright: '#67e8f9', lightBright: '#22d3ee' },
+  secondary: { dark: '#38bdf8', light: '#0284c7', darkBright: '#7dd3fc', lightBright: '#38bdf8' },
+  accent:    { dark: '#818cf8', light: '#6366f1', darkBright: '#a5b4fc', lightBright: '#818cf8' },
+  alert:     { dark: '#fb923c', light: '#ea580c', darkBright: '#fdba74', lightBright: '#fb923c' },
 };
 
 interface Props {
@@ -266,7 +266,7 @@ export function GlobeCanvas({ sim, sidebarWidth = 0 }: Props) {
         type: 'line',
         source: 'corridors',
         paint: {
-          'line-color': dark ? 'rgba(52,211,153,0.12)' : 'rgba(16,185,129,0.10)',
+          'line-color': dark ? 'rgba(34,211,238,0.15)' : 'rgba(8,145,178,0.12)',
           'line-width': 6,
           'line-blur': 4,
           'line-opacity': 0.5,
@@ -279,7 +279,7 @@ export function GlobeCanvas({ sim, sidebarWidth = 0 }: Props) {
         type: 'line',
         source: 'corridors',
         paint: {
-          'line-color': dark ? 'rgba(52,211,153,0.35)' : 'rgba(16,185,129,0.3)',
+          'line-color': dark ? 'rgba(34,211,238,0.4)' : 'rgba(8,145,178,0.3)',
           'line-width': 1.2,
           'line-opacity': 0.7,
         },
