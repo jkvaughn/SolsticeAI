@@ -88,7 +88,7 @@ export function PersonaSwitcher() {
       </div>
 
       {/* Bank scope selector — visible when a non-admin role is active */}
-      {role !== 'admin' && (
+      {persona !== 'admin' && (
         <div>
           <label className="block text-[12px] font-normal text-black/40 dark:text-white/40 mb-1">
             Bank Scope
