@@ -93,21 +93,25 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Session registration — fire when user transitions from null to authenticated
+  // Only create a new session if one doesn't already exist in sessionStorage
   const azurePrevUser = useRef<string | null>(null);
   useEffect(() => {
     const email = state.user?.email ?? null;
     if (email && !azurePrevUser.current) {
-      (async () => {
-        try {
-          const res = await userCallServerPost<{ id: string; session_token: string }>(
-            '/user/sessions', email, {},
-          );
-          sessionStorage.setItem('coda-session-token', res.session_token);
-          sessionStorage.setItem('coda-session-id', res.id);
-        } catch {
-          // Session registration is non-blocking
-        }
-      })();
+      const existingToken = sessionStorage.getItem('coda-session-token');
+      if (!existingToken) {
+        (async () => {
+          try {
+            const res = await userCallServerPost<{ id: string; session_token: string }>(
+              '/user/sessions', email, {},
+            );
+            sessionStorage.setItem('coda-session-token', res.session_token);
+            sessionStorage.setItem('coda-session-id', res.id);
+          } catch {
+            // Session registration is non-blocking
+          }
+        })();
+      }
     }
     azurePrevUser.current = email;
   }, [state.user]);
@@ -217,21 +221,25 @@ function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Session registration — fire when user transitions from null to authenticated
+  // Only create a new session if one doesn't already exist in sessionStorage
   const sbPrevUser = useRef<string | null>(null);
   useEffect(() => {
     const email = state.user?.email ?? null;
     if (email && !sbPrevUser.current) {
-      (async () => {
-        try {
-          const res = await userCallServerPost<{ id: string; session_token: string }>(
-            '/user/sessions', email, {},
-          );
-          sessionStorage.setItem('coda-session-token', res.session_token);
-          sessionStorage.setItem('coda-session-id', res.id);
-        } catch {
-          // Session registration is non-blocking
-        }
-      })();
+      const existingToken = sessionStorage.getItem('coda-session-token');
+      if (!existingToken) {
+        (async () => {
+          try {
+            const res = await userCallServerPost<{ id: string; session_token: string }>(
+              '/user/sessions', email, {},
+            );
+            sessionStorage.setItem('coda-session-token', res.session_token);
+            sessionStorage.setItem('coda-session-id', res.id);
+          } catch {
+            // Session registration is non-blocking
+          }
+        })();
+      }
     }
     sbPrevUser.current = email;
   }, [state.user]);
