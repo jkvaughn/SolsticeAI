@@ -23,13 +23,13 @@ export const BANK_COORDS: Record<
   string,
   { lng: number; lat: number; name: string; color: string }
 > = {
-  JPM:  { lng: -74.006,   lat: 40.7128, name: 'JPMorgan',      color: '#34d399' },
-  CITI: { lng: -73.9855,  lat: 40.758,  name: 'Citibank',      color: '#34d399' },
-  HSBC: { lng: -0.1278,   lat: 51.5074, name: 'HSBC',          color: '#34d399' },
-  UBS:  { lng: 8.5417,    lat: 47.3769, name: 'UBS',           color: '#34d399' },
-  WFC:  { lng: -122.4194, lat: 37.7749, name: 'Wells Fargo',   color: '#34d399' },
-  BNY:  { lng: -74.0445,  lat: 40.6892, name: 'BNY Mellon',    color: '#fbbf24' },
-  FNBT: { lng: -96.797,  lat: 32.7767, name: 'First Nat TX',  color: '#c084fc' },
+  JPM:  { lng: -74.006,   lat: 40.7128, name: 'JPMorgan',      color: '#64748b' },
+  CITI: { lng: -73.9855,  lat: 40.758,  name: 'Citibank',      color: '#64748b' },
+  HSBC: { lng: -0.1278,   lat: 51.5074, name: 'HSBC',          color: '#64748b' },
+  UBS:  { lng: 8.5417,    lat: 47.3769, name: 'UBS',           color: '#64748b' },
+  WFC:  { lng: -122.4194, lat: 37.7749, name: 'Wells Fargo',   color: '#64748b' },
+  BNY:  { lng: -74.0445,  lat: 40.6892, name: 'BNY Mellon',    color: '#94a3b8' },
+  FNBT: { lng: -96.797,  lat: 32.7767, name: 'First Nat TX',  color: '#64748b' },
 };
 
 // ── Corridor pairs ───────────────────────────────────────────
@@ -50,12 +50,12 @@ interface Particle {
   reverse: boolean;
 }
 
-// Dark/light color palettes per color key
+// Monochromatic slate/blue palette — institutional, not playful
 const COLOR_HEX: Record<string, { dark: string; light: string; darkBright: string; lightBright: string }> = {
-  emerald: { dark: '#34d399', light: '#10b981', darkBright: '#6ee7b7', lightBright: '#34d399' },
-  amber:   { dark: '#fbbf24', light: '#d97706', darkBright: '#fde68a', lightBright: '#fbbf24' },
-  purple:  { dark: '#c084fc', light: '#9333ea', darkBright: '#e9d5ff', lightBright: '#c084fc' },
-  red:     { dark: '#f87171', light: '#dc2626', darkBright: '#fecaca', lightBright: '#f87171' },
+  primary:   { dark: '#94a3b8', light: '#64748b', darkBright: '#cbd5e1', lightBright: '#94a3b8' },
+  secondary: { dark: '#7dd3fc', light: '#0ea5e9', darkBright: '#bae6fd', lightBright: '#7dd3fc' },
+  accent:    { dark: '#a5b4fc', light: '#6366f1', darkBright: '#c7d2fe', lightBright: '#a5b4fc' },
+  alert:     { dark: '#fca5a5', light: '#ef4444', darkBright: '#fecaca', lightBright: '#fca5a5' },
 };
 
 interface Props {
@@ -305,9 +305,9 @@ export function GlobeCanvas({ sim, sidebarWidth = 0 }: Props) {
         type: 'circle',
         source: 'bank-nodes',
         paint: {
-          'circle-radius': 18,
+          'circle-radius': 14,
           'circle-color': ['get', 'color'],
-          'circle-opacity': 0.12,
+          'circle-opacity': 0.08,
           'circle-blur': 1,
         },
       });
@@ -317,23 +317,11 @@ export function GlobeCanvas({ sim, sidebarWidth = 0 }: Props) {
         type: 'circle',
         source: 'bank-nodes',
         paint: {
-          'circle-radius': ['case', ['get', 'isBNY'], 7, 6],
+          'circle-radius': ['case', ['get', 'isBNY'], 5, 4],
           'circle-color': ['get', 'color'],
-          'circle-opacity': 0.9,
-          'circle-stroke-width': 1.5,
-          'circle-stroke-color': 'rgba(255,255,255,0.4)',
-        },
-      });
-
-      // Bright center dot on nodes
-      map.addLayer({
-        id: 'bank-nodes-hot',
-        type: 'circle',
-        source: 'bank-nodes',
-        paint: {
-          'circle-radius': ['case', ['get', 'isBNY'], 3, 2.5],
-          'circle-color': '#ffffff',
-          'circle-opacity': 0.7,
+          'circle-opacity': 0.8,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': 'rgba(255,255,255,0.25)',
         },
       });
 
@@ -362,33 +350,20 @@ export function GlobeCanvas({ sim, sidebarWidth = 0 }: Props) {
         data: EMPTY_FC,
       });
 
-      // Layer 1: Outer glow — large, soft, faint
+      // Layer 1: Subtle glow
       map.addLayer({
         id: 'particle-outer-glow',
         type: 'circle',
         source: 'particles',
         paint: {
-          'circle-radius': ['*', ['get', 'radius'], 3.5],
+          'circle-radius': ['*', ['get', 'radius'], 2.5],
           'circle-color': ['get', 'color'],
-          'circle-opacity': ['*', ['get', 'alpha'], 0.12],
+          'circle-opacity': ['*', ['get', 'alpha'], 0.08],
           'circle-blur': 1,
         },
       });
 
-      // Layer 2: Mid glow — medium, colored
-      map.addLayer({
-        id: 'particle-mid-glow',
-        type: 'circle',
-        source: 'particles',
-        paint: {
-          'circle-radius': ['*', ['get', 'radius'], 2],
-          'circle-color': ['get', 'color'],
-          'circle-opacity': ['*', ['get', 'alpha'], 0.3],
-          'circle-blur': 0.6,
-        },
-      });
-
-      // Layer 3: Core — solid, vibrant
+      // Layer 2: Core dot — clean, understated
       map.addLayer({
         id: 'particle-core',
         type: 'circle',
@@ -396,19 +371,7 @@ export function GlobeCanvas({ sim, sidebarWidth = 0 }: Props) {
         paint: {
           'circle-radius': ['get', 'radius'],
           'circle-color': ['get', 'bright'],
-          'circle-opacity': ['get', 'alpha'],
-        },
-      });
-
-      // Layer 4: Hot center — small, white, intense
-      map.addLayer({
-        id: 'particle-hot',
-        type: 'circle',
-        source: 'particles',
-        paint: {
-          'circle-radius': ['*', ['get', 'radius'], 0.45],
-          'circle-color': '#ffffff',
-          'circle-opacity': ['*', ['get', 'alpha'], 0.85],
+          'circle-opacity': ['*', ['get', 'alpha'], 0.7],
         },
       });
     });
@@ -462,14 +425,14 @@ export function GlobeCanvas({ sim, sidebarWidth = 0 }: Props) {
 
             const roll = Math.random();
             const colorKey =
-              roll < 0.65 ? 'emerald' : roll < 0.82 ? 'amber' : roll < 0.94 ? 'purple' : 'red';
+              roll < 0.7 ? 'primary' : roll < 0.88 ? 'secondary' : roll < 0.96 ? 'accent' : 'alert';
 
             particlesRef.current.push({
               corridorIdx: cIdx,
               progress: 0,
-              speed: 0.18 + Math.random() * 0.28,
+              speed: 0.15 + Math.random() * 0.2,
               colorKey,
-              radius: 3 + Math.random() * 3,
+              radius: 1.5 + Math.random() * 1.5,
               reverse: Math.random() > 0.5,
             });
           }
