@@ -77,11 +77,11 @@ export function PersonaSwitcher() {
                   : 'bg-transparent hover:bg-black/[0.02] dark:hover:bg-white/[0.03] ring-1 ring-black/[0.04] dark:ring-white/[0.04] hover:ring-black/[0.08] dark:hover:ring-white/[0.08]'
               }`}
             >
-              <Icon size={20} className={`mb-3 ${active ? 'text-black/70 dark:text-white/70' : 'text-black/25 dark:text-white/25'}`} />
-              <p className={`text-[15px] mb-1 ${active ? 'font-medium text-black/80 dark:text-white/80' : 'text-black/50 dark:text-white/50'}`}>
+              <Icon size={20} className={`mb-3 ${active ? 'text-black/70 dark:text-white/70' : 'text-black/40 dark:text-white/40'}`} />
+              <p className={`text-[15px] mb-1 ${active ? 'font-medium text-black/80 dark:text-white/80' : 'text-black/60 dark:text-white/60'}`}>
                 {opt.label}
               </p>
-              <p className={`text-[11px] leading-relaxed ${active ? 'text-black/40 dark:text-white/40' : 'text-black/25 dark:text-white/25'}`}>
+              <p className={`text-[11px] leading-relaxed ${active ? 'text-black/40 dark:text-white/40' : 'text-black/35 dark:text-white/35'}`}>
                 {opt.desc}
               </p>
             </button>
