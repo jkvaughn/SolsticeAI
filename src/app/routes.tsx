@@ -17,6 +17,7 @@ import { LoginPage } from './components/LoginPage';
 import NetworkCommand from './components/NetworkCommand';
 import { AdminConsole } from './components/AdminConsole';
 import { AuthCallback } from './components/AuthCallback';
+import { NotificationsPage } from './components/NotificationsPage';
 
 const LazyEscalationDashboard = lazy(() =>
   import('./components/EscalationDashboard').then(m => ({ default: m.EscalationDashboard }))
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
           { path: 'transactions', Component: TransactionMonitor },
           { path: 'transactions/:txId', Component: TransactionDetail },
           { path: 'escalations', Component: EscalationDashboardPage },
+          { path: 'notifications', Component: NotificationsPage },
           { path: 'treasury-ops', Component: HeartbeatControl },
           { path: 'network-command', Component: NetworkCommand },
           { path: 'agent-config', Component: AgentConfig },

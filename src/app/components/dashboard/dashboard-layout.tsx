@@ -15,6 +15,7 @@ import {
   blockchainExplorer as explorerAnim,
   networkSquare as networkSetupAnim,
   networkWorld as networkCmdAnim,
+  bell as notificationsAnim,
   nodes as agentConfigAnim,
   settings as settingsAnim,
   userProfile as userProfileAnim,
@@ -28,8 +29,7 @@ import { supabase } from "../../supabaseClient";
 import { useRealtimeSubscription } from "../../hooks/useRealtimeSubscription";
 import { usePersona } from "../../contexts/PersonaContext";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
-import { NotificationBell } from "../notifications/NotificationBell";
-import { NotificationPanel } from "../notifications/NotificationPanel";
+import { useNotifications } from "../../contexts/NotificationContext";
 import type { PersonaType } from "../../types";
 
 // ============================================================
@@ -89,8 +89,9 @@ const opsNav: NavItem[] = [
   { id: 'treasury-ops', label: 'Treasury Ops',    lottieData: treasuryAnim,      lottieScale: 1.3,  route: '/treasury-ops' },
   { id: 'network-cmd',  label: 'Network Command', lottieData: networkCmdAnim,    lottieScale: 1.1,  route: '/network-command' },
   { id: 'transactions', label: 'Transactions',    lottieData: transferAnim,      lottieScale: 1.25, route: '/transactions' },
-  { id: 'escalations',  label: 'Escalations',     lottieData: escalationsAnim,   lottieScale: 1.35, route: '/escalations' },
-  { id: 'visualizer',   label: 'Visualizer',      lottieData: explorerAnim,      lottieScale: 1.2,  route: '/visualizer' },
+  { id: 'escalations',    label: 'Escalations',     lottieData: escalationsAnim,   lottieScale: 1.35, route: '/escalations' },
+  { id: 'notifications', label: 'Notifications',   lottieData: notificationsAnim, lottieScale: 1.2,  route: '/notifications' },
+  { id: 'visualizer',    label: 'Visualizer',      lottieData: explorerAnim,      lottieScale: 1.2,  route: '/visualizer' },
 ];
 
 // Admin — consolidated admin-only tools (visible only to admins)
@@ -111,10 +112,10 @@ const bottomNav: NavItem[] = [];
 // ============================================================
 const ROLE_PRIMARY_ITEMS: Record<string, string[]> = {
   admin: [],
-  treasury: ['dashboard', 'treasury-ops', 'agent-config', 'transactions'],
-  compliance: ['dashboard', 'escalations', 'transactions'],
-  bsa_officer: ['dashboard', 'escalations', 'transactions', 'agent-config'],
-  executive: ['dashboard', 'network-cmd', 'visualizer'],
+  treasury: ['dashboard', 'treasury-ops', 'agent-config', 'transactions', 'notifications'],
+  compliance: ['dashboard', 'escalations', 'transactions', 'notifications'],
+  bsa_officer: ['dashboard', 'escalations', 'transactions', 'agent-config', 'notifications'],
+  executive: ['dashboard', 'network-cmd', 'visualizer', 'notifications'],
 };
 
 // Super admin email can preview any role without losing nav access
@@ -145,6 +146,7 @@ export function DashboardLayout({
   const userEmail = user?.email || '';
   const { persona } = usePersona();
   const isAdmin = useIsAdmin();
+  const { unreadCount: notificationCount } = useNotifications();
 
   // --- Escalation count badge (real-time) ---
   const [escalationCount, setEscalationCount] = React.useState(0);
@@ -216,7 +218,9 @@ export function DashboardLayout({
   const renderNavButton = (item: NavItem) => {
     const Icon = item.icon;
     const active = isActive(item.route);
-    const showBadge = item.id === 'escalations' && escalationCount > 0;
+    const showBadge = (item.id === 'escalations' && escalationCount > 0)
+      || (item.id === 'notifications' && notificationCount > 0);
+    const badgeCount = item.id === 'notifications' ? notificationCount : escalationCount;
     const dimmed = isNavDimmed(persona, item.id, userEmail);
     if (dimmed) return null;
 
@@ -258,7 +262,7 @@ export function DashboardLayout({
               ) : null}
               {showBadge && !sidebarExpanded && (
                 <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center shadow-md">
-                  {escalationCount > 9 ? '9+' : escalationCount}
+                  {badgeCount > 9 ? '9+' : badgeCount}
                 </span>
               )}
             </div>
@@ -269,13 +273,13 @@ export function DashboardLayout({
             )}
             {showBadge && sidebarExpanded && (
               <span className="flex-shrink-0 min-w-[20px] h-5 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-1.5 shadow-md tabular-nums">
-                {escalationCount}
+                {badgeCount}
               </span>
             )}
           </button>
         </TooltipTrigger>
         <TooltipContent side="right">
-          <p>{item.label}{showBadge ? ` (${escalationCount})` : ''}</p>
+          <p>{item.label}{showBadge ? ` (${badgeCount})` : ''}</p>
         </TooltipContent>
       </Tooltip>
       </div>
@@ -336,12 +340,6 @@ export function DashboardLayout({
                     </div>
                   )}
                 </button>
-
-                {/* Notification bell — always visible */}
-                <div className="relative">
-                  <NotificationBell />
-                  <NotificationPanel />
-                </div>
 
                 {/* Expand/Collapse Button - Right Aligned - Only visible when expanded */}
                 {sidebarExpanded && (
