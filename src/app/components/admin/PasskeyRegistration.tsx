@@ -41,7 +41,7 @@ export function PasskeyRegistration() {
     try {
       // 1. Get registration options from server
       const options = await adminCallServer<any>(
-        '/passkey-register-options', undefined, 1, userEmail
+        '/passkey-register-options', {}, 1, userEmail
       );
 
       // 2. Create credential via browser WebAuthn API
