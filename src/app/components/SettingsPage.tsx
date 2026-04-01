@@ -155,7 +155,6 @@ export function SettingsPage() {
   }, [currentUser.userId]);
 
   // ── Sign out ──
-  const [signOutConfirm, setSignOutConfirm] = useState(false);
   const handleSignOut = useCallback(() => {
     signOut();
   }, [signOut]);
@@ -252,12 +251,12 @@ export function SettingsPage() {
                       <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Personal Information</h4>
                     </div>
                     <div className="flex-1">
-                      {profileLoading ? (
-                        <ProfileSkeleton />
-                      ) : profile ? (
+                      {profile ? (
                         <div className="animate-fadeIn">
                           <ProfileEditor profile={profile} onUpdate={updateProfile} email={currentUser.email} />
                         </div>
+                      ) : profileLoading ? (
+                        <ProfileSkeleton />
                       ) : (
                         <ProfileEditorFallback name={profileName} email={currentUser.email} />
                       )}
@@ -306,21 +305,13 @@ export function SettingsPage() {
                           </div>
                         </div>
                         <div className="flex-1 flex justify-end">
-                          {!signOutConfirm ? (
-                            <button
-                              onClick={() => setSignOutConfirm(true)}
-                              className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] text-black/30 dark:text-white/30 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
-                            >
-                              <LogOut size={14} />
-                              <span>Sign Out</span>
-                            </button>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-red-500">End session?</span>
-                              <button onClick={() => setSignOutConfirm(false)} className="px-2.5 py-1.5 text-xs text-black/40 dark:text-white/40 cursor-pointer"><span>Cancel</span></button>
-                              <button onClick={handleSignOut} className="px-2.5 py-1.5 text-xs font-medium text-red-500 cursor-pointer"><span>Sign Out</span></button>
-                            </div>
-                          )}
+                          <button
+                            onClick={handleSignOut}
+                            className="flex items-center gap-1.5 px-4 py-2.5 text-[13px] text-black/30 dark:text-white/30 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"
+                          >
+                            <LogOut size={14} />
+                            <span>Sign Out</span>
+                          </button>
                         </div>
                       </div>
                     </div>
