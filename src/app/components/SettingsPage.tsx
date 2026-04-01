@@ -118,7 +118,7 @@ export function SettingsPage() {
   const totalVolume = statsData?.totalVolume ?? null;
 
   // ── Security stat (SWR-cached) ──
-  const { data: passkeyData } = useSWRCache<{ count: number }>({
+  const { data: passkeyData, invalidate: invalidatePasskeys } = useSWRCache<{ count: number }>({
     key: `settings-passkey-${userEmail ?? 'none'}`,
     fetcher: async () => {
       if (!userEmail) throw new Error('No user email');
@@ -385,7 +385,7 @@ export function SettingsPage() {
               )}
 
               {/* ── Security ── */}
-              {section === 'security' && <SecuritySection />}
+              {section === 'security' && <SecuritySection onPasskeyRegistered={invalidatePasskeys} />}
 
               {/* ── Appearance ── */}
               {section === 'appearance' && (

@@ -4,7 +4,11 @@ import { adminCallServer } from '../../lib/adminClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { Fingerprint, Plus, Trash2, Loader2, Clock } from 'lucide-react';
 
-export function PasskeyRegistration() {
+interface PasskeyRegistrationProps {
+  onRegistered?: () => void;
+}
+
+export function PasskeyRegistration({ onRegistered }: PasskeyRegistrationProps = {}) {
   const { userEmail } = useAuth();
   const [passkeys, setPasskeys] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +62,7 @@ export function PasskeyRegistration() {
       if (result.success) {
         setSuccess('Passkey registered successfully!');
         fetchPasskeys(); // Refresh list
+        onRegistered?.(); // Notify parent to refresh stats
       }
     } catch (err: any) {
       if (err.name === 'NotAllowedError') {

@@ -83,7 +83,11 @@ function LoginHistory() {
   );
 }
 
-export function SecuritySection() {
+interface SecuritySectionProps {
+  onPasskeyRegistered?: () => void;
+}
+
+export function SecuritySection({ onPasskeyRegistered }: SecuritySectionProps = {}) {
   return (
     <div className="space-y-0">
       {/* Passkey Management */}
@@ -92,7 +96,7 @@ export function SecuritySection() {
           <h4 className="text-[15px] font-normal text-black/70 dark:text-white/70">Authentication</h4>
         </div>
         <div className="flex-1">
-          <PasskeyRegistration />
+          <PasskeyRegistration onRegistered={onPasskeyRegistered} />
         </div>
       </div>
 
