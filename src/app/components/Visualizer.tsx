@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { Radio, AlertOctagon, Activity, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import { supabase, callServer } from '../supabaseClient';
+import { fetchTransactions, fetchWallets as dcFetchWallets, fetchLockupTokens as dcFetchLockups, fetchNetworkWallets as dcFetchNetworkWallets } from '../dataClient';
 import type { Bank, Transaction, Wallet } from '../types';
 import {
   formatTokenAmount, truncateAddress, explorerUrl,
@@ -52,45 +53,27 @@ interface InfraNode {
 // ============================================================
 
 async function fetchVisualizerWallets(): Promise<Wallet[]> {
-  const { data, error } = await supabase
-    .from('wallets')
-    .select('*')
-    .eq('is_default', true);
-  if (error) throw error;
-  return data ?? [];
+  return dcFetchWallets();
 }
 
 async function fetchVisualizerTransactions(): Promise<Transaction[]> {
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('*, sender_bank:banks!transactions_sender_bank_id_fkey(id, short_code), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, short_code)')
-    .order('created_at', { ascending: false })
-    .limit(50);
-  if (error) throw error;
-  return data ?? [];
+  // Use dataClient for production routing (Azure Postgres vs Supabase)
+  return fetchTransactions({ limit: 50 });
 }
 
 async function fetchLockupTokens(): Promise<LockupInfo[]> {
-  const { data, error } = await supabase
-    .from('lockup_tokens')
-    .select('id, transaction_id, yb_token_amount, tb_token_amount, status, yield_accrued, yield_rate_bps, lockup_start, lockup_end')
-    .order('created_at', { ascending: false })
-    .limit(100);
-  if (error) {
-    console.error('[Visualizer] lockup_tokens fetch error:', error);
-    return [];
-  }
-  return data ?? [];
+  return dcFetchLockups({ limit: 100 });
 }
 
 async function fetchNetworkWallets(): Promise<{ feesBalance: number; feesExists: boolean }> {
-  const { data, error } = await supabase
-    .from('network_wallets')
-    .select('code, balance')
-    .eq('code', 'SOLSTICE_FEES')
-    .maybeSingle();
-  if (error || !data) return { feesBalance: 0, feesExists: false };
-  return { feesBalance: Number(data.balance || 0), feesExists: true };
+  try {
+    const wallets = await dcFetchNetworkWallets();
+    const fees = wallets.find((w: any) => w.code === 'SOLSTICE_FEES');
+    if (!fees) return { feesBalance: 0, feesExists: false };
+    return { feesBalance: Number(fees.balance || 0), feesExists: true };
+  } catch {
+    return { feesBalance: 0, feesExists: false };
+  }
 }
 
 // ============================================================
