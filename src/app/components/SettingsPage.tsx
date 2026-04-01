@@ -156,9 +156,8 @@ export function SettingsPage() {
 
   // ── Sign out ──
   const [signOutConfirm, setSignOutConfirm] = useState(false);
-  const handleSignOut = useCallback(async () => {
-    await signOut();
-    window.location.href = '/login';
+  const handleSignOut = useCallback(() => {
+    signOut();
   }, [signOut]);
 
   // ── Appearance state ──
