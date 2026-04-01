@@ -115,8 +115,13 @@ const ROLE_PRIMARY_ITEMS: Record<string, string[]> = {
   executive: ['dashboard', 'network-cmd', 'visualizer'],
 };
 
-function isNavDimmed(persona: PersonaType, itemId: string): boolean {
+// Super admin email can preview any role without losing nav access
+const SUPER_ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || '').toLowerCase();
+
+function isNavDimmed(persona: PersonaType, itemId: string, userEmail?: string): boolean {
   if (!persona) return false;
+  // Super admin never gets dimmed — can preview all roles with full nav
+  if (userEmail && userEmail.toLowerCase() === SUPER_ADMIN_EMAIL) return false;
   const primaryIds = ROLE_PRIMARY_ITEMS[persona];
   if (!primaryIds || primaryIds.length === 0) return false; // admin or unknown = show all
   return !primaryIds.includes(itemId);
@@ -135,6 +140,7 @@ export function DashboardLayout({
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const userEmail = user?.email || '';
   const { persona } = usePersona();
   const isAdmin = useIsAdmin();
 
@@ -209,7 +215,7 @@ export function DashboardLayout({
     const Icon = item.icon;
     const active = isActive(item.route);
     const showBadge = item.id === 'escalations' && escalationCount > 0;
-    const dimmed = isNavDimmed(persona, item.id);
+    const dimmed = isNavDimmed(persona, item.id, userEmail);
     if (dimmed) return null;
 
     // Lottie icons are black strokes — invert when icon would be invisible against bg
@@ -277,7 +283,6 @@ export function DashboardLayout({
   // User initials
   const userInitial = (user?.name || user?.email || '?')[0].toUpperCase();
   const userName = user?.name || 'User';
-  const userEmail = user?.email || '';
 
   return (
     <div className="min-h-screen bg-coda-bg transition-colors duration-500 relative overflow-hidden">
