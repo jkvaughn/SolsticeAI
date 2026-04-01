@@ -195,10 +195,10 @@ export function NetworkCommandContent({ containerMode = false }: NetworkCommandC
         style={headerStyle}
       >
         <div>
-          <h1 className="text-sm font-semibold tracking-[0.2em] uppercase text-black/80 dark:text-white/90">
+          <h1 className="text-2xl font-light text-coda-text leading-tight">
             Network Command
           </h1>
-          <p className="text-[10px] text-black/30 dark:text-white/30 tracking-wider">
+          <p className="text-xs text-coda-text-muted mt-0.5">
             Solstice Network &mdash; Institutional Settlement Layer
           </p>
         </div>
