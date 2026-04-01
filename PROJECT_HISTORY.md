@@ -1884,3 +1884,10 @@ Status: DONE
 Unified Settings page with 5 Radix tabs (Profile, Security, Appearance, Network, Notifications). Four new backend tables: `user_profiles` (persistent name, title, department, phone, institution, timezone), `user_preferences` (server-synced settings), `user_sessions` (active session tracking with heartbeat and revoke), `user_audit_logs` (action tracking for compliance). Passkey management moved from standalone to Settings > Security tab. Activity timeline with grouped audit entries. SWR caching across all Settings sections. Popup OAuth flow eliminates SWA callback flash. MFA gate in AuthGate challenges passkey-enrolled users on login. XD-reference design compliance (form fields, horizontal section layout). Performance: removed request queue in production for parallel fetch.
 
 ---END_TASK---
+
+### Task 151 — Role-Based Auth + Role Switcher UI (2026-04-01)
+
+### Summary:
+Five-role authorization system (Treasury, Compliance, BSA Officer, Executive, Admin) with server-persisted roles in `user_profiles.role` column. New `useUserRole` hook reads/writes role via SWR-cached profile. `useIsAdmin` delegates to role with email fail-safe. PersonaContext wired to role system (replaces localStorage personas). PersonaSwitcher redesigned as 5 role cards saving directly to server. Nav dimming via `ROLE_PRIMARY_ITEMS` per role — admin sees everything. Super admin email (`VITE_ADMIN_EMAIL`) bypasses nav dimming when previewing other roles. Backend: `getUserRole()`, `requireRole()` middleware, role validation on profile-update. Legacy `leadership` → `executive` localStorage migration. PersonaBanner updated for all 5 roles.
+
+---END_TASK---
