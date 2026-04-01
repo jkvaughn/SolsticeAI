@@ -191,7 +191,7 @@ export function NetworkCommandContent({ containerMode = false }: NetworkCommandC
 
       {/* ===== FLOATING HEADER BAR ===== */}
       <header
-        className="absolute top-4 right-4 z-20 flex items-center justify-between px-5 py-3 squircle-lg backdrop-blur-xl border border-black/10 dark:border-white/10 shadow-2xl bg-white/60 dark:bg-white/5 transition-all duration-500 pointer-events-auto"
+        className="absolute top-12 right-4 z-20 flex items-center justify-between px-5 py-3 squircle-lg backdrop-blur-xl border border-black/10 dark:border-white/10 shadow-2xl bg-white/60 dark:bg-white/5 transition-all duration-500 pointer-events-auto"
         style={headerStyle}
       >
         <div>

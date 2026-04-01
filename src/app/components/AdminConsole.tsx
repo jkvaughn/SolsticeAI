@@ -3,18 +3,16 @@ import { useIsAdmin } from '../hooks/useIsAdmin';
 import { PageShell, type PageStat, type PageTab } from './PageShell';
 import { SetupPageContent } from './SetupPage';
 import { ProvingGroundContent } from './ProvingGround';
-import { NetworkCommandContent } from './NetworkCommand';
 import DangerZoneContent from './admin/DangerZoneContent';
 import { useBanks } from '../contexts/BanksContext';
 import { Building2, Coins, FlaskConical, Shield } from 'lucide-react';
 
-const VALID_TABS = ['setup', 'proving-ground', 'network-command', 'danger-zone'] as const;
+const VALID_TABS = ['setup', 'proving-ground', 'danger-zone'] as const;
 type AdminTab = (typeof VALID_TABS)[number];
 
 const TABS: PageTab[] = [
   { id: 'setup', label: 'Network Setup' },
   { id: 'proving-ground', label: 'Proving Ground' },
-  { id: 'network-command', label: 'Network Command' },
   { id: 'danger-zone', label: 'Danger Zone' },
 ];
 
@@ -55,7 +53,6 @@ export function AdminConsole() {
     >
       {activeTab === 'setup' && <SetupPageContent />}
       {activeTab === 'proving-ground' && <ProvingGroundContent />}
-      {activeTab === 'network-command' && <NetworkCommandContent containerMode />}
       {activeTab === 'danger-zone' && <DangerZoneContent />}
     </PageShell>
   );
