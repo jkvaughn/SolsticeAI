@@ -1,5 +1,4 @@
 import { Shield, Landmark, BarChart3, Eye, ShieldCheck } from 'lucide-react';
-import { useUserRole } from '../hooks/useUserRole';
 import { usePersona } from '../contexts/PersonaContext';
 import { useBanks } from '../contexts/BanksContext';
 import { useTheme } from './ThemeProvider';
@@ -48,14 +47,13 @@ const ROLE_OPTIONS: {
 ];
 
 export function PersonaSwitcher() {
-  const { role, setRole } = useUserRole();
-  const { selectedBankId, setSelectedBankId } = usePersona();
+  const { persona, setPersona, selectedBankId, setSelectedBankId } = usePersona();
   const { activeBanks } = useBanks();
   const { resolved } = useTheme();
   const isDark = resolved === 'dark';
 
   const handleSelect = (opt: typeof ROLE_OPTIONS[number]) => {
-    setRole(opt.value);
+    setPersona(opt.value); // Uses optimistic update via PersonaContext
   };
 
   const activeBank = activeBanks.find(b => b.id === selectedBankId);
@@ -66,7 +64,7 @@ export function PersonaSwitcher() {
       <div className="grid gap-4 grid-cols-5">
         {ROLE_OPTIONS.map(opt => {
           const Icon = opt.icon;
-          const active = opt.value === role;
+          const active = opt.value === persona;
           return (
             <button
               key={opt.value}
