@@ -25,42 +25,43 @@ const isProduction = import.meta.env.VITE_AUTH_PROVIDER === 'azure';
 
 export function AuthGate() {
   const { user, loading, userEmail } = useAuth();
-  const [mfaState, setMfaState] = useState<'checking' | 'required' | 'verified' | 'not-enrolled'>('checking');
   const [mfaError, setMfaError] = useState<string | null>(null);
   const [mfaLoading, setMfaLoading] = useState(false);
 
-  // Check if MFA was already verified this session
+  // Compute initial MFA state synchronously to prevent any flash of app content
+  const getInitialMfaState = (): 'checking' | 'required' | 'verified' => {
+    if (!isProduction) return 'verified';
+    if (!user || !userEmail) return 'checking';
+    if (sessionStorage.getItem(MFA_VERIFIED_KEY) === userEmail) return 'verified';
+    return 'checking'; // Need to fetch passkey status
+  };
+
+  const [mfaState, setMfaState] = useState<'checking' | 'required' | 'verified'>(getInitialMfaState);
+
+  // Fetch passkey status when in 'checking' state
   useEffect(() => {
-    if (!user || !isProduction) {
-      setMfaState('verified'); // No MFA for staging/local
-      return;
-    }
+    if (mfaState !== 'checking' || !user || !userEmail || !isProduction) return;
 
-    // Already verified this session?
-    if (sessionStorage.getItem(MFA_VERIFIED_KEY) === userEmail) {
-      setMfaState('verified');
-      return;
-    }
-
-    // Check if user has passkeys
-    if (userEmail) {
-      adminCallServer<{ has_passkeys: boolean }>('/passkey-status', undefined, 1, userEmail)
-        .then(result => {
-          if (result.has_passkeys) {
-            setMfaState('required');
-          } else {
-            // No passkeys enrolled — skip MFA
-            setMfaState('verified');
-            sessionStorage.setItem(MFA_VERIFIED_KEY, userEmail);
-          }
-        })
-        .catch(() => {
-          // If check fails, let them through (fail open for now)
+    let cancelled = false;
+    adminCallServer<{ has_passkeys: boolean }>('/passkey-status', undefined, 1, userEmail)
+      .then(result => {
+        if (cancelled) return;
+        if (result.has_passkeys) {
+          setMfaState('required');
+        } else {
+          sessionStorage.setItem(MFA_VERIFIED_KEY, userEmail);
           setMfaState('verified');
-          sessionStorage.setItem(MFA_VERIFIED_KEY, userEmail ?? '');
-        });
-    }
-  }, [user, userEmail]);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Fail open — let them through
+        sessionStorage.setItem(MFA_VERIFIED_KEY, userEmail);
+        setMfaState('verified');
+      });
+
+    return () => { cancelled = true; };
+  }, [mfaState, user, userEmail]);
 
   const handlePasskeyAuth = useCallback(async () => {
     if (!userEmail) return;

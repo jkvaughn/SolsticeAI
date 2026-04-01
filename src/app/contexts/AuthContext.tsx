@@ -149,6 +149,7 @@ function AzureAuthProvider({ children }: { children: ReactNode }) {
     }
     sessionStorage.removeItem('coda-session-token');
     sessionStorage.removeItem('coda-session-id');
+    sessionStorage.removeItem('coda-mfa-verified');
     window.location.href = '/.auth/logout?post_logout_redirect_uri=/login';
   }, [state.user]);
 
