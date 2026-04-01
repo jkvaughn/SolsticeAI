@@ -1104,6 +1104,35 @@ export function TransactionDetail() {
                   <ScoreBar label="Behavioral" score={riskScore.behavioral_score ?? 0} icon={Activity} />
                 </div>
 
+                {/* Deterministic Floor (Task 153) */}
+                {riskScore.floor_score != null && riskScore.floor_score > 0 && (
+                  <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield size={12} className="text-coda-text-muted" />
+                      <span className="text-[11px] font-mono text-coda-text-muted">DETERMINISTIC FLOOR</span>
+                      <span className="text-[11px] font-mono font-bold text-coda-text">{riskScore.floor_score}</span>
+                    </div>
+                    {riskScore.rules_fired?.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {riskScore.rules_fired.map((ruleId: string) => (
+                          <span key={ruleId} className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                            {ruleId}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {riskScore.hard_overrides?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {riskScore.hard_overrides.map((ruleId: string) => (
+                          <span key={ruleId} className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-red-500/15 text-red-500">
+                            {ruleId} HARD
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* AI Reasoning */}
                 {riskScore.reasoning && (
                   <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
