@@ -23,13 +23,13 @@ export const BANK_COORDS: Record<
   string,
   { lng: number; lat: number; name: string; color: string }
 > = {
-  JPM:  { lng: -74.006,   lat: 40.7128, name: 'JPMorgan',      color: '#64748b' },
-  CITI: { lng: -73.9855,  lat: 40.758,  name: 'Citibank',      color: '#64748b' },
-  HSBC: { lng: -0.1278,   lat: 51.5074, name: 'HSBC',          color: '#64748b' },
-  UBS:  { lng: 8.5417,    lat: 47.3769, name: 'UBS',           color: '#64748b' },
-  WFC:  { lng: -122.4194, lat: 37.7749, name: 'Wells Fargo',   color: '#64748b' },
-  BNY:  { lng: -74.0445,  lat: 40.6892, name: 'BNY Mellon',    color: '#94a3b8' },
-  FNBT: { lng: -96.797,  lat: 32.7767, name: 'First Nat TX',  color: '#64748b' },
+  JPM:  { lng: -74.006,   lat: 40.7128, name: 'JPMorgan',      color: '#94a3b8' },
+  CITI: { lng: -73.9855,  lat: 40.758,  name: 'Citibank',      color: '#94a3b8' },
+  HSBC: { lng: -0.1278,   lat: 51.5074, name: 'HSBC',          color: '#94a3b8' },
+  UBS:  { lng: 8.5417,    lat: 47.3769, name: 'UBS',           color: '#94a3b8' },
+  WFC:  { lng: -122.4194, lat: 37.7749, name: 'Wells Fargo',   color: '#94a3b8' },
+  BNY:  { lng: -74.0445,  lat: 40.6892, name: 'BNY Mellon',    color: '#cbd5e1' },
+  FNBT: { lng: -96.797,  lat: 32.7767, name: 'First Nat TX',  color: '#94a3b8' },
 };
 
 // ── Corridor pairs ───────────────────────────────────────────
@@ -50,12 +50,12 @@ interface Particle {
   reverse: boolean;
 }
 
-// Monochromatic slate/blue palette — institutional, not playful
+// Institutional palette — brighter in dark mode for visibility on dark globe
 const COLOR_HEX: Record<string, { dark: string; light: string; darkBright: string; lightBright: string }> = {
-  primary:   { dark: '#94a3b8', light: '#64748b', darkBright: '#cbd5e1', lightBright: '#94a3b8' },
-  secondary: { dark: '#7dd3fc', light: '#0ea5e9', darkBright: '#bae6fd', lightBright: '#7dd3fc' },
-  accent:    { dark: '#a5b4fc', light: '#6366f1', darkBright: '#c7d2fe', lightBright: '#a5b4fc' },
-  alert:     { dark: '#fca5a5', light: '#ef4444', darkBright: '#fecaca', lightBright: '#fca5a5' },
+  primary:   { dark: '#e2e8f0', light: '#64748b', darkBright: '#f1f5f9', lightBright: '#94a3b8' },
+  secondary: { dark: '#7dd3fc', light: '#0ea5e9', darkBright: '#bae6fd', lightBright: '#38bdf8' },
+  accent:    { dark: '#a5b4fc', light: '#6366f1', darkBright: '#c7d2fe', lightBright: '#818cf8' },
+  alert:     { dark: '#fca5a5', light: '#ef4444', darkBright: '#fecaca', lightBright: '#f87171' },
 };
 
 interface Props {
@@ -363,7 +363,7 @@ export function GlobeCanvas({ sim, sidebarWidth = 0 }: Props) {
         },
       });
 
-      // Layer 2: Core dot — clean, understated
+      // Layer 2: Core dot — clean, visible
       map.addLayer({
         id: 'particle-core',
         type: 'circle',
@@ -371,7 +371,7 @@ export function GlobeCanvas({ sim, sidebarWidth = 0 }: Props) {
         paint: {
           'circle-radius': ['get', 'radius'],
           'circle-color': ['get', 'bright'],
-          'circle-opacity': ['*', ['get', 'alpha'], 0.7],
+          'circle-opacity': ['*', ['get', 'alpha'], 0.85],
         },
       });
     });
