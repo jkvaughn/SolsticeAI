@@ -14,7 +14,7 @@ import {
   eye3 as escalationsAnim,
   blockchainExplorer as explorerAnim,
   networkSquare as networkSetupAnim,
-  commandCenter as networkCmdAnim,
+  networkWorld as networkCmdAnim,
   nodes as agentConfigAnim,
   settings as settingsAnim,
   userProfile as userProfileAnim,
