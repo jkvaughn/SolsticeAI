@@ -4,6 +4,8 @@ import { HeartbeatIndicator } from './HeartbeatIndicator';
 import { BanksProvider } from '../contexts/BanksContext';
 import { AriaProvider } from '../contexts/AriaContext';
 import { PersonaBanner } from './PersonaBanner';
+import { NotificationProvider } from '../contexts/NotificationContext';
+import { Toaster } from './ui/sonner';
 
 // ============================================================
 // Layout
@@ -11,11 +13,14 @@ import { PersonaBanner } from './PersonaBanner';
 
 function LayoutInner() {
   return (
-    <DashboardLayout>
-      <PersonaBanner />
-      <Outlet />
-      <HeartbeatIndicator />
-    </DashboardLayout>
+    <NotificationProvider>
+      <DashboardLayout>
+        <PersonaBanner />
+        <Outlet />
+        <HeartbeatIndicator />
+      </DashboardLayout>
+      <Toaster />
+    </NotificationProvider>
   );
 }
 
