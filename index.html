@@ -1,15 +1,21 @@
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Solstice AI</title>
-    </head>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solstice AI</title>
+    <style>
+      /* Hide everything until React mounts — prevents raw auth callback flash */
+      body { opacity: 0; background: #f0f2f5; transition: opacity 0.15s ease-out; }
+      body.ready { opacity: 1; }
+      @media (prefers-color-scheme: dark) { body { background: #0a0a0f; } }
+    </style>
+  </head>
 
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
   
