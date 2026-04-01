@@ -305,9 +305,9 @@ function FloatingMetric({ label, value, variant }: { label: string; value: strin
 }
 
 // ============================================================
-// Route Component (redirect to Admin Console)
+// Route Component — standalone full-page Network Command
 // ============================================================
 
 export default function NetworkCommand() {
-  return <Navigate to="/admin?tab=network-command" replace />;
+  return <NetworkCommandContent />;
 }
