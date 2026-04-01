@@ -35,11 +35,6 @@
     {
       "route": "/.auth/login/twitter",
       "statusCode": 404
-    },
-    {
-      "route": "/.auth/complete",
-      "redirect": "/",
-      "statusCode": 302
     }
   ],
   "navigationFallback": {
