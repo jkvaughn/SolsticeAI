@@ -307,7 +307,7 @@ export function SettingsPage() {
                         <div className="flex-1 flex justify-end">
                           <button
                             onClick={handleSignOut}
-                            className="flex items-center px-3 py-1.5 bg-transparent text-xs text-coda-text liquid-button cursor-pointer"
+                            className="flex items-center px-4 py-3 bg-transparent text-xs text-coda-text liquid-button cursor-pointer"
                           >
                             <LogOut size={12} />
                             <span>Sign Out</span>
