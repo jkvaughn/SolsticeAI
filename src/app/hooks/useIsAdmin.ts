@@ -1,12 +1,13 @@
 import { useAuth } from '../contexts/AuthContext';
+import { useUserRole } from './useUserRole';
 
-/**
- * Returns true if the current user's email matches VITE_ADMIN_EMAIL.
- * Admin gets: god mode (All Views), Setup, Proving Ground, Danger Zone.
- * Non-admin: forced into persona + bank scope, restricted nav.
- */
 export function useIsAdmin(): boolean {
   const { userEmail } = useAuth();
+  const { isAdmin } = useUserRole();
+
+  // Fail-safe: admin email always passes even if role isn't loaded yet
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-  return !!userEmail && !!adminEmail && userEmail.toLowerCase() === adminEmail.toLowerCase();
+  const emailMatch = !!userEmail && !!adminEmail && userEmail.toLowerCase() === adminEmail.toLowerCase();
+
+  return isAdmin || emailMatch;
 }

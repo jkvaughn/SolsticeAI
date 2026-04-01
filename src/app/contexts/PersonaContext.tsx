@@ -1,20 +1,15 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { PersonaType } from '../types';
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useUserRole } from '../hooks/useUserRole';
+import type { PersonaType, UserRole } from '../types';
 
 // ============================================================
-// Persona Context (Task 126 + Task 130)
-// Provides role-based UX filtering + bank scoping across the app.
-// Default: null persona + null bank = show everything.
+// Persona Context (Task 126 + Task 130 + Task 151)
+// Role now comes from server-side user profile via useUserRole.
+// Bank scoping remains localStorage-based (orthogonal to role).
 // ============================================================
 
 const STORAGE_KEY = 'coda-persona-preference';
-const DEFAULT_PERSONA_KEY = 'coda-default-persona';
 const DEFAULT_BANK_KEY = 'coda-default-bank';
-
-interface PersonaState {
-  persona: PersonaType;
-  bankId: string | null;
-}
 
 interface PersonaContextValue {
   persona: PersonaType;
@@ -30,58 +25,71 @@ const PersonaContext = createContext<PersonaContextValue>({
   setSelectedBankId: () => {},
 });
 
-function getInitialState(): PersonaState {
-  if (typeof window === 'undefined') return { persona: null, bankId: null };
-
-  // Try stored session state first
+function getInitialBankId(): string | null {
+  if (typeof window === 'undefined') return null;
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (typeof parsed === 'object' && parsed !== null && 'persona' in parsed) {
-        return {
-          persona: parsed.persona || null,
-          bankId: parsed.bankId || null,
-        };
-      }
-      // Legacy: plain string from Task 126
-      if (parsed === 'compliance' || parsed === 'treasury' || parsed === 'leadership') {
-        return { persona: parsed, bankId: null };
+      if (typeof parsed === 'object' && parsed !== null && 'bankId' in parsed) {
+        return parsed.bankId || null;
       }
     }
-  } catch { /* ignore parse errors */ }
-
-  // Fall back to Profile page defaults
-  const defaultPersona = localStorage.getItem(DEFAULT_PERSONA_KEY);
-  const defaultBank = localStorage.getItem(DEFAULT_BANK_KEY);
-  return {
-    persona: (defaultPersona === 'compliance' || defaultPersona === 'treasury' || defaultPersona === 'leadership')
-      ? defaultPersona : null,
-    bankId: defaultBank || null,
-  };
+  } catch { /* ignore */ }
+  return localStorage.getItem(DEFAULT_BANK_KEY) || null;
 }
 
 export function PersonaProvider({ children }: { children: ReactNode }) {
-  const initial = getInitialState();
-  const [persona, setPersonaState] = useState<PersonaType>(initial.persona);
-  const [selectedBankId, setSelectedBankIdState] = useState<string | null>(initial.bankId);
+  const { role, setRole } = useUserRole();
+  const [selectedBankId, setSelectedBankIdState] = useState<string | null>(getInitialBankId);
 
-  const persist = useCallback((p: PersonaType, bankId: string | null) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ persona: p, bankId }));
+  // Derive persona from role
+  const persona: PersonaType = role;
+
+  // Migrate legacy localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Legacy plain string from Task 126
+        if (typeof parsed === 'string') {
+          if (parsed === 'leadership') {
+            setRole('executive');
+          }
+          // Clear legacy value — role now comes from server
+          localStorage.removeItem(STORAGE_KEY);
+        } else if (typeof parsed === 'object' && parsed !== null && 'persona' in parsed) {
+          // Legacy object format — migrate persona if 'leadership'
+          if (parsed.persona === 'leadership') {
+            setRole('executive');
+          }
+          // Keep bankId, clear persona from storage
+          const bankId = parsed.bankId || null;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankId }));
+        }
+      }
+    } catch { /* ignore */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const persistBankId = useCallback((bankId: string | null) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ bankId }));
   }, []);
 
   const setPersona = useCallback((p: PersonaType) => {
-    setPersonaState(p);
-    // Reset bank scope when clearing persona
-    const newBankId = p ? selectedBankId : null;
-    if (!p) setSelectedBankIdState(null);
-    persist(p, newBankId);
-  }, [selectedBankId, persist]);
+    if (p === null) {
+      // null = admin = all views
+      setRole('admin');
+    } else {
+      setRole(p as UserRole);
+    }
+  }, [setRole]);
 
   const setSelectedBankId = useCallback((id: string | null) => {
     setSelectedBankIdState(id);
-    persist(persona, id);
-  }, [persona, persist]);
+    persistBankId(id);
+  }, [persistBankId]);
 
   return (
     <PersonaContext.Provider value={{ persona, setPersona, selectedBankId, setSelectedBankId }}>

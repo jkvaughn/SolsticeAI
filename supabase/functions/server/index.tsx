@@ -326,6 +326,31 @@ function requireUser(c: any): Response | null {
   return null;
 }
 
+const VALID_ROLES = ['treasury', 'compliance', 'bsa_officer', 'executive', 'admin'];
+
+async function getUserRole(c: any): Promise<string | null> {
+  const email = getUserEmail(c);
+  if (!email) return null;
+  try {
+    const rows = await sql`SELECT role FROM user_profiles WHERE email = ${email}`;
+    return rows[0]?.role ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function requireRole(c: any, roles: string[]): Promise<Response | null> {
+  // Fail-safe: if user has admin email, always pass (don't break existing flow)
+  const email = (c.req.header("X-Admin-Email") || c.req.header("X-User-Email") || "").toLowerCase().trim();
+  if (email === ADMIN_EMAIL) return null;
+
+  const role = await getUserRole(c);
+  if (!role || !roles.includes(role)) {
+    return c.json({ error: `Unauthorized — requires role: ${roles.join(' | ')}` }, 403);
+  }
+  return null;
+}
+
 async function logAuditEvent(
   email: string,
   action: string,
@@ -1632,19 +1657,25 @@ app.post("/make-server-49d15288/user/profile-update", async (c) => {
   if (denied) return denied;
   const email = getUserEmail(c)!;
   const body = await c.req.json();
-  const { full_name, title, department, phone, timezone, institution } = body;
+  const { full_name, title, department, phone, timezone, institution, role } = body;
+
+  // Validate role if provided
+  if (role && !VALID_ROLES.includes(role)) {
+    return c.json({ error: `Invalid role: ${role}. Must be one of: ${VALID_ROLES.join(', ')}` }, 400);
+  }
 
   const rows = await sql`
-    INSERT INTO user_profiles (email, full_name, title, department, phone, timezone, institution)
+    INSERT INTO user_profiles (email, full_name, title, department, phone, timezone, institution, role)
     VALUES (${email}, ${full_name ?? null}, ${title ?? null}, ${department ?? null},
-            ${phone ?? null}, ${timezone ?? null}, ${institution ?? null})
+            ${phone ?? null}, ${timezone ?? null}, ${institution ?? null}, ${role ?? 'admin'})
     ON CONFLICT (email) DO UPDATE SET
       full_name = COALESCE(${full_name ?? null}, user_profiles.full_name),
       title = COALESCE(${title ?? null}, user_profiles.title),
       department = COALESCE(${department ?? null}, user_profiles.department),
       phone = COALESCE(${phone ?? null}, user_profiles.phone),
       timezone = COALESCE(${timezone ?? null}, user_profiles.timezone),
-      institution = COALESCE(${institution ?? null}, user_profiles.institution)
+      institution = COALESCE(${institution ?? null}, user_profiles.institution),
+      role = COALESCE(${role ?? null}, user_profiles.role)
     RETURNING *
   `;
 

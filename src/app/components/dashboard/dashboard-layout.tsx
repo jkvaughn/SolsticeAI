@@ -107,16 +107,18 @@ const bottomNav: NavItem[] = [];
 // ============================================================
 // PERSONA NAV DIMMING (Task 126)
 // ============================================================
-const PERSONA_PRIMARY_ITEMS: Record<Exclude<PersonaType, null>, string[]> = {
-  compliance: ['escalations', 'transactions', 'admin'],
-  treasury: ['treasury-ops', 'agent-config', 'transactions'],
-  leadership: ['dashboard', 'visualizer', 'network-cmd', 'admin'],
+const ROLE_PRIMARY_ITEMS: Record<string, string[]> = {
+  admin: [],
+  treasury: ['dashboard', 'treasury-ops', 'agent-config', 'transactions'],
+  compliance: ['dashboard', 'escalations', 'transactions'],
+  bsa_officer: ['dashboard', 'escalations', 'transactions', 'agent-config'],
+  executive: ['dashboard', 'network-cmd', 'visualizer'],
 };
 
 function isNavDimmed(persona: PersonaType, itemId: string): boolean {
   if (!persona) return false;
-  // Settings is now on user pill, no longer in nav items
-  const primaryIds = PERSONA_PRIMARY_ITEMS[persona];
+  const primaryIds = ROLE_PRIMARY_ITEMS[persona];
+  if (!primaryIds || primaryIds.length === 0) return false; // admin or unknown = show all
   return !primaryIds.includes(itemId);
 }
 

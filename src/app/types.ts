@@ -8,7 +8,8 @@ export const ORPHAN_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
 // ============================================================
 // Persona / Role-Based Views (Task 126)
 // ============================================================
-export type PersonaType = 'compliance' | 'treasury' | 'leadership' | null;
+export type UserRole = 'treasury' | 'compliance' | 'bsa_officer' | 'executive' | 'admin';
+export type PersonaType = UserRole | null;
 
 export const TERMINAL_TX_STATUSES: TxStatus[] = ['settled', 'locked', 'rejected', 'reversed'];
 export const IN_FLIGHT_TX_STATUSES: TxStatus[] = ['initiated', 'compliance_check', 'risk_scored', 'executing'];
