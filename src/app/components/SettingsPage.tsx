@@ -122,7 +122,7 @@ export function SettingsPage() {
     key: `settings-passkey-${userEmail ?? 'none'}`,
     fetcher: async () => {
       if (!userEmail) throw new Error('No user email');
-      const data = await userCallServer<{ has_passkeys: boolean; passkeys: unknown[] }>('/user/passkey-status', userEmail);
+      const data = await userCallServer<{ has_passkeys: boolean; passkeys: unknown[] }>('/passkey-status', userEmail);
       return { count: data.passkeys?.length ?? 0 };
     },
   });
