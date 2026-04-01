@@ -1,9 +1,9 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-03-30T12:00:00Z
-> Phase: Admin Console + Security Hardening (Task 149 — Phase 1 DONE, Phase 2 DONE, Phase 3 WebAuthn Passkey MFA IN PROGRESS)
+> Last updated: 2026-04-01T12:00:00Z
+> Phase: Enterprise Profile & Settings complete (Tasks 149-150 DONE)
 > Server version: v7 Task-125 (lockup-route-dedup-iso20022-fix)
-> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-148)
+> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-150)
 
 ---
 
@@ -751,11 +751,22 @@ Added `/admin-reauth` backend endpoint with KV-stored proof tokens (5-minute TTL
 
 ---END_TASK---
 
----TASK_IN_PROGRESS---
+---TASK_COMPLETE---
 Step: Task 149 Phase 3 — WebAuthn Passkey MFA
-Status: IN PROGRESS
+Timestamp: 2026-04-01T06:00:00Z
+Status: DONE
 
-### Notes:
-WebAuthn passkey-based multi-factor authentication for admin re-auth flow. Will integrate with the Phase 2 re-auth gate to allow passkey verification as an alternative to password re-entry.
+### Summary:
+Implemented WebAuthn passkey-based multi-factor authentication. Registration flow stores passkey credentials server-side. Authentication flow challenges enrolled users on login via MFA gate in AuthGate. Production-only enforcement (staging bypass). Integrated with Phase 2 re-auth gate as passkey verification alternative to password re-entry.
 
----END_TASK_IN_PROGRESS---
+---END_TASK---
+
+---TASK_COMPLETE---
+Step: Task 150 — Enterprise Profile & Settings
+Timestamp: 2026-04-01T12:00:00Z
+Status: DONE
+
+### Summary:
+Unified Settings page with 5 Radix tabs (Profile, Security, Appearance, Network, Notifications). Four new backend tables: `user_profiles` (persistent name, title, department, phone, institution, timezone), `user_preferences` (server-synced settings), `user_sessions` (active session tracking with heartbeat and revoke), `user_audit_logs` (action tracking for compliance). Passkey management moved from standalone to Settings > Security tab. Activity timeline with grouped audit entries. SWR caching across all Settings sections. Popup OAuth flow eliminates SWA callback flash. MFA gate in AuthGate challenges passkey-enrolled users on login. XD-reference design compliance (form fields, horizontal section layout). Performance: removed request queue in production for parallel fetch.
+
+---END_TASK---
