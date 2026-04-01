@@ -34,6 +34,37 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const [oauthLoading, setOauthLoading] = useState(false);
+
+  // Listen for popup auth completion
+  useEffect(() => {
+    function handleMessage(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.type === 'coda-auth-complete') {
+        // Popup auth succeeded — reload to pick up the auth cookie
+        window.location.href = '/';
+      }
+    }
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  // Open OAuth in a centered popup
+  const openAuthPopup = (url: string) => {
+    setOauthLoading(true);
+    const w = 500, h = 650;
+    const left = window.screenX + (window.outerWidth - w) / 2;
+    const top = window.screenY + (window.outerHeight - h) / 2;
+    const popup = window.open(url, 'coda-auth', `width=${w},height=${h},left=${left},top=${top},popup=yes`);
+
+    // Poll for popup close (in case user closes without completing)
+    const timer = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(timer);
+        setOauthLoading(false);
+      }
+    }, 500);
+  };
 
   // If already authenticated, redirect to dashboard
   if (user && !loading) {
@@ -127,19 +158,21 @@ export function LoginPage() {
           {authProvider === 'azure' && (
             <div className="px-8 pb-8 space-y-3">
               <button
-                onClick={() => { window.location.href = '/.auth/login/aad?post_login_redirect_uri=/auth-callback'; }}
-                className={`w-full py-3.5 text-sm font-medium cursor-pointer flex items-center justify-center gap-2.5 rounded-xl ${
+                onClick={() => openAuthPopup('/.auth/login/aad?post_login_redirect_uri=/auth-callback')}
+                disabled={oauthLoading}
+                className={`w-full py-3.5 text-sm font-medium cursor-pointer flex items-center justify-center gap-2.5 rounded-xl disabled:opacity-60 ${
                   isDark
                     ? 'bg-white text-black'
                     : 'bg-black text-white'
                 } shadow-lg`}
               >
-                <ShieldCheck size={18} />
-                <span>Sign in with Microsoft</span>
+                {oauthLoading ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
+                <span>{oauthLoading ? 'Waiting for sign in...' : 'Sign in with Microsoft'}</span>
               </button>
               <button
-                onClick={() => { window.location.href = '/.auth/login/google?post_login_redirect_uri=/auth-callback'; }}
-                className={`w-full py-3 text-sm font-medium cursor-pointer flex items-center justify-center gap-2.5 rounded-xl bg-white/50 dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.1] text-coda-text hover:bg-white/70 dark:hover:bg-white/[0.1] transition-colors`}
+                onClick={() => openAuthPopup('/.auth/login/google?post_login_redirect_uri=/auth-callback')}
+                disabled={oauthLoading}
+                className={`w-full py-3 text-sm font-medium cursor-pointer flex items-center justify-center gap-2.5 rounded-xl disabled:opacity-60 bg-white/50 dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.1] text-coda-text hover:bg-white/70 dark:hover:bg-white/[0.1] transition-colors`}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
