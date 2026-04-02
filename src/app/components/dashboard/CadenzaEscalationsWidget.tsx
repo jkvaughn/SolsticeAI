@@ -9,7 +9,8 @@ import {
   Shield, AlertOctagon, Clock, CheckCircle2, ArrowRight,
   ArrowRightLeft, Loader2, AlertTriangle, Flag,
 } from 'lucide-react';
-import { supabase, callServer } from '../../supabaseClient';
+import { callServer } from '../../supabaseClient';
+import { fetchLockupTokenCount, fetchCadenzaFlagCount } from '../../dataClient';
 import { useSWRCache } from '../../hooks/useSWRCache';
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription';
 import { useBanks } from '../../contexts/BanksContext';
@@ -41,27 +42,19 @@ interface CadenzaSummaryData {
 // ── Fetcher ──────────────────────────────────────────────────
 
 async function fetchCadenzaSummary(): Promise<CadenzaSummaryData> {
-  const [escalationsRes, monitoredRes, flagsRes, resolvedRes] = await Promise.all([
+  const [escalationsRes, monitoredCount, flagsCount, resolvedCount] = await Promise.all([
     callServer<{ escalations: any[]; count: number }>('/cadenza-escalate', {
       action: 'get_escalations',
     }).catch(() => ({ escalations: [], count: 0 })),
 
-    Promise.resolve(supabase
-      .from('lockup_tokens')
-      .select('id', { count: 'exact', head: true }))
-      .catch(() => ({ count: 0 })),
+    fetchLockupTokenCount().catch(() => 0),
 
-    Promise.resolve(supabase
-      .from('cadenza_flags')
-      .select('id', { count: 'exact', head: true }))
-      .catch(() => ({ count: 0 })),
+    fetchCadenzaFlagCount().catch(() => 0),
 
-    Promise.resolve(supabase
-      .from('lockup_tokens')
-      .select('id', { count: 'exact', head: true })
-      .in('status', ['settled', 'reversed'])
-      .gte('updated_at', new Date(Date.now() - 86_400_000).toISOString()))
-      .catch(() => ({ count: 0 })),
+    fetchLockupTokenCount({
+      statuses: ['settled', 'reversed'],
+      updated_since: new Date(Date.now() - 86_400_000).toISOString(),
+    }).catch(() => 0),
   ]);
 
   const escalations = ((escalationsRes as any).escalations || []).map((e: any) => ({
@@ -80,9 +73,9 @@ async function fetchCadenzaSummary(): Promise<CadenzaSummaryData> {
 
   return {
     activeEscalations: escalations.slice(0, 3),
-    totalMonitored: (monitoredRes as any).count ?? 0,
-    totalFlags: (flagsRes as any).count ?? 0,
-    recentlyResolved: (resolvedRes as any).count ?? 0,
+    totalMonitored: monitoredCount,
+    totalFlags: flagsCount,
+    recentlyResolved: resolvedCount,
   };
 }
 
