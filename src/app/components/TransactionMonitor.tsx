@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { supabase } from '../supabaseClient';
+import { fetchTransactions as dcFetchTransactions, fetchAgentMessages as dcFetchMessages } from '../dataClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import type {
   Transaction, AgentMessage,
@@ -47,23 +48,11 @@ const ACTIVE_LOCKUP_STATUSES = ['soft_settled', 'cadenza_monitoring', 'cadenza_f
 // ============================================================
 
 async function fetchAllTransactions(): Promise<Transaction[]> {
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('*, sender_bank:banks!transactions_sender_bank_id_fkey(id,name,short_code), receiver_bank:banks!transactions_receiver_bank_id_fkey(id,name,short_code)')
-    .order('created_at', { ascending: false })
-    .limit(100);
-  if (error) throw error;
-  return data ?? [];
+  return dcFetchTransactions({ limit: 100 });
 }
 
 async function fetchRecentMessages(): Promise<AgentMessage[]> {
-  const { data, error } = await supabase
-    .from('agent_messages')
-    .select('*, from_bank:banks!agent_messages_from_bank_id_fkey(short_code), to_bank:banks!agent_messages_to_bank_id_fkey(short_code)')
-    .order('created_at', { ascending: false })
-    .limit(50);
-  if (error) throw error;
-  return data ?? [];
+  return dcFetchMessages({ limit: 50 });
 }
 
 // ============================================================
