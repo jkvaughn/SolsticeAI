@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { fetchAgentMessagesWithBanks } from '../dataClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { useBanks } from '../contexts/BanksContext';
 import { useSWRCache } from '../hooks/useSWRCache';
@@ -287,13 +287,9 @@ function formatTime(ts: number): string {
 // ============================================================
 
 async function fetchRecentFeedEvents(): Promise<AgenticEvent[]> {
-  const { data: msgs } = await supabase
-    .from('agent_messages')
-    .select('id, from_bank_id, to_bank_id, message_type, content, natural_language, created_at, from_bank:banks!agent_messages_from_bank_id_fkey(short_code), to_bank:banks!agent_messages_to_bank_id_fkey(short_code)')
-    .order('created_at', { ascending: false })
-    .limit(40);
+  const msgs = await fetchAgentMessagesWithBanks({ limit: 40 });
 
-  if (!msgs) return [];
+  if (!msgs || msgs.length === 0) return [];
 
   const events: AgenticEvent[] = [];
   for (const msg of msgs.reverse()) {

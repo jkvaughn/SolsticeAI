@@ -25,7 +25,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import codaIcon from "../icons/coda-icon.svg";
 import { LayoutProvider } from "../../contexts/LayoutContext";
-import { supabase } from "../../supabaseClient";
+import { fetchLockupTokenCount } from "../../dataClient";
 import { useRealtimeSubscription } from "../../hooks/useRealtimeSubscription";
 import { usePersona } from "../../contexts/PersonaContext";
 import { useIsAdmin } from "../../hooks/useIsAdmin";
@@ -152,13 +152,9 @@ export function DashboardLayout({
   const [escalationCount, setEscalationCount] = React.useState(0);
 
   const reQueryEscalatedCount = React.useCallback(() => {
-    supabase
-      .from('lockup_tokens')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'escalated')
-      .then(({ count }) => {
-        if (count !== null) setEscalationCount(count);
-      });
+    fetchLockupTokenCount({ status: 'escalated' })
+      .then((count) => setEscalationCount(count))
+      .catch(() => {/* non-critical */});
   }, []);
 
   // Initial count

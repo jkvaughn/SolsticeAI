@@ -300,6 +300,155 @@ export async function fetchCorridorTransactionCount(
   return count ?? 0;
 }
 
+export async function fetchTransactionCount(params?: {
+  status?: string;
+  statuses?: string[];   // .in() filter
+  resolved_by_like?: string;  // .like() filter
+}): Promise<number> {
+  if (useServer) {
+    // TODO: add REST endpoint /data/transaction-count
+    // Fallback to Supabase for now
+  }
+  let q = supabase.from('transactions').select('id', { count: 'exact', head: true });
+  if (params?.status) q = q.eq('status', params.status);
+  if (params?.statuses) q = q.in('status', params.statuses);
+  const { count, error } = await q;
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function fetchSettledVolume(): Promise<number> {
+  if (useServer) {
+    // TODO: add REST endpoint /data/settled-volume
+    // Fallback to Supabase for now
+  }
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('amount_display')
+    .eq('status', 'settled');
+  if (error) throw error;
+  return (data ?? []).reduce(
+    (sum: number, t: { amount_display: number | null }) => sum + (t.amount_display || 0),
+    0,
+  );
+}
+
+export async function fetchLockupTokenCount(params?: {
+  status?: string;
+  statuses?: string[];
+  resolved_by_like?: string;
+  updated_since?: string;
+}): Promise<number> {
+  if (useServer) {
+    // TODO: add REST endpoint /data/lockup-token-count
+    // Fallback to Supabase for now
+  }
+  let q = supabase.from('lockup_tokens').select('id', { count: 'exact', head: true });
+  if (params?.status) q = q.eq('status', params.status);
+  if (params?.statuses) q = q.in('status', params.statuses);
+  if (params?.resolved_by_like) q = q.like('resolved_by', params.resolved_by_like);
+  if (params?.updated_since) q = q.gte('updated_at', params.updated_since);
+  const { count, error } = await q;
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function fetchCadenzaFlagCount(): Promise<number> {
+  if (useServer) {
+    // TODO: add REST endpoint /data/cadenza-flag-count
+    // Fallback to Supabase for now
+  }
+  const { count, error } = await supabase
+    .from('cadenza_flags')
+    .select('id', { count: 'exact', head: true });
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function fetchSettledVolumeRaw(): Promise<number> {
+  if (useServer) {
+    // TODO: add REST endpoint /data/settled-volume-raw
+    // Fallback to Supabase for now
+  }
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('amount')
+    .eq('status', 'settled');
+  if (error) throw error;
+  return (data ?? []).reduce((sum: number, t: any) => sum + (Number(t.amount) || 0), 0);
+}
+
+export async function fetchTransactionsInWindow(
+  windowStart: string,
+  windowEnd: string,
+): Promise<any[]> {
+  if (useServer) {
+    // TODO: add REST endpoint /data/transactions-in-window
+    // Fallback to Supabase for now
+  }
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('id, amount_display, amount, status, purpose_code, sender_bank_id, receiver_bank_id, created_at, sender_bank:banks!transactions_sender_bank_id_fkey(short_code), receiver_bank:banks!transactions_receiver_bank_id_fkey(short_code)')
+    .gte('created_at', windowStart)
+    .lte('created_at', windowEnd)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchAgentMessagesInWindow(
+  windowStart: string,
+  windowEnd: string,
+  messageType?: string,
+): Promise<any[]> {
+  if (useServer) {
+    // TODO: add REST endpoint /data/agent-messages-in-window
+    // Fallback to Supabase for now
+  }
+  let q = supabase
+    .from('agent_messages')
+    .select('id, from_bank_id, content, natural_language, created_at, from_bank:banks!agent_messages_from_bank_id_fkey(short_code)')
+    .gte('created_at', windowStart)
+    .lte('created_at', windowEnd)
+    .order('created_at', { ascending: true });
+  if (messageType) q = q.eq('message_type', messageType);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchAgentMessagesWithBanks(params?: {
+  limit?: number;
+}): Promise<any[]> {
+  if (useServer) {
+    // TODO: add REST endpoint /data/agent-messages-with-banks
+    // Fallback to Supabase for now
+  }
+  let q = supabase
+    .from('agent_messages')
+    .select('id, from_bank_id, to_bank_id, message_type, content, natural_language, created_at, from_bank:banks!agent_messages_from_bank_id_fkey(short_code), to_bank:banks!agent_messages_to_bank_id_fkey(short_code)')
+    .order('created_at', { ascending: false });
+  if (params?.limit) q = q.limit(params.limit);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchResolvedEscalations(limit = 5): Promise<any[]> {
+  if (useServer) {
+    // TODO: add REST endpoint /data/resolved-escalations
+    // Fallback to Supabase for now
+  }
+  const { data, error } = await supabase
+    .from('lockup_tokens')
+    .select('id, transaction_id, sender_bank_id, receiver_bank_id, resolution, resolved_at')
+    .like('resolved_by', 'operator:%')
+    .order('resolved_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function fetchCount(table: string, filter?: string): Promise<number> {
   if (useServer) {
     const p: Record<string, string> = { table };

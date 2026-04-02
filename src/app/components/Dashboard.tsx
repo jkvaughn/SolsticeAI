@@ -2,8 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import type React from 'react';
 import { Link } from 'react-router';
 import { Settings, ArrowRight, AlertOctagon, Shield, TrendingUp } from 'lucide-react';
-import { supabase } from '../supabaseClient';
-import { fetchCount, fetchTransactions } from '../dataClient';
+import { fetchCount, fetchTransactions, fetchTransactionCount, fetchSettledVolume } from '../dataClient';
 import type { Transaction } from '../types';
 import { isOrphanedTransaction } from '../types';
 import { useBanks } from '../contexts/BanksContext';
@@ -30,34 +29,16 @@ interface DashboardStats {
 }
 
 async function fetchDashboardStats(): Promise<DashboardStats> {
-  // Parallel: total count (all statuses) + settled rows (for volume sum)
-  const [countRes, settledRes] = await Promise.all([
-    supabase
-      .from('transactions')
-      .select('*', { count: 'exact', head: true }),
-    supabase
-      .from('transactions')
-      .select('amount_display')
-      .eq('status', 'settled'),
+  const [totalTransactions, settledVolume] = await Promise.all([
+    fetchTransactionCount(),
+    fetchSettledVolume(),
   ]);
-
-  const totalTransactions = countRes.count ?? 0;
-  const settledVolume = (settledRes.data ?? []).reduce(
-    (sum: number, t: { amount_display: number | null }) => sum + (t.amount_display || 0),
-    0,
-  );
   return { totalTransactions, settledVolume };
 }
 
 // ── Recent transactions (for orphan/active detection) ────────
 async function fetchRecentTransactions(): Promise<Transaction[]> {
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(20);
-  if (error) throw error;
-  return data ?? [];
+  return fetchTransactions({ limit: 20 });
 }
 
 export function Dashboard() {

@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from './motion-shim';
 import { useNavigate } from 'react-router';
-import { supabase, callServer } from '../supabaseClient';
+import { callServer } from '../supabaseClient';
+import { fetchLockupTokenCount } from '../dataClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { formatTokenAmount, explorerUrl, truncateAddress } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -694,12 +695,8 @@ export function EscalationDashboard() {
   // Fetch total monitored lockup count for empty state
   const fetchMonitoredCount = useCallback(async () => {
     try {
-      const { count, error: countErr } = await supabase
-        .from('lockup_tokens')
-        .select('id', { count: 'exact', head: true });
-      if (!countErr && count !== null) {
-        setTotalMonitored(count);
-      }
+      const count = await fetchLockupTokenCount();
+      setTotalMonitored(count);
     } catch {
       // non-critical
     }

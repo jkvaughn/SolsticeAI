@@ -7,7 +7,8 @@ import {
   Activity, Clock, ChevronRight,
   ArrowRight, Brain, Globe,
 } from 'lucide-react';
-import { supabase, callServer } from '../supabaseClient';
+import { callServer } from '../supabaseClient';
+import { fetchHeartbeatCycles, fetchTransactionsInWindow, fetchAgentMessagesInWindow } from '../dataClient';
 import { useHeartbeat } from './HeartbeatContext';
 import { NetworkActivityFeed } from './NetworkActivityFeed';
 import { useSWRCache, evictSWRCache } from '../hooks/useSWRCache';
@@ -116,13 +117,7 @@ function eventLabel(evtType: string | undefined): string {
 // ============================================================
 
 async function fetchRecentCycles(): Promise<HeartbeatCycle[]> {
-  const { data, error } = await supabase
-    .from('heartbeat_cycles')
-    .select('*')
-    .order('cycle_number', { ascending: false })
-    .limit(20);
-  if (error) throw error;
-  return (data || []) as HeartbeatCycle[];
+  return fetchHeartbeatCycles(20) as Promise<HeartbeatCycle[]>;
 }
 
 // ============================================================
@@ -619,29 +614,16 @@ function CycleRow({ cycle, isNew, expanded, onToggle }: { cycle: HeartbeatCycle;
         ? new Date(new Date(cycle.completed_at).getTime() + 5000).toISOString()
         : new Date(Date.now() + 10000).toISOString();
 
-      const { data: txns } = await supabase
-        .from('transactions')
-        .select('id, amount_display, amount, status, purpose_code, sender_bank_id, receiver_bank_id, created_at, sender_bank:banks!transactions_sender_bank_id_fkey(short_code), receiver_bank:banks!transactions_receiver_bank_id_fkey(short_code)')
-        .gte('created_at', windowStart)
-        .lte('created_at', windowEnd)
-        .order('created_at', { ascending: true });
-
-      const incoming = txns || [];
+      const incoming = await fetchTransactionsInWindow(windowStart, windowEnd);
 
       setCycleTxns(incoming);
 
       // ── Write to module-level cache ──
       const allIds = new Set(incoming.map((tx: any) => tx.id));
 
-      const { data: msgs } = await supabase
-        .from('agent_messages')
-        .select('id, from_bank_id, content, natural_language, created_at, from_bank:banks!agent_messages_from_bank_id_fkey(short_code)')
-        .eq('message_type', 'status_update')
-        .gte('created_at', windowStart)
-        .lte('created_at', windowEnd)
-        .order('created_at', { ascending: true });
+      const msgs = await fetchAgentMessagesInWindow(windowStart, windowEnd, 'status_update');
 
-      const noActions = (msgs || []).filter((m: any) => {
+      const noActions = msgs.filter((m: any) => {
         const content = m.content;
         return content?.action === 'NO_ACTION' && content?.context === 'treasury_cycle';
       });

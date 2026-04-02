@@ -14,7 +14,7 @@ import { ProfileEditor } from './profile/ProfileEditor';
 import { ActivityTimeline } from './profile/ActivityTimeline';
 import { SecuritySection } from './settings/SecuritySection';
 import { motion } from './motion-shim';
-import { supabase } from '../supabaseClient';
+import { fetchLockupTokenCount, fetchTransactionCount, fetchSettledVolumeRaw, fetchResolvedEscalations } from '../dataClient';
 import { userCallServer } from '../lib/userClient';
 import {
   Shield, Layers, Wifi, Bell, BellOff,
@@ -103,14 +103,13 @@ export function SettingsPage() {
   const { data: statsData, isValidating: statsLoading } = useSWRCache<ProfileStats>({
     key: 'settings-profile-stats',
     fetcher: async () => {
-      const [escRes, settRes, pendingRes, volumeRes] = await Promise.all([
-        supabase.from('lockup_tokens').select('id', { count: 'exact', head: true }).like('resolved_by', 'operator:%'),
-        supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('status', 'settled'),
-        supabase.from('transactions').select('id', { count: 'exact', head: true }).in('status', ['pending', 'processing', 'lockup']),
-        supabase.from('transactions').select('amount').eq('status', 'settled'),
+      const [escalations, settlements, pendingActions, totalVolume] = await Promise.all([
+        fetchLockupTokenCount({ resolved_by_like: 'operator:%' }),
+        fetchTransactionCount({ status: 'settled' }),
+        fetchTransactionCount({ statuses: ['pending', 'processing', 'lockup'] }),
+        fetchSettledVolumeRaw(),
       ]);
-      const vol = (volumeRes.data ?? []).reduce((sum: number, t: any) => sum + (Number(t.amount) || 0), 0);
-      return { escalations: escRes.count ?? 0, settlements: settRes.count ?? 0, pendingActions: pendingRes.count ?? 0, totalVolume: vol };
+      return { escalations, settlements, pendingActions, totalVolume };
     },
   });
   const escalations = statsData?.escalations ?? null;
@@ -133,13 +132,7 @@ export function SettingsPage() {
   const { data: recentEscalations, isValidating: escalationsLoading } = useSWRCache<EscalationRow[]>({
     key: 'settings-recent-escalations',
     fetcher: async () => {
-      const { data } = await supabase
-        .from('lockup_tokens')
-        .select('id, transaction_id, sender_bank_id, receiver_bank_id, resolution, resolved_at')
-        .like('resolved_by', 'operator:%')
-        .order('resolved_at', { ascending: false })
-        .limit(5);
-      return (data as EscalationRow[]) ?? [];
+      return fetchResolvedEscalations(5) as Promise<EscalationRow[]>;
     },
   });
 
