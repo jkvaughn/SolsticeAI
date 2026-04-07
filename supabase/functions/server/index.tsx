@@ -2081,14 +2081,14 @@ app.post("/make-server-49d15288/agent-think", async (c) => {
       id: crypto.randomUUID(),
       bank_id,
       transaction_id: transaction_id || null,
-      role: "model",
+      role: "assistant",
       content: geminiResponse.message_to_user || geminiResponse.reasoning,
       created_at: new Date(Date.now() + 100).toISOString(),
     }, ...Object.keys({
       id: crypto.randomUUID(),
       bank_id,
       transaction_id: transaction_id || null,
-      role: "model",
+      role: "assistant",
       content: geminiResponse.message_to_user || geminiResponse.reasoning,
       created_at: new Date(Date.now() + 100).toISOString(),
     }))}`
@@ -2288,14 +2288,14 @@ app.post("/make-server-49d15288/agent-chat", async (c) => {
       id: crypto.randomUUID(),
       bank_id,
       transaction_id: null,
-      role: "model",
+      role: "assistant",
       content: response,
       created_at: new Date(Date.now() + 100).toISOString(),
     }, ...Object.keys({
       id: crypto.randomUUID(),
       bank_id,
       transaction_id: null,
-      role: "model",
+      role: "assistant",
       content: response,
       created_at: new Date(Date.now() + 100).toISOString(),
     }))}`
@@ -3687,7 +3687,7 @@ async function coreAgentThink(
   // doesn't render auto-generated prompts with the "You" label
   const inputRole = (contextType === 'user_instruction' || contextType === 'user_chat') ? 'user' : 'system';
   await sql`INSERT INTO agent_conversations (id, bank_id, transaction_id, role, content, created_at) VALUES (${crypto.randomUUID()}, ${bankId}, ${transactionId || null}, ${inputRole}, ${input}, ${now})`;
-  await sql`INSERT INTO agent_conversations (id, bank_id, transaction_id, role, content, created_at) VALUES (${crypto.randomUUID()}, ${bankId}, ${transactionId || null}, ${"model"}, ${geminiResponse.message_to_user || geminiResponse.reasoning}, ${new Date(Date.now() + 100).toISOString()})`;
+  await sql`INSERT INTO agent_conversations (id, bank_id, transaction_id, role, content, created_at) VALUES (${crypto.randomUUID()}, ${bankId}, ${transactionId || null}, ${"assistant"}, ${geminiResponse.message_to_user || geminiResponse.reasoning}, ${new Date(Date.now() + 100).toISOString()})`;
 
   // ── Treasury cycle: handle NO_ACTION early return ──
   if (contextType === 'treasury_cycle' &&
