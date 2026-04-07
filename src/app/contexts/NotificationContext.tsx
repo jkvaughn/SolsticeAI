@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
-import { supabase } from '../supabaseClient';
+import { fetchAgentMessages, fetchCadenzaFlags, fetchLockupTokens } from '../dataClient';
 import { toast } from 'sonner';
 import { usePersona } from './PersonaContext';
 
@@ -71,21 +71,29 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const items: Notification[] = [];
 
-    // agent_messages — settlements & system
-    const { data: msgs } = await supabase
-      .from('agent_messages')
-      .select('id, agent_name, content, created_at')
-      .gte('created_at', since)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    // Fetch from dataClient (routes through REST in production, Supabase in staging)
+    let msgs: any[] = [];
+    let flags: any[] = [];
+    let lockups: any[] = [];
+    try {
+      msgs = await fetchAgentMessages({ limit: 20 });
+    } catch { /* silent */ }
+    try {
+      flags = await fetchCadenzaFlags({ limit: 20 });
+    } catch { /* silent */ }
+    try {
+      lockups = await fetchLockupTokens({ limit: 10, status: 'escalated' });
+    } catch { /* silent */ }
 
+    // agent_messages — settlements & system
     for (const m of msgs || []) {
-      const isSettlement = /settl|confirm|complete/i.test(m.content || '');
+      const content = m.content || m.natural_language || '';
+      const isSettlement = /settl|confirm|complete/i.test(content);
       items.push({
         id: `msg-${m.id}`,
         type: isSettlement ? 'settlement' : 'system',
-        title: m.agent_name || 'System',
-        description: (m.content || '').slice(0, 120),
+        title: m.agent_name || m.message_type || 'System',
+        description: content.slice(0, 120),
         severity: 'info',
         linkTo: '/transactions',
         read: false,
@@ -94,34 +102,20 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
 
     // cadenza_flags — escalations & flags
-    const { data: flags } = await supabase
-      .from('cadenza_flags')
-      .select('id, flag_type, reason, severity, created_at')
-      .gte('created_at', since)
-      .order('created_at', { ascending: false })
-      .limit(20);
-
     for (const f of flags || []) {
       items.push({
         id: `flag-${f.id}`,
         type: f.flag_type === 'escalation' ? 'escalation' : 'flag',
         title: f.flag_type || 'Flag',
-        description: (f.reason || '').slice(0, 120),
+        description: (f.reasoning || f.reason || '').slice(0, 120),
         severity: (f.severity as Notification['severity']) || 'warning',
         linkTo: '/escalations',
         read: false,
-        createdAt: f.created_at,
+        createdAt: f.created_at || f.detected_at,
       });
     }
 
-    // lockup_tokens — escalated items
-    const { data: lockups } = await supabase
-      .from('lockup_tokens')
-      .select('id, reason, status, created_at')
-      .eq('status', 'escalated')
-      .gte('created_at', since)
-      .order('created_at', { ascending: false })
-      .limit(10);
+    // lockup_tokens — already filtered by status='escalated' above
 
     for (const l of lockups || []) {
       items.push({
