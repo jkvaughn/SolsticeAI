@@ -20,7 +20,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from './motion-shim';
 import { CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
-import { supabase } from '../supabaseClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import { useBanks } from '../contexts/BanksContext';
 import { truncateAddress, explorerUrl } from '../types';

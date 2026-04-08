@@ -12,7 +12,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase, callServer } from '../supabaseClient';
-import { fetchBanks, fetchLockupTokens, fetchNetworkWallets, fetchCadenzaFlags } from '../dataClient';
+import { fetchBanks, fetchLockupTokens, fetchNetworkWallets, fetchCadenzaFlags, fetchTransactions } from '../dataClient';
 
 // ============================================================
 // Types
@@ -210,12 +210,7 @@ export function useNetworkSimulation(): NetworkSimulationControls {
 
         const flags = await fetchCadenzaFlags();
 
-        const { data: recentTxns } = await supabase
-          .from('transactions')
-          .select('id, sender_bank_id, receiver_bank_id, amount_display, amount, settlement_method, settled_at, created_at')
-          .eq('status', 'settled')
-          .order('settled_at', { ascending: false })
-          .limit(50);
+        const recentTxns = await fetchTransactions({ status: 'settled', limit: 50 });
 
         const bankMap: Record<string, string> = {};
         const allBanks = await fetchBanks();

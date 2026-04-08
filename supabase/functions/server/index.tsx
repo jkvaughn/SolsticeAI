@@ -8236,5 +8236,161 @@ app.get(`${R}/data/corridor-transaction-count`, async (c) => {
   }
 });
 
+// --- Additional data endpoints for dashboard/reporting ---
+
+app.get(`${R}/data/transaction-count`, async (c) => {
+  try {
+    const status = c.req.query("status");
+    const statuses = c.req.query("statuses"); // comma-separated
+    let rows;
+    if (statuses) {
+      const list = statuses.split(',');
+      rows = await sql`SELECT COUNT(*)::int as count FROM transactions WHERE status = ANY(${list})`;
+    } else if (status) {
+      rows = await sql`SELECT COUNT(*)::int as count FROM transactions WHERE status = ${status}`;
+    } else {
+      rows = await sql`SELECT COUNT(*)::int as count FROM transactions`;
+    }
+    return c.json({ count: rows[0]?.count ?? 0 });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/settled-volume`, async (c) => {
+  try {
+    const rows = await sql`SELECT COALESCE(SUM(amount_display), 0)::bigint as total FROM transactions WHERE status = 'settled'`;
+    return c.json({ total: Number(rows[0]?.total ?? 0) });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/lockup-token-count`, async (c) => {
+  try {
+    const status = c.req.query("status");
+    const statuses = c.req.query("statuses");
+    const resolvedByLike = c.req.query("resolved_by_like");
+    let rows;
+    if (resolvedByLike) {
+      rows = await sql`SELECT COUNT(*)::int as count FROM lockup_tokens WHERE resolved_by LIKE ${resolvedByLike + '%'}`;
+    } else if (statuses) {
+      const list = statuses.split(',');
+      rows = await sql`SELECT COUNT(*)::int as count FROM lockup_tokens WHERE status = ANY(${list})`;
+    } else if (status) {
+      rows = await sql`SELECT COUNT(*)::int as count FROM lockup_tokens WHERE status = ${status}`;
+    } else {
+      rows = await sql`SELECT COUNT(*)::int as count FROM lockup_tokens`;
+    }
+    return c.json({ count: rows[0]?.count ?? 0 });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/cadenza-flag-count`, async (c) => {
+  try {
+    const rows = await sql`SELECT COUNT(*)::int as count FROM cadenza_flags`;
+    return c.json({ count: rows[0]?.count ?? 0 });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/settled-volume-raw`, async (c) => {
+  try {
+    const rows = await sql`SELECT COALESCE(SUM(amount), 0)::bigint as total FROM transactions WHERE status = 'settled'`;
+    return c.json({ total: Number(rows[0]?.total ?? 0) });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/transactions-in-window`, async (c) => {
+  try {
+    const start = c.req.query("start");
+    const end = c.req.query("end");
+    if (!start || !end) return c.json({ error: "start and end required" }, 400);
+    const rows = await sql`
+      SELECT t.*,
+        sb.short_code as sender_short_code, sb.name as sender_name,
+        rb.short_code as receiver_short_code, rb.name as receiver_name
+      FROM transactions t
+      LEFT JOIN banks sb ON t.sender_bank_id = sb.id
+      LEFT JOIN banks rb ON t.receiver_bank_id = rb.id
+      WHERE t.created_at >= ${start} AND t.created_at <= ${end}
+      ORDER BY t.created_at DESC
+    `;
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/agent-messages-in-window`, async (c) => {
+  try {
+    const start = c.req.query("start");
+    const end = c.req.query("end");
+    const messageType = c.req.query("message_type");
+    if (!start || !end) return c.json({ error: "start and end required" }, 400);
+    let rows;
+    if (messageType) {
+      rows = await sql`
+        SELECT m.*, fb.short_code as from_short_code, tb.short_code as to_short_code
+        FROM agent_messages m
+        LEFT JOIN banks fb ON m.from_bank_id = fb.id
+        LEFT JOIN banks tb ON m.to_bank_id = tb.id
+        WHERE m.created_at >= ${start} AND m.created_at <= ${end} AND m.message_type = ${messageType}
+        ORDER BY m.created_at DESC
+      `;
+    } else {
+      rows = await sql`
+        SELECT m.*, fb.short_code as from_short_code, tb.short_code as to_short_code
+        FROM agent_messages m
+        LEFT JOIN banks fb ON m.from_bank_id = fb.id
+        LEFT JOIN banks tb ON m.to_bank_id = tb.id
+        WHERE m.created_at >= ${start} AND m.created_at <= ${end}
+        ORDER BY m.created_at DESC
+      `;
+    }
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/agent-messages-with-banks`, async (c) => {
+  try {
+    const limit = parseInt(c.req.query("limit") || "50");
+    const rows = await sql`
+      SELECT m.*, fb.short_code as from_short_code, tb.short_code as to_short_code
+      FROM agent_messages m
+      LEFT JOIN banks fb ON m.from_bank_id = fb.id
+      LEFT JOIN banks tb ON m.to_bank_id = tb.id
+      ORDER BY m.created_at DESC
+      LIMIT ${limit}
+    `;
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/resolved-escalations`, async (c) => {
+  try {
+    const limit = parseInt(c.req.query("limit") || "10");
+    const rows = await sql`
+      SELECT id, transaction_id, sender_bank_id, receiver_bank_id, resolution, resolved_by, resolved_at
+      FROM lockup_tokens
+      WHERE resolved_by LIKE 'operator:%'
+      ORDER BY resolved_at DESC
+      LIMIT ${limit}
+    `;
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
 console.log(`\u2588\u2588\u2588\u2588 EDGE FUNCTION COLD START \u2588\u2588\u2588\u2588 v13 Task-118.2 (coreLockupSettle/Reverse-all-callsites) ${new Date().toISOString()}`);
 Deno.serve(app.fetch);

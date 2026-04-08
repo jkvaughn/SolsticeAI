@@ -3,7 +3,6 @@ import {
   Activity, ExternalLink, AlertOctagon, Eye, Clock, Infinity,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { supabase } from '../supabaseClient';
 import { fetchTransactions as dcFetchTransactions, fetchAgentMessages as dcFetchMessages } from '../dataClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import type {

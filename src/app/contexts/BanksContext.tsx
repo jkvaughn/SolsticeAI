@@ -22,7 +22,6 @@ import {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
-import { supabase } from '../supabaseClient';
 import { fetchBanks as fetchBanksFromClient } from '../dataClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
 import type { Bank } from '../types';
