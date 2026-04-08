@@ -1891,3 +1891,24 @@ Unified Settings page with 5 Radix tabs (Profile, Security, Appearance, Network,
 Five-role authorization system (Treasury, Compliance, BSA Officer, Executive, Admin) with server-persisted roles in `user_profiles.role` column. New `useUserRole` hook reads/writes role via SWR-cached profile. `useIsAdmin` delegates to role with email fail-safe. PersonaContext wired to role system (replaces localStorage personas). PersonaSwitcher redesigned as 5 role cards saving directly to server. Nav dimming via `ROLE_PRIMARY_ITEMS` per role — admin sees everything. Super admin email (`VITE_ADMIN_EMAIL`) bypasses nav dimming when previewing other roles. Backend: `getUserRole()`, `requireRole()` middleware, role validation on profile-update. Legacy `leadership` → `executive` localStorage migration. PersonaBanner updated for all 5 roles.
 
 ---END_TASK---
+
+### Task 152 — Unified Notification Center (2026-04-01)
+
+### Summary:
+NotificationContext with single batched 15s poll across agent_messages, cadenza_flags, lockup_tokens. Transforms into unified Notification objects with per-role relevance filtering. NotificationBell + NotificationPanel + NotificationItem components. Dedicated /notifications page with sidebar nav item (bell Lottie icon + unread badge). Sonner toast dispatch gated by user notification preferences. Role filtering: Treasury sees settlements/cycles, Compliance sees flags/escalations, Admin sees all.
+
+---END_TASK---
+
+### Task 153 — Risk Rules Table + Deterministic Scoring Engine (2026-04-01)
+
+### Summary:
+risk_rules table with 13 seed rules (R-001 through R-014, R-010 deferred). Pure TypeScript evaluateRules() engine in risk-engine.ts — no LLM, deterministic. Wired into coreRiskScore(): runs before Fermata, produces floor constraint (final_score >= floor_score * 0.70). HARD_BLOCK rules (R-012 suspended counterparty, R-013 watchlist match) reject immediately. HARD_ESCALATE rules (R-004 high-risk jurisdiction, R-008 structuring) force escalation. GET /risk-rules endpoint. TransactionDetail shows floor score + fired rules. condition_params JSONB schema defined per rule type.
+
+---END_TASK---
+
+### Production Fixes — BigInt, Role Constraint, Data Routing (2026-04-07/08)
+
+### Summary:
+Fixed BigInt error in db.tsx (deno-postgres returns BigInt for bigint columns — now converted to Number). Fixed agent_conversations role CHECK constraint (model → assistant). Eliminated all direct Supabase reads across 11 frontend files — routed through dataClient.ts which respects VITE_SERVER_BASE_URL. Created generic database client (src/app/db.ts) with Table class for environment-aware routing. Added 9 missing backend REST endpoints for count/aggregate queries. Production now reads entirely from Azure Postgres via Container App REST API.
+
+---END_TASK---

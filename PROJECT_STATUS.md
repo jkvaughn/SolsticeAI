@@ -1,9 +1,9 @@
 # CODA Agentic Payments -- Project Status
 
-> Last updated: 2026-04-01T18:00:00Z
-> Phase: Persona Sprint started — Role-Based Auth complete (Task 151 DONE)
-> Server version: v151-roles
-> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-151)
+> Last updated: 2026-04-08T04:00:00Z
+> Phase: Persona Sprint — Tasks 151-153 DONE + generic db client + prod fixes
+> Server version: v153-dbclient
+> History: see PROJECT_HISTORY.md for all previous TASK_COMPLETE blocks (Tasks 13-40, 41-153)
 
 ---
 
