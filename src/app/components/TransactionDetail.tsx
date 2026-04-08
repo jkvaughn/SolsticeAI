@@ -15,6 +15,7 @@ import {
   fetchRiskScore, fetchComplianceLogs, fetchWallets, fetchLockupToken,
   fetchCadenzaFlags, fetchCorridorTransactions, fetchCorridorTransactionCount,
   fetchHeartbeatCycles, fetchTreasuryMandates,
+  fetchTransactionWithBanks, fetchAgentMessagesForTransaction,
 } from '../dataClient';
 import { SettlementLifecycle } from './SettlementLifecycle';
 import type { Transaction, AgentMessage, Wallet as WalletType } from '../types';
@@ -77,25 +78,17 @@ interface TxPrimaryData {
 async function fetchTxPrimary(key: string): Promise<TxPrimaryData> {
   const txId = key.replace('tx-primary/', '');
 
-  const [txRes, msgRes, riskData, compData] = await Promise.all([
-    supabase
-      .from('transactions')
-      .select('*, sender_bank:banks!transactions_sender_bank_id_fkey(id, name, short_code, jurisdiction, tier, swift_bic, status, token_mint_address, token_symbol, agent_system_prompt), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, name, short_code, jurisdiction, tier, swift_bic, status, token_mint_address, token_symbol, agent_system_prompt)')
-      .eq('id', txId)
-      .single(),
-    supabase
-      .from('agent_messages')
-      .select('*, from_bank:banks!agent_messages_from_bank_id_fkey(short_code, name), to_bank:banks!agent_messages_to_bank_id_fkey(short_code, name)')
-      .eq('transaction_id', txId)
-      .order('created_at', { ascending: true }),
+  const [txData, msgData, riskData, compData] = await Promise.all([
+    fetchTransactionWithBanks(txId),
+    fetchAgentMessagesForTransaction(txId),
     fetchRiskScore(txId),
     fetchComplianceLogs(txId),
   ]);
 
-  if (txRes.error) throw txRes.error;
+  if (!txData) throw new Error(`Transaction ${txId} not found`);
   return {
-    tx: txRes.data as Transaction,
-    messages: (msgRes.data || []) as AgentMessage[],
+    tx: txData as Transaction,
+    messages: (msgData || []) as AgentMessage[],
     riskScore: riskData || null,
     complianceLogs: compData || [],
   };

@@ -14,7 +14,10 @@ import { ProfileEditor } from './profile/ProfileEditor';
 import { ActivityTimeline } from './profile/ActivityTimeline';
 import { WidgetShell } from './dashboard/WidgetShell';
 import { motion } from './motion-shim';
-import { supabase } from '../supabaseClient';
+import {
+  fetchLockupTokenCount, fetchTransactionCount,
+  fetchSettledVolumeRaw, fetchResolvedEscalations,
+} from '../dataClient';
 import {
   LogOut,
   ShieldCheck,
@@ -61,30 +64,17 @@ export function ProfilePage() {
     let cancelled = false;
 
     async function fetchStats() {
-      const [escRes, settRes, pendingRes, volumeRes] = await Promise.all([
-        supabase
-          .from('lockup_tokens')
-          .select('id', { count: 'exact', head: true })
-          .like('resolved_by', 'operator:%'),
-        supabase
-          .from('transactions')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'settled'),
-        supabase
-          .from('transactions')
-          .select('id', { count: 'exact', head: true })
-          .in('status', ['pending', 'processing', 'lockup']),
-        supabase
-          .from('transactions')
-          .select('amount')
-          .eq('status', 'settled'),
+      const [escCount, settCount, pendingCount, vol] = await Promise.all([
+        fetchLockupTokenCount({ resolved_by_like: 'operator:%' }),
+        fetchTransactionCount({ status: 'settled' }),
+        fetchTransactionCount({ statuses: ['pending', 'processing', 'lockup'] }),
+        fetchSettledVolumeRaw(),
       ]);
 
       if (cancelled) return;
-      setEscalations(escRes.count ?? 0);
-      setSettlements(settRes.count ?? 0);
-      setPendingActions(pendingRes.count ?? 0);
-      const vol = (volumeRes.data ?? []).reduce((sum: number, t: any) => sum + (Number(t.amount) || 0), 0);
+      setEscalations(escCount);
+      setSettlements(settCount);
+      setPendingActions(pendingCount);
       setTotalVolume(vol);
     }
 
@@ -106,12 +96,7 @@ export function ProfilePage() {
   useEffect(() => {
     let cancelled = false;
     async function fetchEscalations() {
-      const { data } = await supabase
-        .from('lockup_tokens')
-        .select('id, transaction_id, sender_bank_id, receiver_bank_id, resolution, resolved_at')
-        .like('resolved_by', 'operator:%')
-        .order('resolved_at', { ascending: false })
-        .limit(5);
+      const data = await fetchResolvedEscalations(5);
       if (!cancelled && data) setRecentEscalations(data as EscalationRow[]);
     }
     fetchEscalations();

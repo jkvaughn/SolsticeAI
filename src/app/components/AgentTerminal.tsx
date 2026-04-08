@@ -5,6 +5,11 @@ import {
   Copy, CheckCircle2,
 } from 'lucide-react';
 import { supabase, callServer, supabaseUrl, publicAnonKey } from '../supabaseClient';
+import {
+  fetchBankWithWallets, fetchAgentConversations,
+  fetchAgentMessagesForBank, fetchPendingAgentMessages,
+  fetchTransactionStatus, fetchAgentMessageProcessed,
+} from '../dataClient';
 import type {
   Bank, Wallet as WalletType, AgentMessage,
   AgentThinkResponse, Transaction
@@ -428,11 +433,7 @@ export function AgentTerminal() {
   // ── Data loading ────────────────────────────────────────────
 
   async function loadBank() {
-    const { data } = await supabase
-      .from('banks')
-      .select('*, wallets(*)')
-      .eq('id', bankId!)
-      .single();
+    const data = await fetchBankWithWallets(bankId!);
 
     if (data) {
       const { wallets, ...bankData } = data;
@@ -444,12 +445,7 @@ export function AgentTerminal() {
   }
 
   async function loadConversations() {
-    const { data } = await supabase
-      .from('agent_conversations')
-      .select('*')
-      .eq('bank_id', bankId!)
-      .order('created_at', { ascending: true })
-      .limit(100);
+    const data = await fetchAgentConversations({ bank_id: bankId!, limit: 100 });
 
     if (data && data.length > 0) {
       const msgs: ChatMessage[] = data.map(conv => ({
@@ -464,12 +460,7 @@ export function AgentTerminal() {
   }
 
   async function loadMessages() {
-    const { data } = await supabase
-      .from('agent_messages')
-      .select('*, from_bank:banks!agent_messages_from_bank_id_fkey(short_code, name), to_bank:banks!agent_messages_to_bank_id_fkey(short_code, name)')
-      .or(`to_bank_id.eq.${bankId},from_bank_id.eq.${bankId},to_bank_id.is.null`)
-      .order('created_at', { ascending: true })
-      .limit(100);
+    const data = await fetchAgentMessagesForBank(bankId!, 100);
 
     if (data) {
       setAgentMessages(data);
@@ -506,13 +497,7 @@ export function AgentTerminal() {
     if (!bankId) return;
     if (!bankRef.current || bankRef.current.status !== 'active') return;
 
-    const { data } = await supabase
-      .from('agent_messages')
-      .select('*, from_bank:banks!agent_messages_from_bank_id_fkey(short_code, name), to_bank:banks!agent_messages_to_bank_id_fkey(short_code, name)')
-      .eq('to_bank_id', bankId)
-      .eq('processed', false)
-      .order('created_at', { ascending: true })
-      .limit(10);
+    const data = await fetchPendingAgentMessages(bankId!, 10);
 
     if (!data || data.length === 0) return;
 
@@ -520,13 +505,9 @@ export function AgentTerminal() {
 
     for (const msg of data) {
       if (msg.transaction_id) {
-        const { data: tx } = await supabase
-          .from('transactions')
-          .select('status')
-          .eq('id', msg.transaction_id)
-          .single();
+        const txStatus = await fetchTransactionStatus(msg.transaction_id);
 
-        if (tx && ['settled', 'executing', 'rejected', 'reversed'].includes(tx.status)) {
+        if (txStatus && ['settled', 'executing', 'rejected', 'reversed'].includes(txStatus)) {
           console.log(`[AgentTerminal] Skipping pending msg ${msg.id.slice(0, 8)} — tx already ${tx.status}`);
           continue;
         }
@@ -650,13 +631,9 @@ export function AgentTerminal() {
       if (processingRef.current) return;
 
       if (msg.transaction_id) {
-        const { data: tx } = await supabase
-          .from('transactions')
-          .select('status')
-          .eq('id', msg.transaction_id)
-          .single();
+        const txStatus = await fetchTransactionStatus(msg.transaction_id);
 
-        if (tx && ['settled', 'executing', 'rejected', 'reversed'].includes(tx.status)) {
+        if (txStatus && ['settled', 'executing', 'rejected', 'reversed'].includes(txStatus)) {
           return;
         }
 
@@ -690,13 +667,9 @@ export function AgentTerminal() {
         }
       }
 
-      const { data: freshMsg } = await supabase
-        .from('agent_messages')
-        .select('processed')
-        .eq('id', msg.id)
-        .single();
+      const alreadyProcessed = await fetchAgentMessageProcessed(msg.id);
 
-      if (freshMsg?.processed) {
+      if (alreadyProcessed) {
         console.log(`[AgentTerminal] Skipping msg ${msg.id.slice(0, 8)} — already processed by A2A server`);
         return;
       }

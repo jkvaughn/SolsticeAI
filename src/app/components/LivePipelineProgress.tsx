@@ -19,8 +19,8 @@
 
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Loader2, ArrowRight, CheckCircle2, Activity, Brain, Minus } from 'lucide-react';
-import { supabase } from '../supabaseClient';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
+import { fetchTransactionsInWindow } from '../dataClient';
 import { PipelineWaterfall, STATUS_STEP_COUNT } from './PipelineWaterfall';
 import { useBanks } from '../contexts/BanksContext';
 
@@ -273,12 +273,7 @@ export function LivePipelineProgress({ runningCycle }: LivePipelineProgressProps
         ? new Date(new Date(cycle.completed_at).getTime() + 5000).toISOString()
         : new Date(Date.now() + 10000).toISOString();
 
-      const { data } = await supabase
-        .from('transactions')
-        .select('id, amount_display, amount, status, purpose_code, sender_bank_id, receiver_bank_id, created_at, sender_bank:banks!transactions_sender_bank_id_fkey(short_code), receiver_bank:banks!transactions_receiver_bank_id_fkey(short_code)')
-        .gte('created_at', windowStart)
-        .lte('created_at', windowEnd)
-        .order('created_at', { ascending: true });
+      const data = await fetchTransactionsInWindow(windowStart, windowEnd);
 
       if (data && data.length > 0) {
         // Initialize step animation for newly discovered txns

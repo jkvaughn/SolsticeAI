@@ -306,8 +306,11 @@ export async function fetchTransactionCount(params?: {
   resolved_by_like?: string;  // .like() filter
 }): Promise<number> {
   if (useServer) {
-    // TODO: add REST endpoint /data/transaction-count
-    // Fallback to Supabase for now
+    const p: Record<string, string> = {};
+    if (params?.status) p.status = params.status;
+    if (params?.statuses) p.statuses = params.statuses.join(',');
+    const result = await serverGet<{ count: number }>('/transaction-count', p);
+    return result.count;
   }
   let q = supabase.from('transactions').select('id', { count: 'exact', head: true });
   if (params?.status) q = q.eq('status', params.status);
@@ -319,8 +322,8 @@ export async function fetchTransactionCount(params?: {
 
 export async function fetchSettledVolume(): Promise<number> {
   if (useServer) {
-    // TODO: add REST endpoint /data/settled-volume
-    // Fallback to Supabase for now
+    const result = await serverGet<{ volume: number }>('/settled-volume');
+    return result.volume;
   }
   const { data, error } = await supabase
     .from('transactions')
@@ -340,8 +343,13 @@ export async function fetchLockupTokenCount(params?: {
   updated_since?: string;
 }): Promise<number> {
   if (useServer) {
-    // TODO: add REST endpoint /data/lockup-token-count
-    // Fallback to Supabase for now
+    const p: Record<string, string> = {};
+    if (params?.status) p.status = params.status;
+    if (params?.statuses) p.statuses = params.statuses.join(',');
+    if (params?.resolved_by_like) p.resolved_by_like = params.resolved_by_like;
+    if (params?.updated_since) p.updated_since = params.updated_since;
+    const result = await serverGet<{ count: number }>('/lockup-token-count', p);
+    return result.count;
   }
   let q = supabase.from('lockup_tokens').select('id', { count: 'exact', head: true });
   if (params?.status) q = q.eq('status', params.status);
@@ -355,8 +363,8 @@ export async function fetchLockupTokenCount(params?: {
 
 export async function fetchCadenzaFlagCount(): Promise<number> {
   if (useServer) {
-    // TODO: add REST endpoint /data/cadenza-flag-count
-    // Fallback to Supabase for now
+    const result = await serverGet<{ count: number }>('/cadenza-flag-count');
+    return result.count;
   }
   const { count, error } = await supabase
     .from('cadenza_flags')
@@ -367,8 +375,8 @@ export async function fetchCadenzaFlagCount(): Promise<number> {
 
 export async function fetchSettledVolumeRaw(): Promise<number> {
   if (useServer) {
-    // TODO: add REST endpoint /data/settled-volume-raw
-    // Fallback to Supabase for now
+    const result = await serverGet<{ volume: number }>('/settled-volume-raw');
+    return result.volume;
   }
   const { data, error } = await supabase
     .from('transactions')
@@ -383,8 +391,7 @@ export async function fetchTransactionsInWindow(
   windowEnd: string,
 ): Promise<any[]> {
   if (useServer) {
-    // TODO: add REST endpoint /data/transactions-in-window
-    // Fallback to Supabase for now
+    return serverGet('/transactions-in-window', { start: windowStart, end: windowEnd });
   }
   const { data, error } = await supabase
     .from('transactions')
@@ -402,8 +409,9 @@ export async function fetchAgentMessagesInWindow(
   messageType?: string,
 ): Promise<any[]> {
   if (useServer) {
-    // TODO: add REST endpoint /data/agent-messages-in-window
-    // Fallback to Supabase for now
+    const p: Record<string, string> = { start: windowStart, end: windowEnd };
+    if (messageType) p.message_type = messageType;
+    return serverGet('/agent-messages-in-window', p);
   }
   let q = supabase
     .from('agent_messages')
@@ -421,8 +429,9 @@ export async function fetchAgentMessagesWithBanks(params?: {
   limit?: number;
 }): Promise<any[]> {
   if (useServer) {
-    // TODO: add REST endpoint /data/agent-messages-with-banks
-    // Fallback to Supabase for now
+    const p: Record<string, string> = {};
+    if (params?.limit) p.limit = String(params.limit);
+    return serverGet('/agent-messages-with-banks', p);
   }
   let q = supabase
     .from('agent_messages')
@@ -436,8 +445,7 @@ export async function fetchAgentMessagesWithBanks(params?: {
 
 export async function fetchResolvedEscalations(limit = 5): Promise<any[]> {
   if (useServer) {
-    // TODO: add REST endpoint /data/resolved-escalations
-    // Fallback to Supabase for now
+    return serverGet('/resolved-escalations', { limit: String(limit) });
   }
   const { data, error } = await supabase
     .from('lockup_tokens')
@@ -445,6 +453,108 @@ export async function fetchResolvedEscalations(limit = 5): Promise<any[]> {
     .like('resolved_by', 'operator:%')
     .order('resolved_at', { ascending: false })
     .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ── AgentTerminal & TransactionDetail joined queries ────────
+
+export async function fetchBankWithWallets(id: string): Promise<any> {
+  if (useServer) return serverGet(`/banks/${id}`);
+  const { data, error } = await supabase
+    .from('banks')
+    .select('*, wallets(*)')
+    .eq('id', id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchAgentMessagesForBank(
+  bankId: string,
+  limit = 100,
+): Promise<any[]> {
+  if (useServer) {
+    return serverGet('/agent-messages', { bank_id: bankId, limit: String(limit) });
+  }
+  const { data, error } = await supabase
+    .from('agent_messages')
+    .select('*, from_bank:banks!agent_messages_from_bank_id_fkey(short_code, name), to_bank:banks!agent_messages_to_bank_id_fkey(short_code, name)')
+    .or(`to_bank_id.eq.${bankId},from_bank_id.eq.${bankId},to_bank_id.is.null`)
+    .order('created_at', { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchPendingAgentMessages(
+  bankId: string,
+  limit = 10,
+): Promise<any[]> {
+  if (useServer) {
+    return serverGet('/agent-messages', { bank_id: bankId, processed: 'false', limit: String(limit) });
+  }
+  const { data, error } = await supabase
+    .from('agent_messages')
+    .select('*, from_bank:banks!agent_messages_from_bank_id_fkey(short_code, name), to_bank:banks!agent_messages_to_bank_id_fkey(short_code, name)')
+    .eq('to_bank_id', bankId)
+    .eq('processed', false)
+    .order('created_at', { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchAgentMessageProcessed(messageId: string): Promise<boolean> {
+  if (useServer) {
+    // TODO: add REST endpoint /data/agent-message-processed
+    // Fallback to Supabase for now
+  }
+  const { data, error } = await supabase
+    .from('agent_messages')
+    .select('processed')
+    .eq('id', messageId)
+    .single();
+  if (error) throw error;
+  return data?.processed ?? false;
+}
+
+export async function fetchTransactionStatus(id: string): Promise<string | null> {
+  if (useServer) {
+    const tx = await serverGet<any>(`/transactions/${id}`);
+    return tx?.status ?? null;
+  }
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('status')
+    .eq('id', id)
+    .single();
+  if (error) throw error;
+  return data?.status ?? null;
+}
+
+export async function fetchTransactionWithBanks(id: string): Promise<any> {
+  if (useServer) return serverGet(`/transactions/${id}`);
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*, sender_bank:banks!transactions_sender_bank_id_fkey(id, name, short_code, jurisdiction, tier, swift_bic, status, token_mint_address, token_symbol, agent_system_prompt), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, name, short_code, jurisdiction, tier, swift_bic, status, token_mint_address, token_symbol, agent_system_prompt)')
+    .eq('id', id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchAgentMessagesForTransaction(
+  txId: string,
+): Promise<any[]> {
+  if (useServer) {
+    return serverGet('/agent-messages', { transaction_id: txId });
+  }
+  const { data, error } = await supabase
+    .from('agent_messages')
+    .select('*, from_bank:banks!agent_messages_from_bank_id_fkey(short_code, name), to_bank:banks!agent_messages_to_bank_id_fkey(short_code, name)')
+    .eq('transaction_id', txId)
+    .order('created_at', { ascending: true });
   if (error) throw error;
   return data ?? [];
 }
