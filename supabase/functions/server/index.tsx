@@ -7959,33 +7959,71 @@ app.get(`${R}/data/transactions`, async (c) => {
     const limit = parseInt(c.req.query("limit") || "100");
     const sinceStr = c.req.query("since");
 
+    // Base query with bank JOINs for sender/receiver short_code + name
+    const baseSelect = `
+      SELECT t.*,
+        json_build_object('id', sb.id, 'short_code', sb.short_code, 'name', sb.name) as sender_bank,
+        json_build_object('id', rb.id, 'short_code', rb.short_code, 'name', rb.name) as receiver_bank
+      FROM transactions t
+      LEFT JOIN banks sb ON t.sender_bank_id = sb.id
+      LEFT JOIN banks rb ON t.receiver_bank_id = rb.id
+    `;
+
     let rows;
     if (bankId && status) {
       rows = await sql`
-        SELECT * FROM transactions
-        WHERE (sender_bank_id = ${bankId} OR receiver_bank_id = ${bankId})
-          AND status = ${status}
-        ORDER BY created_at DESC LIMIT ${limit}
+        SELECT t.*,
+          json_build_object('id', sb.id, 'short_code', sb.short_code, 'name', sb.name) as sender_bank,
+          json_build_object('id', rb.id, 'short_code', rb.short_code, 'name', rb.name) as receiver_bank
+        FROM transactions t
+        LEFT JOIN banks sb ON t.sender_bank_id = sb.id
+        LEFT JOIN banks rb ON t.receiver_bank_id = rb.id
+        WHERE (t.sender_bank_id = ${bankId} OR t.receiver_bank_id = ${bankId})
+          AND t.status = ${status}
+        ORDER BY t.created_at DESC LIMIT ${limit}
       `;
     } else if (bankId) {
       rows = await sql`
-        SELECT * FROM transactions
-        WHERE sender_bank_id = ${bankId} OR receiver_bank_id = ${bankId}
-        ORDER BY created_at DESC LIMIT ${limit}
+        SELECT t.*,
+          json_build_object('id', sb.id, 'short_code', sb.short_code, 'name', sb.name) as sender_bank,
+          json_build_object('id', rb.id, 'short_code', rb.short_code, 'name', rb.name) as receiver_bank
+        FROM transactions t
+        LEFT JOIN banks sb ON t.sender_bank_id = sb.id
+        LEFT JOIN banks rb ON t.receiver_bank_id = rb.id
+        WHERE t.sender_bank_id = ${bankId} OR t.receiver_bank_id = ${bankId}
+        ORDER BY t.created_at DESC LIMIT ${limit}
       `;
     } else if (status) {
       rows = await sql`
-        SELECT * FROM transactions WHERE status = ${status}
-        ORDER BY created_at DESC LIMIT ${limit}
+        SELECT t.*,
+          json_build_object('id', sb.id, 'short_code', sb.short_code, 'name', sb.name) as sender_bank,
+          json_build_object('id', rb.id, 'short_code', rb.short_code, 'name', rb.name) as receiver_bank
+        FROM transactions t
+        LEFT JOIN banks sb ON t.sender_bank_id = sb.id
+        LEFT JOIN banks rb ON t.receiver_bank_id = rb.id
+        WHERE t.status = ${status}
+        ORDER BY t.created_at DESC LIMIT ${limit}
       `;
     } else if (sinceStr) {
       rows = await sql`
-        SELECT * FROM transactions WHERE created_at >= ${sinceStr}
-        ORDER BY created_at DESC LIMIT ${limit}
+        SELECT t.*,
+          json_build_object('id', sb.id, 'short_code', sb.short_code, 'name', sb.name) as sender_bank,
+          json_build_object('id', rb.id, 'short_code', rb.short_code, 'name', rb.name) as receiver_bank
+        FROM transactions t
+        LEFT JOIN banks sb ON t.sender_bank_id = sb.id
+        LEFT JOIN banks rb ON t.receiver_bank_id = rb.id
+        WHERE t.created_at >= ${sinceStr}
+        ORDER BY t.created_at DESC LIMIT ${limit}
       `;
     } else {
       rows = await sql`
-        SELECT * FROM transactions ORDER BY created_at DESC LIMIT ${limit}
+        SELECT t.*,
+          json_build_object('id', sb.id, 'short_code', sb.short_code, 'name', sb.name) as sender_bank,
+          json_build_object('id', rb.id, 'short_code', rb.short_code, 'name', rb.name) as receiver_bank
+        FROM transactions t
+        LEFT JOIN banks sb ON t.sender_bank_id = sb.id
+        LEFT JOIN banks rb ON t.receiver_bank_id = rb.id
+        ORDER BY t.created_at DESC LIMIT ${limit}
       `;
     }
     return c.json(rows);
@@ -7997,7 +8035,15 @@ app.get(`${R}/data/transactions`, async (c) => {
 app.get(`${R}/data/transactions/:id`, async (c) => {
   try {
     const id = c.req.param("id");
-    const [tx] = await sql`SELECT * FROM transactions WHERE id = ${id}`;
+    const [tx] = await sql`
+      SELECT t.*,
+        json_build_object('id', sb.id, 'short_code', sb.short_code, 'name', sb.name) as sender_bank,
+        json_build_object('id', rb.id, 'short_code', rb.short_code, 'name', rb.name) as receiver_bank
+      FROM transactions t
+      LEFT JOIN banks sb ON t.sender_bank_id = sb.id
+      LEFT JOIN banks rb ON t.receiver_bank_id = rb.id
+      WHERE t.id = ${id}
+    `;
     if (!tx) return c.json({ error: "Transaction not found" }, 404);
     return c.json(tx);
   } catch (err) {
