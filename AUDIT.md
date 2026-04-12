@@ -1496,140 +1496,134 @@ coda/
 - Zod validation on all AI responses and API inputs
 - Error middleware with request IDs and structured error envelopes
 
-**Frontend — React 19 + SSR framework + TypeScript strict (decision pending):**
+**Frontend — React 19 + TypeScript strict (stack decision pending):**
 
-All options below assume: SSR behind auth, route-level data loading, server-side mutations, streaming, error boundaries per route, shared types from `packages/shared`, and deployment as a Node server on Azure Container Apps alongside the Hono API.
+This is a greenfield rebuild. The existing codebase is not being migrated — it's being replaced. Stack decisions should be evaluated purely on merit for the app being built: an authenticated, data-heavy, real-time financial dashboard with ~15 routes, a separate Hono API backend, and deployment to Azure.
 
-**Option A: React Router 7 Framework Mode (Recommended)**
+**Option A: React Router 7 Framework Mode**
 
-The current codebase is already on react-router 7.13.0. Framework mode is a Vite plugin that unlocks SSR, loaders, actions, and streaming — all through Vite's dev server and build pipeline.
+SSR framework built into React Router as a Vite plugin. Loaders, actions, streaming, nested routes.
 
 | | |
 |---|---|
-| Loaders | Parallel per-route server-side data fetching. Replaces the broken `useSWRCache` + `dataClient` + raw `supabase` mess. |
-| Actions | Replaces hand-rolled `callServer` POST calls. Built-in pending/error states. |
-| Streaming | Layout renders instantly, child route data streams in as loaders resolve. |
-| Auth | Shared `requireAuth()` in root loader + per-route loaders call Hono API with session token. No middleware file — requires manual pattern. |
-| Error boundaries | Per route segment (framework provides this naturally). |
-| Build | Vite plugin. Same DX as a plain Vite app. |
-| Deploy | Standard Node server. No adapters, no vendor lock-in. |
-| Complexity | Low-medium. Loaders/actions are straightforward. |
-| Ecosystem | Medium. React ecosystem, but RR7 framework mode docs are still maturing. |
-| Migration path | Shortest — route structure is almost directly portable from current codebase. |
+| SSR | Yes — loaders fetch data server-side with the user's auth. Content on first paint. |
+| Data loading | Loaders — parallel, per-route, server-side. |
+| Mutations | Actions — built-in pending/error states. |
+| Auth | `requireAuth()` in root loader. No dedicated middleware file — requires manual pattern. |
+| Error boundaries | Per route segment (built-in). |
+| Build | Vite plugin. |
+| Deploy | Node server on Container Apps. |
+| Complexity | Low-medium. |
 
 Pros:
-- Lightest framework opinion — handles routing, SSR, data loading. Everything else is your choice.
-- Vite-native. Fast dev server, fast builds.
-- Already on react-router 7 — not a framework switch.
+- Lightest SSR framework opinion. Handles routing + SSR + data loading, everything else is your choice.
+- Vite-native. Fast DX.
+- Loader/action model is clean and easy to reason about.
 
 Cons:
-- No built-in middleware file for auth (solvable but manual).
-- Smaller community than Next.js — fewer "how to do X" resources.
-- Framework mode is the newer path (Remix → RR convergence). Some docs still reference old Remix patterns.
+- No built-in auth middleware file (manual pattern).
+- Smaller community than Next.js. Framework mode docs still maturing (Remix → RR convergence).
+- Newer path — fewer battle-tested production deployments.
 
 **Option B: Next.js (App Router)**
 
-The industry default. Largest ecosystem, most battle-tested, most opinionated.
+Industry default. Largest ecosystem, most opinionated, most battle-tested.
 
 | | |
 |---|---|
-| Data loading | Server components fetch data directly. No explicit loader — the component IS the loader. |
+| SSR | Yes — server components fetch data directly. The component IS the data loader. |
+| Data loading | Server components + `fetch` with caching. |
 | Mutations | Server actions (`"use server"` functions). |
-| Streaming | Built-in with Suspense boundaries. |
-| Auth | `middleware.ts` — one file gates every route. This alone is huge given CODA's current auth gap. |
+| Auth | `middleware.ts` — single file, gates every request. |
 | Error boundaries | `error.tsx` per route segment. |
-| Build | Custom bundler (Turbopack/webpack). Not Vite. |
-| Deploy | Self-host on Container Apps as Node server. Not locked to Vercel. |
-| Complexity | Highest. Server vs client components, `"use client"` boundaries, caching/revalidation strategies. |
-| Ecosystem | Largest by far. Every problem has a public solution. |
-| Extras | Image optimization, font optimization, metadata API, parallel routes, intercepting routes. |
+| Build | Turbopack (not Vite). |
+| Deploy | Node server on Container Apps. Self-hostable, not locked to Vercel. |
+| Complexity | Highest. |
 
 Pros:
-- Largest ecosystem and hiring pool.
-- `middleware.ts` for auth is exactly what CODA needs.
-- Server components mean data-heavy pages (Dashboard, TransactionMonitor) ship zero client JS for non-interactive parts.
-- Most production battle-tested option.
+- Largest ecosystem and hiring pool. Every problem has a public solution.
+- `middleware.ts` for auth is a single-file solution to CODA's biggest gap.
+- Server components: data-heavy pages ship zero client JS for non-interactive parts.
+- Most production battle-tested. Proven at scale.
 
 Cons:
-- Most complex mental model. Server components vs client components is a learning curve.
-- Caching layer is famously confusing and has changed behavior between versions. For a real-time settlement dashboard, you'll fight the cache.
-- Heavier framework — more magic, more implicit behavior, more "why is this not updating."
-- Not Vite-based (uses Turbopack). Different DX from the rest of the ecosystem.
-- Overkill for ~15 routes. The framework's power shines at scale.
+- Most complex mental model. Server vs client components, `"use client"` boundaries, caching behavior.
+- Caching layer is confusing and has changed between versions. Real-time dashboard will fight it.
+- Not Vite. Different DX, different plugin ecosystem.
+- Heavy framework opinion — more magic, more implicit behavior.
 
 **Option C: TanStack Start**
 
-Best data-loading story. Built by Tanner Linsley (TanStack Query, Router, Table). Currently in beta.
+Best-in-class data loading and type safety. TanStack Query + Router unified with a server layer. Currently in beta.
 
 | | |
 |---|---|
-| Data loading | TanStack Query at the core, not bolted on. Loaders with automatic cache integration. |
+| SSR | Yes — loaders with TanStack Query integration. |
+| Data loading | TanStack Query at the core. Loaders with automatic cache integration. |
 | Mutations | Server functions — call server code like regular functions. |
-| Streaming | Yes. |
-| Auth | Custom (similar to RR7). |
-| Type safety | Best-in-class — full-stack type safety from route params through loaders through components. |
+| Auth | Custom (manual pattern, similar to RR7). |
+| Type safety | Best-in-class — full-stack, route params through loaders through components. |
 | Build | Vite-based. |
 | Deploy | Node server with adapters. |
-| Complexity | Medium. Simpler than Next.js, similar to RR7. |
-| Ecosystem | Smallest. Beta software. |
+| Complexity | Medium. |
 
 Pros:
-- If you're using TanStack Query anyway (and you should for CODA's real-time data), Start puts it at the center.
+- TanStack Query is the data layer, not an add-on. Best fit for a data-heavy real-time dashboard.
 - Full-stack type safety with zero casting.
 - Vite-based, clean mental model.
+- If it stabilizes, this is the strongest overall option for CODA's use case.
 
 Cons:
-- **Still in beta.** API could change, docs incomplete, edge cases undiscovered.
-- Tiny community. You're reading source code, not Stack Overflow.
-- Unclear production battle-testing.
-- Revisit when 1.0 ships. Could become the top recommendation.
+- **Beta.** API could change. Docs incomplete. Edge cases undiscovered.
+- Tiny community. You're reading source code when you hit problems.
+- Unclear production track record.
+- Revisit when 1.0 ships.
 
 **Option D: Vite SPA + TanStack Router + TanStack Query**
 
-No SSR framework. A client-side SPA with TanStack's routing and data libraries — both stable, both best-in-class, both designed to work together.
+No SSR. Client-side SPA with the best routing and data-fetching libraries in the React ecosystem. Both stable, both designed to work together.
 
 | | |
 |---|---|
+| SSR | No. Client-side rendering only. |
 | Data loading | TanStack Query — cache, refetch, optimistic updates, prefetching. Mature and stable. |
-| Route-level loading | TanStack Router's `loader` option prefetches queries before rendering. No waterfall. |
-| Mutations | TanStack Query `useMutation` with built-in pending/error/success states. |
-| Streaming | No SSR streaming. Client-side Suspense only. |
-| Auth | Route guards via TanStack Router's `beforeLoad`. One place, type-safe. |
-| Type safety | TanStack Router is fully type-safe — route params, search params, loader data. Zero `as` casts. |
+| Route-level loading | TanStack Router `loader` prefetches queries before component mounts. No waterfall. |
+| Mutations | TanStack Query `useMutation` — built-in pending/error/success states. |
+| Auth | TanStack Router `beforeLoad` — type-safe route guards. Backend validates every request server-side. |
+| Type safety | TanStack Router is fully type-safe — route params, search params, loader data all inferred. |
 | Build | Vite. Pure, fast, no framework layer. |
-| Deploy | Azure Static Web Apps (static files, no server). Simplest deployment story. |
-| Complexity | Low. Two libraries you'd use anyway, no framework opinions. |
-| Ecosystem | TanStack Query is the most widely used data-fetching library in React. Router is newer but stable. |
+| Deploy | Azure Static Web Apps (static files, no server). Simplest deployment. |
+| Complexity | Lowest. |
 
 Pros:
-- **No server to run for the frontend.** Static files on Azure SWA. Zero infra. The Hono API is your only server.
-- **TanStack Query is battle-tested.** It's what you'd use for data fetching in any React app regardless of framework.
-- **TanStack Router's type safety is the best of any React router.** Route params, search params, and loader data are all inferred — no manual typing, no runtime surprises.
-- **Route-level `loader` + Query prefetching** eliminates the waterfall problem without SSR. On navigation, the loader fires the query before the component mounts. User sees cached data instantly or a brief loading state — not a blank page.
-- **Simplest upgrade path to TanStack Start.** If Start hits 1.0 and you want SSR later, you're already on TanStack Router + Query. Start adds the server layer on top — it's additive, not a rewrite.
+- **No frontend server.** Static files on a CDN. The Hono API is the only server. Simplest infra.
+- **TanStack Query is the most battle-tested data library in React.** You'd use it regardless of framework.
+- **TanStack Router type safety is the best of any React router.** Zero `as` casts, zero runtime surprises.
+- **Loader prefetching** closes most of the SSR gap — data loads before the component mounts, cached data renders instantly on re-navigation.
+- **Cleanest upgrade path.** If TanStack Start stabilizes and you want SSR, add the server layer on top of the same Router + Query. Additive, not a rewrite.
 - **Simplest mental model.** No server/client boundary, no "which code runs where," no hydration mismatches.
 
 Cons:
-- **No SSR.** First paint shows a loading state while JS loads and data fetches. For heavy pages, this means the user sees a skeleton before content. Loaders with prefetching mitigate this but don't eliminate it.
-- **Auth is client-side only.** The SWA config can gate routes, but the actual auth check happens in the browser. The Hono API is still responsible for validating every request server-side.
-- **No server-side middleware.** Can't intercept requests before they hit the client. Auth, redirects, and headers are all client-side or handled by the API.
-- **Larger client bundle than SSR frameworks** — all rendering logic ships to the browser. Route-based code splitting (TanStack Router supports lazy routes) mitigates but doesn't eliminate.
+- **No SSR.** First paint is a loading state while JS loads and queries fire. Loaders and prefetching mitigate but don't eliminate.
+- **Auth is client-side only.** Route guards run in the browser. Server-side auth is the Hono API's responsibility.
+- **No server-side middleware.** Can't intercept requests before they reach the client.
+- **Larger client bundle** than SSR options. Route-based code splitting (TanStack Router lazy routes) helps.
 
 **Decision criteria:**
 
 | If you value... | Choose |
 |----------------|--------|
-| Shortest migration path from current codebase | Option A (RR7) |
-| Largest ecosystem and auth middleware built-in | Option B (Next.js) |
-| Best type safety + data layer (and can wait for stable) | Option C (TanStack Start) |
-| Simplest architecture — no frontend server, static deploy | Option D (Vite + TanStack) |
-| Best type safety + data layer NOW (stable, proven) | Option D (Vite + TanStack) |
+| SSR with lightest framework opinion | Option A (RR7) |
+| Largest ecosystem, built-in auth middleware | Option B (Next.js) |
+| Best data layer + type safety (when stable) | Option C (TanStack Start) |
+| Simplest architecture, no frontend server | Option D (Vite + TanStack) |
+| Best data layer + type safety NOW (stable) | Option D (Vite + TanStack) |
 | Simplest mental model | Option D (Vite + TanStack) |
-| Minimum risk | Option B (Next.js) |
-| Cleanest upgrade path to SSR later | Option D → Option C (TanStack Start) |
-| SSR matters today | Option A (RR7) or Option B (Next.js) |
+| Minimum ecosystem risk | Option B (Next.js) |
+| Upgrade path to SSR later | Option D → C (TanStack Start) |
+| SSR is a requirement today | Option A or B |
 
-**Note on architecture fit:** CODA already has a separate Hono API backend that handles all business logic, data access, auth validation, and blockchain operations. The frontend's job is to call that API and render the results. Options A-C add a frontend server between the browser and the API (for SSR). Option D skips that layer — the browser calls the API directly, same as the current architecture but with proper libraries. Both patterns are valid. The question is whether SSR's first-paint benefit justifies the extra server.
+**Architecture note:** CODA has a separate Hono API backend that owns all business logic, data access, auth validation, and blockchain operations. The frontend's job is to call that API and render results. Options A-C add a frontend Node server between the browser and the API (for SSR). Option D keeps it simple — browser calls API directly, static files on CDN. Both patterns are valid. The question is whether SSR's first-paint benefit justifies a second server.
 
 **Database — Azure Postgres with proper setup:**
 - Migration runner (dbmate, Flyway, or golang-migrate) integrated into CI
