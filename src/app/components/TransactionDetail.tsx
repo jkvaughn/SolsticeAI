@@ -846,7 +846,7 @@ export function TransactionDetail() {
   const isLockupFinalized = isLockupSettled || isLockupReversed;
 
   const compChecks = complianceLogs.length > 0
-    ? complianceLogs.map((log: any) => ({ type: log.check_type, passed: log.check_result, detail: log.details?.detail || '\u2014' }))
+    ? complianceLogs.map((log: any) => ({ type: log.check_type, passed: log.check_result === 'pass', detail: log.details?.detail || '\u2014' }))
     : ((tx as any).compliance_checks || []);
 
   const pipelineVerdicts = computePipelineVerdicts(messages, tx);

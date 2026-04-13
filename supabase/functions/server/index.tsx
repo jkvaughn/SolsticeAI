@@ -2520,7 +2520,7 @@ async function coreComplianceCheck(transactionId: string): Promise<any> {
       transaction_id: transactionId,
       bank_id: tx.receiver_bank_id,
       check_type: check.type,
-      check_result: check.passed,
+      check_result: check.passed ? 'pass' : 'fail',
       details: { detail: check.detail, agent_id: aid },
       solana_log_signature: null,
       created_at: now,
@@ -3919,7 +3919,7 @@ async function runSettlementPipeline(bankId: string, msg: any): Promise<any> {
     const allPassed = checks.every((ch) => ch.passed);
     const compNow = new Date().toISOString();
     for (const check of checks) {
-      await sql`INSERT INTO compliance_logs ${sql({ id: crypto.randomUUID(), transaction_id: txId, bank_id: txComp.receiver_bank_id, check_type: check.type, check_result: check.passed, details: { detail: check.detail, agent_id: aid }, solana_log_signature: null, created_at: compNow }, ...Object.keys({ id: crypto.randomUUID(), transaction_id: txId, bank_id: txComp.receiver_bank_id, check_type: check.type, check_result: check.passed, details: { detail: check.detail, agent_id: aid }, solana_log_signature: null, created_at: compNow }))}`
+      await sql`INSERT INTO compliance_logs ${sql({ id: crypto.randomUUID(), transaction_id: txId, bank_id: txComp.receiver_bank_id, check_type: check.type, check_result: check.passed ? 'pass' : 'fail', details: { detail: check.detail, agent_id: aid }, solana_log_signature: null, created_at: compNow }, ...Object.keys({ id: crypto.randomUUID(), transaction_id: txId, bank_id: txComp.receiver_bank_id, check_type: check.type, check_result: check.passed ? 'pass' : 'fail', details: { detail: check.detail, agent_id: aid }, solana_log_signature: null, created_at: compNow }))}`
     }
     await sql`UPDATE transactions SET status = ${"compliance_check"}, compliance_passed = ${allPassed}, compliance_checks = ${checks}, compliance_completed_at = ${compNow} WHERE id = ${txId}`;
     console.log(`[${aid}] Step 1 result: ${allPassed ? "PASSED" : "FAILED"} (${checks.filter(c => c.passed).length}/${checks.length})`);
