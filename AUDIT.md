@@ -1848,5 +1848,30 @@ The settlement flow race conditions were covered in Section 12.7. Additional con
 
 ---
 
+### 21.9 Load Balancing, Scaling & Work Distribution: None
+
+**What exists:** Azure Container Apps config has `min_replicas = 0` (scale to zero), `max_replicas = 3`. Container Apps has a built-in HTTP load balancer that round-robins across replicas. That's it.
+
+**The backend is built assuming a single process.** With multiple replicas:
+
+| Problem | Detail |
+|---------|--------|
+| **No job queue** | Long-running operations (settlement pipeline, Cadenza scans, treasury cycles) run inline in HTTP handlers. No Bull/BullMQ, no Redis, no message queue. If a replica scales down mid-operation, the work is lost. |
+| **Fire-and-forget is per-process** | `coreOrchestrate()` runs as a fire-and-forget function call on the replica that handled the initiating request. If that replica scales down mid-pipeline, the settlement is abandoned with no recovery. |
+| **No distributed locking** | Heartbeat/treasury cycles have no coordination. Two replicas processing `/network-heartbeat` simultaneously create duplicate cycles with duplicate transactions. |
+| **KV store race conditions** | Two replicas doing `kv.get` → modify → `kv.set` on custodian/fees data simultaneously overwrite each other. No atomic read-modify-write, no optimistic concurrency. |
+| **Connection pool exhaustion** | Each replica creates 10 Postgres connections. 3 replicas = 30 connections against B_Standard_B1ms's ~50 limit. No external pooler (PgBouncer). Under load, new replicas can't connect. |
+| **No sticky sessions** | Sequential frontend calls for a single settlement flow can hit different replicas. The `agent-think` → `coreOrchestrate` fire-and-forget assumes same-process handling. |
+| **Cold starts** | `min_replicas = 0` means first request after idle boots a Deno container, caches all `npm:` deps, and establishes a DB pool. For a financial platform, this latency spike is unacceptable. |
+
+**What the rebuild needs:**
+- A job queue (BullMQ + Redis, or Azure Service Bus) for long-running operations — settlements, Cadenza scans, treasury cycles should be enqueued, not run inline
+- Distributed locking (Redis or Postgres advisory locks) for heartbeat cycles and any singleton operations
+- An external connection pooler (PgBouncer sidecar or Azure's built-in Postgres pooler) to manage connection limits across replicas
+- `min_replicas = 1` minimum in production — no cold starts for a financial platform
+- Idempotency keys on all enqueued work so duplicate delivery doesn't cause duplicate settlements
+
+---
+
 *This audit captures the state of the codebase as of commit `f83be40` on `main`.*
 *Completed 2026-04-11/12. Sections: structural analysis (1-11), settlement flow trace (12), auth security audit (13), database access patterns (14), updated triage (15), production database (16), error handling & observability (17), Deno forensics (18), repo structure (19), rebuild brief (20), overlooked areas (21).*
