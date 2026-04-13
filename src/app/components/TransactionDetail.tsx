@@ -18,6 +18,7 @@ import {
   fetchTransactionWithBanks, fetchAgentMessagesForTransaction,
 } from '../dataClient';
 import { SettlementLifecycle } from './SettlementLifecycle';
+import { PaymentLifecycleTracker } from './treasury/PaymentLifecycleTracker';
 import type { Transaction, AgentMessage, Wallet as WalletType } from '../types';
 import {
   formatTokenAmount, truncateAddress, explorerUrl,
@@ -1203,6 +1204,16 @@ export function TransactionDetail() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* ═══ Payment Lifecycle Tracker (Task 155) ═══ */}
+        <div className="mb-4">
+          <PaymentLifecycleTracker
+            tx={tx}
+            messages={messages}
+            riskScore={riskScore}
+            complianceLogs={complianceLogs}
+          />
         </div>
           </>
         )}

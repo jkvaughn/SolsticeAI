@@ -15,6 +15,7 @@ import { NetworkInfrastructureWidget } from './dashboard/NetworkInfrastructureWi
 import { CadenzaEscalationsWidget } from './dashboard/CadenzaEscalationsWidget';
 import { WidgetShell } from './dashboard/WidgetShell';
 import { usePersona } from '../contexts/PersonaContext';
+import { TreasuryDashboard } from './treasury/TreasuryDashboard';
 import {
   wallet as walletAnim,
   lightning as lightningAnim,
@@ -44,6 +45,11 @@ async function fetchRecentTransactions(): Promise<Transaction[]> {
 export function Dashboard() {
   const { activeBanks: banks, cacheVersion } = useBanks();
   const { persona } = usePersona();
+
+  // Treasury role gets a dedicated dashboard (Task 155)
+  if (persona === 'treasury') {
+    return <TreasuryDashboard />;
+  }
 
   const {
     data: transactions,
