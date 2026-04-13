@@ -1924,5 +1924,80 @@ The DB writes before and after the chain call are each atomic. The chain call it
 
 ---
 
+## 22. Frontend Framework Decision
+
+### 22.1 Constraints Established
+
+Through discussion, several decisions were locked in before the framework choice:
+
+- **This is a greenfield rebuild.** The existing codebase is not being migrated. Stack decisions are evaluated on merit, not migration path.
+- **A framework is the way to go.** Rolling your own SSR/data-loading/caching on top of React Router is just building a worse framework. Let the framework handle plumbing.
+- **better-auth for authentication.** Framework-agnostic, works with any option.
+- **TanStack Query for data.** Non-negotiable for a real-time settlement dashboard — cache control, refetch intervals, optimistic updates, invalidation.
+- **Separate Hono API backend.** The frontend framework is a rendering layer, not the business logic server.
+
+### 22.2 Final Shortlist: Next.js vs TanStack Start
+
+The decision narrowed to two options after eliminating plain SPA (needs SSR for heavy pages) and React Router 7 framework mode (if you're going framework, go all the way).
+
+**TanStack Start — Updated Status (April 2026):**
+- v1 Release Candidate (March 2026). API frozen, considered stable. Not beta.
+- Full SSR, streaming, server functions, middleware, API routes
+- Built on Vite, TanStack Router + Query as first-class core
+- End-to-end type safety (route params → loaders → components)
+- ~30-35% smaller client bundles than Next.js in benchmarks
+- ~5.5x throughput (2,357 req/s vs 427 req/s in published benchmarks)
+- RSC support experimental/coming — designed as opt-in, not default paradigm
+- Deploys anywhere (Node adapter)
+
+**Next.js — Current strengths:**
+- Largest ecosystem, most tutorials, most Stack Overflow answers
+- `middleware.ts` for auth gating (single file)
+- RSC production-ready today
+- `"use cache"` directive (new, more opt-in caching model)
+- Server components: zero client JS for non-interactive page sections
+- Most production battle-tested
+
+### 22.3 Comparison for CODA's Use Case
+
+| | Next.js | TanStack Start |
+|---|---|---|
+| Routing | File-based conventions | File-based, fully type-safe |
+| Data loading | Server components + fetch | Loaders + TanStack Query (integrated) |
+| Caching | Built-in (complex, `"use cache"` improving it) | TanStack Query (explicit, you control it) |
+| Dynamic rendering | Per-route config (`force-dynamic`) | SSR by default, opt into static |
+| Server functions | Server actions (`"use server"`) | Server functions with middleware |
+| Auth | `middleware.ts` | Middleware support (better-auth works in both) |
+| Build tool | Turbopack | Vite |
+| Bundle size | Larger | ~30-35% smaller |
+| Throughput | Baseline | ~5.5x in benchmarks |
+| RSC | Production-ready | Experimental (opt-in, coming) |
+| Type safety | Good (gaps at boundaries) | Best-in-class (end-to-end) |
+| Ecosystem | Largest | Smaller, growing fast |
+| Mental model | Implicit (framework magic) | Explicit (you control what happens) |
+| Maturity | Years of production | RC, approaching 1.0 final |
+
+### 22.4 Recommendation: TanStack Start
+
+For CODA specifically, the deciding factors:
+
+1. **TanStack Query is already the data layer.** In Next.js, Query sits alongside the framework's own caching — two systems doing similar things, sometimes conflicting. In Start, it's the core. No redundancy, no conflict.
+
+2. **Explicit caching for a financial dashboard.** You need to know exactly when data is fresh and when it's stale. Query's `staleTime`, `refetchInterval`, and `invalidateQueries` are precise tools. Next.js's caching — even with `"use cache"` — is another layer to learn and debug on top of that.
+
+3. **End-to-end type safety.** This app has a complex domain — transaction statuses, risk levels, settlement types, agent configs with 20+ parameters. Type errors at route boundaries are exactly the bugs the current codebase is full of. Start catches them at compile time.
+
+4. **Vite across the monorepo.** The backend is Hono (Vite-compatible). The shared types package is plain TypeScript. Frontend on Vite means one build tool for the entire monorepo. Next.js Turbopack is a different universe.
+
+5. **The RC is stable enough.** API is frozen. The team is polishing docs and edge cases, not redesigning. This is not a bet on beta software.
+
+**What you give up:** Next.js's ecosystem depth when Googling a problem. But the Start-specific surface area (server functions, middleware, file-based routes) is small. The core libraries — React, TanStack Query, TanStack Router — are all well-documented independently.
+
+### 22.5 Sequencing Note
+
+The framework choice only affects `packages/web/`. The rebuild should start with the backend (Phase 1): monorepo scaffold, shared types, Hono API with auth middleware, database with migrations and FK constraints, CI pipeline. None of that depends on the frontend framework. By the time the API is solid and you're building UI, TanStack Start will likely have shipped 1.0 final.
+
+---
+
 *This audit captures the state of the codebase as of commit `f83be40` on `main`.*
-*Completed 2026-04-11/12. Sections: structural analysis (1-11), settlement flow trace (12), auth security audit (13), database access patterns (14), updated triage (15), production database (16), error handling & observability (17), Deno forensics (18), repo structure (19), rebuild brief (20), overlooked areas (21).*
+*Completed 2026-04-11/13. Sections: structural analysis (1-11), settlement flow trace (12), auth security audit (13), database access patterns (14), updated triage (15), production database (16), error handling & observability (17), Deno forensics (18), repo structure (19), rebuild brief (20), overlooked areas (21), frontend framework decision (22).*
