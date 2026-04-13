@@ -13,6 +13,8 @@ import type { Bank, Wallet as WalletType, SetupBankRequest } from '../types';
 import { truncateAddress, explorerUrl, formatTokenAmount } from '../types';
 import { useBanks } from '../contexts/BanksContext';
 import { useSWRCache } from '../hooks/useSWRCache';
+import { useReAuthAction } from '../hooks/useReAuthAction';
+import { ReAuthDialog } from './admin/ReAuthDialog';
 import { WidgetShell } from './dashboard/WidgetShell';
 import {
   AlertDialog,
@@ -225,6 +227,7 @@ export function SetupPageContent() {
   const [seedError, setSeedError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resettingTokens, setResettingTokens] = useState(false);
+  const { executeWithReAuth, dialogOpen, setDialogOpen, onAuthenticated, actionDescription } = useReAuthAction();
   const [solBalances, setSolBalances] = useState<Record<string, number | null>>({});
 
   // ── Custodian & Fees Wallet state (SWR-cached) ──
@@ -559,59 +562,63 @@ export function SetupPageContent() {
     }
   }
 
-  async function resetNetwork() {
-    console.log('[reset] Starting network reset...');
-    setResetting(true);
-    try {
-      await adminCall('/reset-network', {});
-      console.log('[reset] Reset complete');
-      setSeedCards([]);
-      seedCardsRef.current = [];
-      setSeedError(null);
-      setDeployError(null);
-      await revalidate();
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Reset failed';
-      console.error('Reset error:', errorMessage);
-      setDeployError(errorMessage);
-    } finally {
-      setResetting(false);
-    }
+  function resetNetwork() {
+    executeWithReAuth('Reset Network', async (token) => {
+      console.log('[reset] Starting network reset...');
+      setResetting(true);
+      try {
+        await adminCallServer('/reset-network', {}, 3, userEmail, { 'X-Reauth-Token': token });
+        console.log('[reset] Reset complete');
+        setSeedCards([]);
+        seedCardsRef.current = [];
+        setSeedError(null);
+        setDeployError(null);
+        await revalidate();
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Reset failed';
+        console.error('Reset error:', errorMessage);
+        setDeployError(errorMessage);
+      } finally {
+        setResetting(false);
+      }
+    });
   }
 
-  async function resetTokens() {
-    console.log('[reset] Starting token reset...');
-    setResettingTokens(true);
-    try {
-      const result = await adminCall<{
-        status: string;
-        banks_preserved: number;
-        tables: Record<string, { success: boolean; error?: string; detail?: string }>;
-      }>('/reset-tokens', {});
-      console.log('[reset] Token reset response:', JSON.stringify(result));
+  function resetTokens() {
+    executeWithReAuth('Reset Tokens', async (token) => {
+      console.log('[reset] Starting token reset...');
+      setResettingTokens(true);
+      try {
+        const result = await adminCallServer<{
+          status: string;
+          banks_preserved: number;
+          tables: Record<string, { success: boolean; error?: string; detail?: string }>;
+        }>('/reset-tokens', {}, 3, userEmail, { 'X-Reauth-Token': token });
+        console.log('[reset] Token reset response:', JSON.stringify(result));
 
-      // Check if any step failed (especially the critical banks step)
-      const failedSteps = Object.entries(result.tables || {})
-        .filter(([, v]) => !v.success)
-        .map(([table, v]) => `${table}: ${v.error}`);
+        // Check if any step failed (especially the critical banks step)
+        const failedSteps = Object.entries(result.tables || {})
+          .filter(([, v]) => !v.success)
+          .map(([table, v]) => `${table}: ${v.error}`);
 
-      if (failedSteps.length > 0) {
-        console.error('[reset] Partial failures:', failedSteps);
-        setDeployError(`Token reset partial failure: ${failedSteps.join('; ')}`);
-      } else {
-        setDeployError(null);
+        if (failedSteps.length > 0) {
+          console.error('[reset] Partial failures:', failedSteps);
+          setDeployError(`Token reset partial failure: ${failedSteps.join('; ')}`);
+        } else {
+          setDeployError(null);
+        }
+
+        setSeedCards([]);
+        seedCardsRef.current = [];
+        await revalidate();
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Token reset failed';
+        console.error('Token reset error:', errorMessage);
+        setDeployError(errorMessage);
+      } finally {
+        setResettingTokens(false);
       }
-
-      setSeedCards([]);
-      seedCardsRef.current = [];
-      await revalidate();
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Token reset failed';
-      console.error('Token reset error:', errorMessage);
-      setDeployError(errorMessage);
-    } finally {
-      setResettingTokens(false);
-    }
+    });
   }
 
   function resetForm() {
@@ -1289,6 +1296,12 @@ export function SetupPageContent() {
         </div>
       )}
       </div>
+      <ReAuthDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onAuthenticated={onAuthenticated}
+        actionDescription={actionDescription}
+      />
     </div>
   );
 }
