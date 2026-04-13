@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { RUNTIME_AUTH_PROVIDER } from '../runtime-env';
 import { useTheme, type ThemePreference } from './ThemeProvider';
 import { useAuth } from '../contexts/AuthContext';
 import { useBanks } from '../contexts/BanksContext';
@@ -461,7 +462,7 @@ export function SettingsPage() {
                       {[
                         { label: 'Cluster', value: import.meta.env.VITE_SOLANA_CLUSTER || 'devnet' },
                         { label: 'Network', value: isProductionCluster ? 'Solstice Network' : 'Solana Devnet' },
-                        { label: 'Auth Provider', value: (import.meta.env.VITE_AUTH_PROVIDER || 'supabase').toUpperCase() },
+                        { label: 'Auth Provider', value: RUNTIME_AUTH_PROVIDER.toUpperCase() },
                         { label: 'Explorer', value: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com' },
                         { label: 'Realtime', value: import.meta.env.VITE_USE_SUPABASE_REALTIME === 'false' ? 'Polling' : 'Supabase Realtime' },
                         { label: 'Live Data', value: import.meta.env.VITE_USE_LIVE_NETWORK_DATA === 'true' ? 'Enabled' : 'Simulation' },

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { RUNTIME_AUTH_PROVIDER } from '../runtime-env';
 
 export function useReAuthAction() {
   const { userEmail } = useAuth();
@@ -18,7 +19,7 @@ export function useReAuthAction() {
     action: (token: string) => void | Promise<void>,
   ) => {
     // Staging bypass: no re-auth gate
-    if (import.meta.env.VITE_AUTH_PROVIDER !== 'azure') {
+    if (RUNTIME_AUTH_PROVIDER !== 'azure') {
       action(''); // empty token — staging backend doesn't check it
       return;
     }

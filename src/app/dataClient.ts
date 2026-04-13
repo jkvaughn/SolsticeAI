@@ -12,7 +12,8 @@
 import { supabase, serverBaseUrl } from './supabaseClient';
 
 // If VITE_SERVER_BASE_URL is set, we're in production — use REST endpoints.
-const useServer = !!import.meta.env.VITE_SERVER_BASE_URL;
+import { RUNTIME_IS_PRODUCTION } from './runtime-env';
+const useServer = RUNTIME_IS_PRODUCTION;
 
 // Derive the data API base from the server URL.
 // REST data endpoints are at /make-server-49d15288/data/...

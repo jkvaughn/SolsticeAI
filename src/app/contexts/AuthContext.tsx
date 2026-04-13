@@ -9,7 +9,8 @@ import type { Session, User } from '@supabase/supabase-js';
 // Controlled by VITE_AUTH_PROVIDER env var.
 // ============================================================
 
-const AUTH_PROVIDER = import.meta.env.VITE_AUTH_PROVIDER || 'supabase';
+import { RUNTIME_AUTH_PROVIDER } from '../runtime-env';
+const AUTH_PROVIDER = RUNTIME_AUTH_PROVIDER;
 
 // Unified user type that works for both providers
 interface AppUser {

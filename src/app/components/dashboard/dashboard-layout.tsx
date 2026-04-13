@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useNavigate, useLocation } from "react-router";
+import { RUNTIME_IS_PRODUCTION } from '../../runtime-env';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from "../ui/tooltip";
@@ -36,7 +37,7 @@ import type { PersonaType } from "../../types";
 // ENVIRONMENT BANNER (local / staging only, hidden in production)
 // ============================================================
 function EnvironmentBanner() {
-  const isProduction = !!import.meta.env.VITE_SERVER_BASE_URL;
+  const isProduction = RUNTIME_IS_PRODUCTION;
   if (isProduction) return null;
 
   const isLocal = typeof window !== 'undefined' &&
@@ -451,7 +452,7 @@ export function DashboardLayout({
         >
           <div className="flex flex-col min-h-full">
             <EnvironmentBanner />
-            <div className={`flex-1 pb-4 pr-[10px] relative z-10 min-h-0 ${import.meta.env.VITE_SERVER_BASE_URL ? 'pt-4' : 'pt-2'}`}>
+            <div className={`flex-1 pb-4 pr-[10px] relative z-10 min-h-0 ${RUNTIME_IS_PRODUCTION ? 'pt-4' : 'pt-2'}`}>
               {children}
             </div>
           </div>

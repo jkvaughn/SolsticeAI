@@ -6,6 +6,7 @@ import { adminCallServer } from '../lib/adminClient';
 import { Loader2, Fingerprint, Shield } from 'lucide-react';
 import { AnimatedBackground } from './AnimatedBackground';
 import codaIcon from './icons/coda-icon.svg';
+import { RUNTIME_AUTH_PROVIDER } from '../runtime-env';
 
 // ============================================================
 // AuthGate — authentication + MFA verification
@@ -21,7 +22,7 @@ import codaIcon from './icons/coda-icon.svg';
 // ============================================================
 
 const MFA_VERIFIED_KEY = 'coda-mfa-verified';
-const isProduction = import.meta.env.VITE_AUTH_PROVIDER === 'azure';
+const isProduction = RUNTIME_AUTH_PROVIDER === 'azure';
 
 export function AuthGate() {
   const { user, loading, userEmail } = useAuth();

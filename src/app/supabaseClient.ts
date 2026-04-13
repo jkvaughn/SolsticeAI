@@ -20,7 +20,8 @@ if (!projectId || !publicAnonKey || !functionName) {
 const supabaseUrl = `https://${projectId}.supabase.co`;
 // Production can override the server URL to point at Azure Container Apps
 // instead of Supabase Edge Functions (different RPC endpoint).
-const serverBaseUrl = import.meta.env.VITE_SERVER_BASE_URL
+import { RUNTIME_SERVER_BASE_URL, RUNTIME_IS_PRODUCTION } from './runtime-env';
+const serverBaseUrl = RUNTIME_SERVER_BASE_URL
   || `${supabaseUrl}/functions/v1/${functionName}`;
 
 // ============================================================
@@ -28,7 +29,7 @@ const serverBaseUrl = import.meta.env.VITE_SERVER_BASE_URL
 // which return 429s under concurrent load. Production (Azure
 // Container App) handles concurrent requests fine — no queue.
 // ============================================================
-const isProduction = !!import.meta.env.VITE_SERVER_BASE_URL;
+const isProduction = RUNTIME_IS_PRODUCTION;
 const REQUEST_GAP_MS = 350; // staging only
 
 let requestQueue: Promise<void> = Promise.resolve();

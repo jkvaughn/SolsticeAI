@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { startAuthentication } from '@simplewebauthn/browser';
+import { RUNTIME_AUTH_PROVIDER } from '../../runtime-env';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +27,7 @@ export function ReAuthDialog({ open, onOpenChange, onAuthenticated, actionDescri
   const [hasPasskeys, setHasPasskeys] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isProduction = import.meta.env.VITE_AUTH_PROVIDER === 'azure';
+  const isProduction = RUNTIME_AUTH_PROVIDER === 'azure';
 
   // Check passkey status when dialog opens
   useEffect(() => {

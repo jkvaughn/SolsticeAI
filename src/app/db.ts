@@ -6,8 +6,9 @@
 // ============================================================
 
 import { supabase, serverBaseUrl } from './supabaseClient';
+import { RUNTIME_IS_PRODUCTION } from './runtime-env';
 
-const isProduction = !!import.meta.env.VITE_SERVER_BASE_URL;
+const isProduction = RUNTIME_IS_PRODUCTION;
 const dataBase = isProduction ? `${serverBaseUrl}/data` : null;
 
 // ── REST helper (production path) ──────────────────────────

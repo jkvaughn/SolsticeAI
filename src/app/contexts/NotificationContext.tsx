@@ -58,7 +58,8 @@ function getToastPrefs(): Record<string, boolean> {
   } catch { return {}; }
 }
 
-const isProduction = !!import.meta.env.VITE_SERVER_BASE_URL;
+import { RUNTIME_IS_PRODUCTION } from '../runtime-env';
+const isProduction = RUNTIME_IS_PRODUCTION;
 const POLL_INTERVAL = isProduction ? 15_000 : 30_000;
 
 export function NotificationProvider({ children }: { children: ReactNode }) {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
+import { RUNTIME_AUTH_PROVIDER } from '../../runtime-env';
 import { adminCallServer } from '../../lib/adminClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { Fingerprint, Plus, Trash2, Loader2, Clock } from 'lucide-react';
@@ -17,7 +18,7 @@ export function PasskeyRegistration({ onRegistered }: PasskeyRegistrationProps =
   const [success, setSuccess] = useState<string | null>(null);
 
   // Only show in production (Azure) — passkeys are production-only
-  const isProduction = import.meta.env.VITE_AUTH_PROVIDER === 'azure';
+  const isProduction = RUNTIME_AUTH_PROVIDER === 'azure';
 
   const fetchPasskeys = async () => {
     try {

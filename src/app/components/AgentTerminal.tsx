@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router';
+import { RUNTIME_IS_PRODUCTION } from '../runtime-env';
 import {
   Send, Loader2, AlertCircle, Wallet,
   Copy, CheckCircle2,
@@ -1199,7 +1200,7 @@ export function AgentTerminal() {
           RIGHT SIDEBAR: Floating Transaction Panel
           ═══════════════════════════════════════════════════════ */}
       <div
-        className={`fixed right-4 bottom-4 z-50 ${import.meta.env.VITE_SERVER_BASE_URL ? 'top-4' : 'top-[52px]'}`}
+        className={`fixed right-4 bottom-4 z-50 ${RUNTIME_IS_PRODUCTION ? 'top-4' : 'top-[52px]'}`}
         style={{ width: RIGHT_SIDEBAR_W }}
       >
         <div className="h-full flex flex-col liquid-glass-elevated squircle-sm overflow-hidden">
