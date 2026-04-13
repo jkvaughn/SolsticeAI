@@ -6,6 +6,7 @@ import sql from "./db.tsx";
 import { callGemini, callGeminiJSON } from "./gemini.tsx";
 import { handleProvingGround, setCadenzaDirectHandlers, setAgentDirectHandlers, setVerifyDirectHandler } from "./proving-ground.tsx";
 import { MockVerifyProvider, type VerifyResult, type IVerifyProvider } from "./integrations/verify-provider.ts";
+import { MockCustodyProvider, type ICustodyProvider } from "./integrations/custody-provider.ts";
 import { handleAria } from "./aria.tsx";
 import { calculateAccruedYield, formatYieldUsd } from "./yield-engine.tsx";
 import { evaluateRules, type RuleContext } from "./risk-engine.ts";
@@ -8650,6 +8651,263 @@ app.get(`${R}/data/resolved-escalations`, async (c) => {
       ORDER BY resolved_at DESC
       LIMIT ${limit}
     `;
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+// ── Task 164: Compliance Filing + Alert Infrastructure ─────
+
+// GET /compliance-filings — list filings with optional status/bank_id filter
+app.get(`${R}/compliance-filings`, async (c) => {
+  try {
+    const status = c.req.query("status");
+    const bankId = c.req.query("bank_id");
+    let rows;
+    if (status && bankId) {
+      rows = await sql`SELECT * FROM compliance_filings WHERE status = ${status} AND bank_id = ${bankId}::uuid ORDER BY created_at DESC`;
+    } else if (status) {
+      rows = await sql`SELECT * FROM compliance_filings WHERE status = ${status} ORDER BY created_at DESC`;
+    } else if (bankId) {
+      rows = await sql`SELECT * FROM compliance_filings WHERE bank_id = ${bankId}::uuid ORDER BY created_at DESC LIMIT 100`;
+    } else {
+      rows = await sql`SELECT * FROM compliance_filings ORDER BY created_at DESC LIMIT 100`;
+    }
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+// POST /compliance-filings — create a filing (auto-triggered or manual)
+app.post(`${R}/compliance-filings`, async (c) => {
+  try {
+    const body = await c.req.json();
+    const { bank_id, transaction_id, filing_type, amount, trigger_reason, filed_by } = body;
+
+    if (!filing_type || !['CTR', 'SAR', 'OTHER'].includes(filing_type)) {
+      return c.json({ error: "filing_type must be 'CTR', 'SAR', or 'OTHER'" }, 400);
+    }
+
+    const rows = await sql`
+      INSERT INTO compliance_filings (bank_id, transaction_id, filing_type, amount, trigger_reason, filed_by)
+      VALUES (${bank_id || null}, ${transaction_id || null}, ${filing_type}, ${amount || null}, ${trigger_reason || null}, ${filed_by || null})
+      RETURNING *
+    `;
+
+    // Auto-create a unified alert for the new filing
+    if (rows.length > 0) {
+      await sql`
+        INSERT INTO unified_alerts (source, source_id, alert_type, severity, title, description, transaction_id, bank_id)
+        VALUES (
+          'filing',
+          ${rows[0].id},
+          ${filing_type === 'CTR' ? 'CTR Auto-Generated' : filing_type === 'SAR' ? 'SAR Candidate' : 'Filing Created'},
+          ${filing_type === 'SAR' ? 'high' : 'medium'},
+          ${filing_type + ' filing created' + (amount ? ' for $' + Number(amount).toLocaleString() : '')},
+          ${trigger_reason || null},
+          ${transaction_id || null},
+          ${bank_id || null}
+        )
+      `;
+    }
+
+    return c.json(rows[0]);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+// POST /compliance-filings/:id/review — update status (under_review, filed, dismissed)
+app.post(`${R}/compliance-filings/:id/review`, async (c) => {
+  try {
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const { status, filed_by } = body;
+
+    if (!status || !['under_review', 'filed', 'dismissed'].includes(status)) {
+      return c.json({ error: "status must be 'under_review', 'filed', or 'dismissed'" }, 400);
+    }
+
+    const updates = status === 'filed'
+      ? await sql`
+          UPDATE compliance_filings
+          SET status = ${status}, filed_by = ${filed_by || null}, filed_at = now()
+          WHERE id = ${id}
+          RETURNING *
+        `
+      : await sql`
+          UPDATE compliance_filings
+          SET status = ${status}
+          WHERE id = ${id}
+          RETURNING *
+        `;
+
+    if (updates.length === 0) return c.json({ error: "Filing not found" }, 404);
+    return c.json(updates[0]);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+// GET /unified-alerts — list alerts with optional resolved filter
+app.get(`${R}/unified-alerts`, async (c) => {
+  try {
+    const resolved = c.req.query("resolved");
+    let rows;
+    if (resolved === 'true') {
+      rows = await sql`SELECT * FROM unified_alerts WHERE resolved = true ORDER BY created_at DESC LIMIT 100`;
+    } else if (resolved === 'false') {
+      rows = await sql`SELECT * FROM unified_alerts WHERE resolved = false ORDER BY created_at DESC LIMIT 100`;
+    } else {
+      rows = await sql`SELECT * FROM unified_alerts ORDER BY created_at DESC LIMIT 100`;
+    }
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+// POST /unified-alerts/:id/resolve — resolve an alert
+app.post(`${R}/unified-alerts/:id/resolve`, async (c) => {
+  try {
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const { resolved_by } = body;
+
+    const rows = await sql`
+      UPDATE unified_alerts
+      SET resolved = true, resolved_by = ${resolved_by || 'operator'}, resolved_at = now()
+      WHERE id = ${id} AND resolved = false
+      RETURNING *
+    `;
+
+    if (rows.length === 0) return c.json({ error: "Alert not found or already resolved" }, 404);
+    return c.json(rows[0]);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+// ── Task 165: Digital Asset Custody + Collateral Framework ──
+
+const custodyProvider: ICustodyProvider = new MockCustodyProvider();
+
+// GET /custody/balances — per-bank digital asset balances (mock)
+app.get(`${R}/custody/balances`, async (c) => {
+  try {
+    const bankId = c.req.query("bank_id") || 'default';
+    const balances = await custodyProvider.getBalances(bankId);
+    return c.json({ bank_id: bankId, balances, provider: 'mock' });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+// GET /custody/attestations — proof of reserves log
+app.get(`${R}/custody/attestations`, async (c) => {
+  try {
+    const bankId = c.req.query("bank_id");
+    const assetType = c.req.query("asset_type");
+    let rows;
+    if (bankId && assetType) {
+      rows = await sql`SELECT * FROM proof_of_reserves WHERE bank_id = ${bankId}::uuid AND asset_type = ${assetType} ORDER BY fetched_at DESC LIMIT 100`;
+    } else if (bankId) {
+      rows = await sql`SELECT * FROM proof_of_reserves WHERE bank_id = ${bankId}::uuid ORDER BY fetched_at DESC LIMIT 100`;
+    } else {
+      rows = await sql`SELECT * FROM proof_of_reserves ORDER BY fetched_at DESC LIMIT 100`;
+    }
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+// POST /custody/attest — trigger attestation (stores in proof_of_reserves)
+app.post(`${R}/custody/attest`, async (c) => {
+  try {
+    const body = await c.req.json();
+    const { bank_id, asset_type } = body;
+
+    if (!bank_id || !asset_type) {
+      return c.json({ error: "bank_id and asset_type are required" }, 400);
+    }
+
+    const attestation = await custodyProvider.getAttestation(bank_id, asset_type);
+    const balances = await custodyProvider.getBalances(bank_id);
+    const match = balances.find((b) => b.asset_type === asset_type);
+
+    const rows = await sql`
+      INSERT INTO proof_of_reserves (bank_id, asset_type, balance, usd_equivalent, attestation_hash, provider, fetched_at)
+      VALUES (${bank_id}, ${asset_type}, ${attestation.balance}, ${match?.usd_equivalent || null}, ${attestation.attestation_hash}, 'mock', ${attestation.fetched_at})
+      RETURNING *
+    `;
+
+    return c.json(rows[0]);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+// ── Data endpoints for compliance filings / unified alerts / custody ──
+
+app.get(`${R}/data/compliance-filings`, async (c) => {
+  try {
+    const status = c.req.query("status");
+    const bankId = c.req.query("bank_id");
+    let rows;
+    if (status && bankId) {
+      rows = await sql`SELECT * FROM compliance_filings WHERE status = ${status} AND bank_id = ${bankId}::uuid ORDER BY created_at DESC LIMIT 100`;
+    } else if (status) {
+      rows = await sql`SELECT * FROM compliance_filings WHERE status = ${status} ORDER BY created_at DESC LIMIT 100`;
+    } else if (bankId) {
+      rows = await sql`SELECT * FROM compliance_filings WHERE bank_id = ${bankId}::uuid ORDER BY created_at DESC LIMIT 100`;
+    } else {
+      rows = await sql`SELECT * FROM compliance_filings ORDER BY created_at DESC LIMIT 100`;
+    }
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/unified-alerts`, async (c) => {
+  try {
+    const resolved = c.req.query("resolved");
+    let rows;
+    if (resolved === 'true') {
+      rows = await sql`SELECT * FROM unified_alerts WHERE resolved = true ORDER BY created_at DESC LIMIT 100`;
+    } else if (resolved === 'false') {
+      rows = await sql`SELECT * FROM unified_alerts WHERE resolved = false ORDER BY created_at DESC LIMIT 100`;
+    } else {
+      rows = await sql`SELECT * FROM unified_alerts ORDER BY created_at DESC LIMIT 100`;
+    }
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/custody-balances`, async (c) => {
+  try {
+    const bankId = c.req.query("bank_id") || 'default';
+    const balances = await custodyProvider.getBalances(bankId);
+    return c.json({ bank_id: bankId, balances, provider: 'mock' });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get(`${R}/data/proof-of-reserves`, async (c) => {
+  try {
+    const bankId = c.req.query("bank_id");
+    let rows;
+    if (bankId) {
+      rows = await sql`SELECT * FROM proof_of_reserves WHERE bank_id = ${bankId}::uuid ORDER BY fetched_at DESC LIMIT 100`;
+    } else {
+      rows = await sql`SELECT * FROM proof_of_reserves ORDER BY fetched_at DESC LIMIT 100`;
+    }
     return c.json(rows);
   } catch (err) {
     return c.json({ error: (err as Error).message }, 500);

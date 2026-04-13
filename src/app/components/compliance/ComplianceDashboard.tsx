@@ -18,6 +18,9 @@ import type { PageStat } from '../PageShell';
 import { WidgetShell } from '../dashboard/WidgetShell';
 import { AgentPerformanceDashboard } from '../governance/AgentPerformanceDashboard';
 import { DecisionReviewQueue } from '../governance/DecisionReviewQueue';
+import { CTRFilingPanel } from './CTRFilingPanel';
+import { UnifiedAlertQueue } from './UnifiedAlertQueue';
+import { ProofOfReservesLog } from './ProofOfReservesLog';
 import {
   shield as shieldAnim,
   searchSecurity as searchSecurityAnim,
@@ -366,6 +369,15 @@ export function ComplianceDashboard() {
           )}
         </WidgetShell>
       </div>
+
+      {/* ── CTR/SAR Filings (Task 164) ── */}
+      <CTRFilingPanel />
+
+      {/* ── Unified Alert Queue (Task 164) ── */}
+      <UnifiedAlertQueue />
+
+      {/* ── Proof of Reserves (Task 165) ── */}
+      <ProofOfReservesLog />
 
       {/* ── Agent Governance (Task 162) ── */}
       <AgentPerformanceDashboard />

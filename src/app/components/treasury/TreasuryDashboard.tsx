@@ -17,6 +17,7 @@ import type { PageStat } from '../PageShell';
 import { WidgetShell } from '../dashboard/WidgetShell';
 import { CounterpartyPanel } from './CounterpartyPanel';
 import { NostroFreePosition } from './NostroFreePosition';
+import { DigitalAssetHoldings } from './DigitalAssetHoldings';
 import {
   wallet as walletAnim,
   lightning as lightningAnim,
@@ -348,6 +349,9 @@ export function TreasuryDashboard() {
           )}
         </WidgetShell>
       </div>
+
+      {/* ── Digital Asset Holdings (Task 165) ── */}
+      <DigitalAssetHoldings />
 
       {/* ── Counterparty Relationships ── */}
       <CounterpartyPanel />

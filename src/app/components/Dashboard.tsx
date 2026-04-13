@@ -17,6 +17,7 @@ import { WidgetShell } from './dashboard/WidgetShell';
 import { usePersona } from '../contexts/PersonaContext';
 import { TreasuryDashboard } from './treasury/TreasuryDashboard';
 import { ComplianceDashboard } from './compliance/ComplianceDashboard';
+import { DigitalAssetExposure } from './executive/DigitalAssetExposure';
 import {
   wallet as walletAnim,
   lightning as lightningAnim,
@@ -241,6 +242,9 @@ export function Dashboard() {
           </div>
         </Link>
       )}
+
+      {/* Executive: Digital Asset Exposure (Task 165) */}
+      {persona === 'executive' && <DigitalAssetExposure />}
 
       {/* Network Infrastructure & Cadenza Escalations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

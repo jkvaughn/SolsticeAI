@@ -457,6 +457,76 @@ export async function fetchResolvedEscalations(limit = 5): Promise<any[]> {
   return data ?? [];
 }
 
+// ── Task 164: Compliance Filings + Unified Alerts ─────────
+
+export async function fetchComplianceFilings(params?: {
+  status?: string;
+  bank_id?: string;
+}): Promise<any[]> {
+  if (useServer) {
+    const p: Record<string, string> = {};
+    if (params?.status) p.status = params.status;
+    if (params?.bank_id) p.bank_id = params.bank_id;
+    return serverGet('/compliance-filings', p);
+  }
+  let q = supabase.from('compliance_filings').select('*').order('created_at', { ascending: false });
+  if (params?.status) q = q.eq('status', params.status);
+  if (params?.bank_id) q = q.eq('bank_id', params.bank_id);
+  const { data, error } = await q.limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchUnifiedAlerts(params?: {
+  resolved?: boolean;
+}): Promise<any[]> {
+  if (useServer) {
+    const p: Record<string, string> = {};
+    if (params?.resolved !== undefined) p.resolved = String(params.resolved);
+    return serverGet('/unified-alerts', p);
+  }
+  let q = supabase.from('unified_alerts').select('*').order('created_at', { ascending: false });
+  if (params?.resolved !== undefined) q = q.eq('resolved', params.resolved);
+  const { data, error } = await q.limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ── Task 165: Custody + Proof of Reserves ─────────────────
+
+export async function fetchCustodyBalances(bankId?: string): Promise<any> {
+  if (useServer) {
+    const p: Record<string, string> = {};
+    if (bankId) p.bank_id = bankId;
+    return serverGet('/custody-balances', p);
+  }
+  // Staging fallback: return mock data directly
+  return {
+    bank_id: bankId || 'default',
+    balances: [
+      { asset_type: 'BTC', balance: 12.5, usd_equivalent: 812500 },
+      { asset_type: 'ETH', balance: 250.0, usd_equivalent: 500000 },
+      { asset_type: 'USDC', balance: 2000000, usd_equivalent: 2000000 },
+    ],
+    provider: 'mock',
+  };
+}
+
+export async function fetchProofOfReserves(params?: {
+  bank_id?: string;
+}): Promise<any[]> {
+  if (useServer) {
+    const p: Record<string, string> = {};
+    if (params?.bank_id) p.bank_id = params.bank_id;
+    return serverGet('/proof-of-reserves', p);
+  }
+  let q = supabase.from('proof_of_reserves').select('*').order('fetched_at', { ascending: false });
+  if (params?.bank_id) q = q.eq('bank_id', params.bank_id);
+  const { data, error } = await q.limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
 // ── AgentTerminal & TransactionDetail joined queries ────────
 
 export async function fetchBankWithWallets(id: string): Promise<any> {
