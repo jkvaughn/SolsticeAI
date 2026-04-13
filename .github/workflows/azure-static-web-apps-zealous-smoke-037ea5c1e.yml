@@ -34,9 +34,10 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_FUNCTION_NAME: ${{ secrets.VITE_SUPABASE_FUNCTION_NAME }}
           VITE_MAPBOX_TOKEN: ${{ secrets.VITE_MAPBOX_TOKEN }}
-          # Staging-specific values — Supabase auth, Devnet, no server override
-          VITE_AUTH_PROVIDER: supabase
-          VITE_SOLANA_CLUSTER: devnet
+          # Production values — Azure auth, Solstice Network, Container App backend
+          VITE_AUTH_PROVIDER: azure
+          VITE_SERVER_BASE_URL: https://coda-prod-api.whitemoss-8572d17c.westus2.azurecontainerapps.io
+          VITE_SOLANA_CLUSTER: mainnet-beta
           VITE_SOLANA_EXPLORER_URL: https://explorer.solana.com
           VITE_ADMIN_EMAIL: jeremy@rimark.io
 
