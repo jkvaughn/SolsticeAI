@@ -3921,7 +3921,7 @@ async function runSettlementPipeline(bankId: string, msg: any): Promise<any> {
     for (const check of checks) {
       await sql`INSERT INTO compliance_logs ${sql({ id: crypto.randomUUID(), transaction_id: txId, bank_id: txComp.receiver_bank_id, check_type: check.type, check_result: check.passed ? 'pass' : 'fail', details: { detail: check.detail, agent_id: aid }, solana_log_signature: null, created_at: compNow }, ...Object.keys({ id: crypto.randomUUID(), transaction_id: txId, bank_id: txComp.receiver_bank_id, check_type: check.type, check_result: check.passed ? 'pass' : 'fail', details: { detail: check.detail, agent_id: aid }, solana_log_signature: null, created_at: compNow }))}`
     }
-    await sql`UPDATE transactions SET status = ${"compliance_check"}, compliance_passed = ${allPassed}, compliance_checks = ${checks}, compliance_completed_at = ${compNow} WHERE id = ${txId}`;
+    await sql`UPDATE transactions SET status = ${"compliance_check"}, compliance_passed = ${allPassed}, compliance_checks = ${JSON.stringify(checks)}, compliance_completed_at = ${compNow} WHERE id = ${txId}`;
     console.log(`[${aid}] Step 1 result: ${allPassed ? "PASSED" : "FAILED"} (${checks.filter(c => c.passed).length}/${checks.length})`);
 
     // ── NEW: Concord narrative reasoning (Gemini LLM pass) ──
