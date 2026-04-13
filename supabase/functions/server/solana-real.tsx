@@ -47,6 +47,29 @@ function getConnection(): Connection {
   return new Connection(DEVNET_RPC, "confirmed");
 }
 
+/**
+ * Validate that a lockup mint exists on-chain and has the expected authority.
+ * Returns true if valid, false if stale/missing.
+ */
+export async function validateLockupMintAuthority(mintAddress: string, expectedAuthority: string): Promise<boolean> {
+  try {
+    const connection = getConnection();
+    const mintPk = new PublicKey(mintAddress);
+    const info = await connection.getAccountInfo(mintPk);
+    if (!info || !info.data) return false;
+    // Parse mint authority from Token-2022 account data (bytes 4-36 are mint authority)
+    // Byte 0-3: coption (4 = Some), bytes 4-35 = authority pubkey
+    const hasAuthority = info.data[0] === 1; // COption::Some
+    if (!hasAuthority) return false;
+    const authorityBytes = info.data.slice(4, 36);
+    const authorityPk = new PublicKey(authorityBytes);
+    return authorityPk.toBase58() === expectedAuthority;
+  } catch (e) {
+    console.log(`[lockup-mint] Validation failed: ${(e as Error).message}`);
+    return false;
+  }
+}
+
 // ── Polling-based send+confirm ────────────────────────────────
 // Replaces sendAndConfirmTransaction which uses lastValidBlockHeight
 // and fails on Solstice Network due to fast block production.
