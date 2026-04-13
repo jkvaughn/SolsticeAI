@@ -88,7 +88,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     // agent_messages — settlements & system
     for (const m of msgs || []) {
-      const content = m.content || m.natural_language || '';
+      const rawContent = m.natural_language || m.content || '';
+      const content = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
       const isSettlement = /settl|confirm|complete/i.test(content);
       items.push({
         id: `msg-${m.id}`,
