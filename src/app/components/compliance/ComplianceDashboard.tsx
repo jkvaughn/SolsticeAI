@@ -21,6 +21,10 @@ import { DecisionReviewQueue } from '../governance/DecisionReviewQueue';
 import { CTRFilingPanel } from './CTRFilingPanel';
 import { UnifiedAlertQueue } from './UnifiedAlertQueue';
 import { ProofOfReservesLog } from './ProofOfReservesLog';
+import { AMLRiskHeatmap } from './AMLRiskHeatmap';
+import { RegulatoryExport } from './RegulatoryExport';
+import { SARCandidateQueue } from './SARCandidateQueue';
+import { IntradayLiquidity } from './IntradayLiquidity';
 import {
   shield as shieldAnim,
   searchSecurity as searchSecurityAnim,
@@ -127,6 +131,7 @@ function getSeverityStyle(severity: string) {
 export function ComplianceDashboard() {
   const { cacheVersion } = useBanks();
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
+  const [showExport, setShowExport] = useState(false);
 
   const { data } = useSWRCache<ComplianceData>({
     key: 'compliance-dashboard',
@@ -177,6 +182,21 @@ export function ComplianceDashboard() {
       subtitle="Regulatory Monitoring & Audit Trail"
       stats={pageStats}
     >
+      {/* ── Regulatory Export toggle ── */}
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={() => setShowExport(!showExport)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-mono bg-coda-brand/10 text-coda-brand rounded-lg hover:bg-coda-brand/20 transition-colors cursor-pointer"
+        >
+          {showExport ? 'Hide Export Panel' : 'Regulatory Export'}
+        </button>
+      </div>
+      {showExport && (
+        <WidgetShell title="Regulatory Export">
+          <RegulatoryExport onClose={() => setShowExport(false)} />
+        </WidgetShell>
+      )}
+
       {/* ── Active Flags ── */}
       <WidgetShell
         title="Active Flags"
@@ -378,6 +398,15 @@ export function ComplianceDashboard() {
 
       {/* ── Proof of Reserves (Task 165) ── */}
       <ProofOfReservesLog />
+
+      {/* ── AML Risk Heatmap (Task 167) ── */}
+      <AMLRiskHeatmap />
+
+      {/* ── SAR Candidate Queue (Task 167) ── */}
+      <SARCandidateQueue />
+
+      {/* ── Intraday Liquidity BCBS 248 (Task 167) ── */}
+      <IntradayLiquidity />
 
       {/* ── Agent Governance (Task 162) ── */}
       <AgentPerformanceDashboard />

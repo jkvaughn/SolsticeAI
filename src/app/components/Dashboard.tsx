@@ -18,6 +18,7 @@ import { usePersona } from '../contexts/PersonaContext';
 import { TreasuryDashboard } from './treasury/TreasuryDashboard';
 import { ComplianceDashboard } from './compliance/ComplianceDashboard';
 import { DigitalAssetExposure } from './executive/DigitalAssetExposure';
+import { ExecutiveDashboard } from './executive/ExecutiveDashboard';
 import {
   wallet as walletAnim,
   lightning as lightningAnim,
@@ -56,6 +57,11 @@ export function Dashboard() {
   // Compliance/BSA Officer role gets a dedicated dashboard (Task 156)
   if (persona === 'compliance' || persona === 'bsa_officer') {
     return <ComplianceDashboard />;
+  }
+
+  // Executive role gets the War Room dashboard (Task 166)
+  if (persona === 'executive') {
+    return <ExecutiveDashboard />;
   }
 
   const {
