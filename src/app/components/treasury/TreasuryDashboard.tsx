@@ -15,6 +15,8 @@ import { useSWRCache } from '../../hooks/useSWRCache';
 import { PageShell } from '../PageShell';
 import type { PageStat } from '../PageShell';
 import { WidgetShell } from '../dashboard/WidgetShell';
+import { CounterpartyPanel } from './CounterpartyPanel';
+import { NostroFreePosition } from './NostroFreePosition';
 import {
   wallet as walletAnim,
   lightning as lightningAnim,
@@ -346,6 +348,12 @@ export function TreasuryDashboard() {
           )}
         </WidgetShell>
       </div>
+
+      {/* ── Counterparty Relationships ── */}
+      <CounterpartyPanel />
+
+      {/* ── Net Settlement Position ── */}
+      <NostroFreePosition />
     </PageShell>
   );
 }

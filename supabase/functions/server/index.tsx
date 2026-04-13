@@ -2909,6 +2909,37 @@ app.get("/make-server-49d15288/risk-rules", async (c) => {
   return c.json({ rules: rows });
 });
 
+// 4b-2. Risk rules toggle (POST, Task 163)
+app.post("/make-server-49d15288/risk-rules/:ruleId/toggle", async (c) => {
+  const ruleId = c.req.param("ruleId");
+  const body = await c.req.json();
+  const { active } = body;
+  if (typeof active !== "boolean") {
+    return c.json({ error: "Only 'active' toggle is supported" }, 400);
+  }
+  await sql`UPDATE risk_rules SET active = ${active} WHERE id = ${ruleId}`;
+  const [updated] = await sql`SELECT * FROM risk_rules WHERE id = ${ruleId}`;
+  return c.json({ rule: updated });
+});
+
+// 4b-3. Risk score override (compliance override, Task 163)
+app.post("/make-server-49d15288/risk-scores/:transactionId/override", async (c) => {
+  const transactionId = c.req.param("transactionId");
+  const body = await c.req.json();
+  const { override_score, override_reason, override_by } = body;
+  if (override_score == null || !override_reason || !override_by) {
+    return c.json({ error: "Missing override_score, override_reason, or override_by" }, 400);
+  }
+  // Add override columns if not present (idempotent)
+  try { await sql`ALTER TABLE risk_scores ADD COLUMN IF NOT EXISTS override_score NUMERIC(6,2)`; } catch {}
+  try { await sql`ALTER TABLE risk_scores ADD COLUMN IF NOT EXISTS override_reason TEXT`; } catch {}
+  try { await sql`ALTER TABLE risk_scores ADD COLUMN IF NOT EXISTS override_by TEXT`; } catch {}
+  try { await sql`ALTER TABLE risk_scores ADD COLUMN IF NOT EXISTS override_at TIMESTAMPTZ`; } catch {}
+  await sql`UPDATE risk_scores SET override_score = ${override_score}, override_reason = ${override_reason}, override_by = ${override_by}, override_at = now() WHERE transaction_id = ${transactionId}`;
+  const [updated] = await sql`SELECT * FROM risk_scores WHERE transaction_id = ${transactionId}`;
+  return c.json({ risk_score: updated });
+});
+
 // 4b. RISK-SCORE route (delegates to coreRiskScore)
 // ============================================================
 app.post("/make-server-49d15288/risk-score", async (c) => {

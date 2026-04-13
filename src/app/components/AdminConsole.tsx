@@ -7,15 +7,17 @@ import DangerZoneContent from './admin/DangerZoneContent';
 import { IntegrationHealthPanel } from './sandbox/IntegrationHealthPanel';
 import { PromotionWorkflow } from './sandbox/PromotionWorkflow';
 import { IntegrationActivityLog } from './sandbox/IntegrationActivityLog';
+import { RiskRulesManager } from './governance/RiskRulesManager';
 import { useBanks } from '../contexts/BanksContext';
 import { Building2, Coins, FlaskConical, Shield } from 'lucide-react';
 
-const VALID_TABS = ['setup', 'proving-ground', 'integrations', 'danger-zone'] as const;
+const VALID_TABS = ['setup', 'proving-ground', 'risk-rules', 'integrations', 'danger-zone'] as const;
 type AdminTab = (typeof VALID_TABS)[number];
 
 const TABS: PageTab[] = [
   { id: 'setup', label: 'Network Setup' },
   { id: 'proving-ground', label: 'Proving Ground' },
+  { id: 'risk-rules', label: 'Risk Rules' },
   { id: 'integrations', label: 'Integrations' },
   { id: 'danger-zone', label: 'Danger Zone' },
 ];
@@ -57,6 +59,7 @@ export function AdminConsole() {
     >
       {activeTab === 'setup' && <SetupPageContent />}
       {activeTab === 'proving-ground' && <ProvingGroundContent />}
+      {activeTab === 'risk-rules' && <RiskRulesManager />}
       {activeTab === 'integrations' && (
         <div className="space-y-8">
           <IntegrationHealthPanel />

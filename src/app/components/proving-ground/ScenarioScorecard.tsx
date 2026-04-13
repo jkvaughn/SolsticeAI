@@ -35,6 +35,7 @@ function AgentResultCard({ ar }: { ar: AgentResult }) {
   const badge = AGENT_BADGE[ar.agent] || AGENT_BADGE.Concord;
   const rb = RESULT_BADGE[ar.result] || RESULT_BADGE['N/A'];
   const RbIcon = rb.icon;
+  const hasFloor = ar.agent === 'Fermata' && ar.floor_score != null && ar.score != null;
 
   return (
     <div className={`dashboard-card-subtle p-3 ${badge.border} border`}>
@@ -60,6 +61,37 @@ function AgentResultCard({ ar }: { ar: AgentResult }) {
           </span>
         </div>
       </div>
+
+      {/* Task 163: 3-layer risk score breakdown for Fermata */}
+      {hasFloor && (
+        <div className="mt-2 flex items-center gap-1.5">
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <Shield size={10} />
+            <span className="text-[10px] font-mono">Floor {ar.floor_score}</span>
+          </div>
+          <span className="text-coda-text-muted text-[10px]">+</span>
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400">
+            <span className="text-[10px] font-mono">Adj {Math.max(0, (ar.score ?? 0) - (ar.floor_score ?? 0))}</span>
+          </div>
+          <span className="text-coda-text-muted text-[10px]">=</span>
+          <div className={`flex items-center gap-1 px-2 py-0.5 rounded ${
+            (ar.score ?? 0) >= 70 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+            (ar.score ?? 0) >= 40 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+            'bg-red-500/10 text-red-600 dark:text-red-400'
+          }`}>
+            <span className="text-[10px] font-mono font-bold">Final {ar.score}</span>
+          </div>
+          {ar.rules_fired && ar.rules_fired.length > 0 && (
+            <div className="flex flex-wrap gap-0.5 ml-1">
+              {ar.rules_fired.map((ruleId: string) => (
+                <span key={ruleId} className="px-1 py-0.5 rounded text-[8px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  {ruleId}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Reasoning preview / expand */}
       <button

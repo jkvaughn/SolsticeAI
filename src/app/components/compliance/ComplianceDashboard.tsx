@@ -16,6 +16,8 @@ import { useSWRCache } from '../../hooks/useSWRCache';
 import { PageShell } from '../PageShell';
 import type { PageStat } from '../PageShell';
 import { WidgetShell } from '../dashboard/WidgetShell';
+import { AgentPerformanceDashboard } from '../governance/AgentPerformanceDashboard';
+import { DecisionReviewQueue } from '../governance/DecisionReviewQueue';
 import {
   shield as shieldAnim,
   searchSecurity as searchSecurityAnim,
@@ -364,6 +366,10 @@ export function ComplianceDashboard() {
           )}
         </WidgetShell>
       </div>
+
+      {/* ── Agent Governance (Task 162) ── */}
+      <AgentPerformanceDashboard />
+      <DecisionReviewQueue />
     </PageShell>
   );
 }

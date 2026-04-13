@@ -19,6 +19,12 @@ import {
 } from '../dataClient';
 import { SettlementLifecycle } from './SettlementLifecycle';
 import { PaymentLifecycleTracker } from './treasury/PaymentLifecycleTracker';
+import { SettlementFinality } from './treasury/SettlementFinality';
+import { StopReverseAction } from './treasury/StopReverseAction';
+import { ComplianceOverride } from './governance/ComplianceOverride';
+import { FermataExplainer } from './governance/FermataExplainer';
+import { MaestroTrace } from './governance/MaestroTrace';
+import { useUserRole } from '../hooks/useUserRole';
 import type { Transaction, AgentMessage, Wallet as WalletType } from '../types';
 import {
   formatTokenAmount, truncateAddress, explorerUrl,
@@ -417,6 +423,16 @@ function BankProfileCard({ bank, wallet, role }: { bank: any; wallet: WalletType
       </div>
     </div>
   );
+}
+
+// ============================================================
+// Compliance Override Gate — only renders for compliance/bsa_officer roles
+// ============================================================
+
+function ComplianceOverrideGate({ transactionId, riskScore, onOverrideApplied }: { transactionId: string; riskScore: any; onOverrideApplied?: () => void }) {
+  const { isCompliance, isBSA, isAdmin } = useUserRole();
+  if (!isCompliance && !isBSA && !isAdmin) return null;
+  return <ComplianceOverride transactionId={transactionId} riskScore={riskScore} onOverrideApplied={onOverrideApplied} />;
 }
 
 // ============================================================
@@ -1051,6 +1067,18 @@ export function TransactionDetail() {
           </div>
         </div>
 
+        {/* ═══ Settlement Finality (Task 161) ═══ */}
+        <div className="mb-4">
+          <SettlementFinality transaction={tx} />
+        </div>
+
+        {/* ═══ Stop/Reverse Action (Task 161) ═══ */}
+        {tx.status === 'locked' && (
+          <div className="mb-4">
+            <StopReverseAction transaction={tx} onSuccess={() => mutate()} />
+          </div>
+        )}
+
         {/* ═══ Section 4: Risk Assessment + Compliance ═══ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
 
@@ -1154,6 +1182,16 @@ export function TransactionDetail() {
                       })()}
                     </div>
                   </div>
+                )}
+
+                {/* Fermata Explainer (Task 162) — 3-layer risk score breakdown */}
+                <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
+                  <FermataExplainer riskScore={riskScore} />
+                </div>
+
+                {/* Compliance Override (Task 163) — for compliance/bsa_officer roles on locked txs */}
+                {(tx.status === 'locked' || tx.status === 'risk_scored') && (
+                  <ComplianceOverrideGate transactionId={tx.id} riskScore={riskScore} onOverrideApplied={() => mutatePrimary()} />
                 )}
               </div>
             ) : (
@@ -1571,6 +1609,11 @@ export function TransactionDetail() {
             )}
           </div>
         )}
+
+        {/* ═══ Maestro Decision Trace (Task 162) ═══ */}
+        <div className="liquid-glass-card squircle p-6 mb-4">
+          <MaestroTrace messages={messages} />
+        </div>
 
           </>
         )}

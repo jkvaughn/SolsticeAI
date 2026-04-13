@@ -114,6 +114,10 @@ export interface AgentResult {
   reasoning: string;
   score?: number;
   timing_ms: number;
+  /** Task 163 — 3-layer risk breakdown for Fermata results */
+  floor_score?: number;
+  floor_breakdown?: Record<string, number>;
+  rules_fired?: string[];
 }
 
 export interface PipelineStep {
@@ -587,14 +591,23 @@ function scoreRiskResult(
 
   const scorePass = composite >= expectedMinScore;
 
+  // Task 163: extract floor data for 3-layer breakdown
+  const floorScore = rs?.floor_score ?? 0;
+  const floorBreakdown = rs?.floor_breakdown ?? {};
+  const rulesFired = rs?.rules_fired ?? [];
+
   return {
     agent: 'Fermata',
     result: (scorePass || keywordMatch) ? 'CAUGHT' : 'MISSED',
     reasoning: `Score: ${composite}/100 (${level}), threshold: ${expectedMinScore}. ` +
       `Keywords matched: ${keywordMatch}. ` +
+      `Floor: ${floorScore}. ` +
       `Reasoning: ${reasoning.slice(0, 300)}`,
     score: composite,
     timing_ms,
+    floor_score: floorScore,
+    floor_breakdown: floorBreakdown,
+    rules_fired: rulesFired,
   };
 }
 

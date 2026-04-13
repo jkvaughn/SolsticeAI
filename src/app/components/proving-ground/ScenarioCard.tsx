@@ -19,6 +19,10 @@ export interface AgentResult {
   reasoning: string;
   score?: number;
   timing_ms: number;
+  /** Task 163 — 3-layer risk breakdown for Fermata results */
+  floor_score?: number;
+  floor_breakdown?: Record<string, number>;
+  rules_fired?: string[];
 }
 
 export interface PipelineStep {
