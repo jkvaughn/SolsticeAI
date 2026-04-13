@@ -16,6 +16,7 @@ import { CadenzaEscalationsWidget } from './dashboard/CadenzaEscalationsWidget';
 import { WidgetShell } from './dashboard/WidgetShell';
 import { usePersona } from '../contexts/PersonaContext';
 import { TreasuryDashboard } from './treasury/TreasuryDashboard';
+import { ComplianceDashboard } from './compliance/ComplianceDashboard';
 import {
   wallet as walletAnim,
   lightning as lightningAnim,
@@ -49,6 +50,11 @@ export function Dashboard() {
   // Treasury role gets a dedicated dashboard (Task 155)
   if (persona === 'treasury') {
     return <TreasuryDashboard />;
+  }
+
+  // Compliance/BSA Officer role gets a dedicated dashboard (Task 156)
+  if (persona === 'compliance' || persona === 'bsa_officer') {
+    return <ComplianceDashboard />;
   }
 
   const {
