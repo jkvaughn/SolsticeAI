@@ -4,15 +4,19 @@ import { PageShell, type PageStat, type PageTab } from './PageShell';
 import { SetupPageContent } from './SetupPage';
 import { ProvingGroundContent } from './ProvingGround';
 import DangerZoneContent from './admin/DangerZoneContent';
+import { IntegrationHealthPanel } from './sandbox/IntegrationHealthPanel';
+import { PromotionWorkflow } from './sandbox/PromotionWorkflow';
+import { IntegrationActivityLog } from './sandbox/IntegrationActivityLog';
 import { useBanks } from '../contexts/BanksContext';
 import { Building2, Coins, FlaskConical, Shield } from 'lucide-react';
 
-const VALID_TABS = ['setup', 'proving-ground', 'danger-zone'] as const;
+const VALID_TABS = ['setup', 'proving-ground', 'integrations', 'danger-zone'] as const;
 type AdminTab = (typeof VALID_TABS)[number];
 
 const TABS: PageTab[] = [
   { id: 'setup', label: 'Network Setup' },
   { id: 'proving-ground', label: 'Proving Ground' },
+  { id: 'integrations', label: 'Integrations' },
   { id: 'danger-zone', label: 'Danger Zone' },
 ];
 
@@ -53,6 +57,13 @@ export function AdminConsole() {
     >
       {activeTab === 'setup' && <SetupPageContent />}
       {activeTab === 'proving-ground' && <ProvingGroundContent />}
+      {activeTab === 'integrations' && (
+        <div className="space-y-8">
+          <IntegrationHealthPanel />
+          <PromotionWorkflow />
+          <IntegrationActivityLog />
+        </div>
+      )}
       {activeTab === 'danger-zone' && <DangerZoneContent />}
     </PageShell>
   );
