@@ -106,12 +106,15 @@ const sql: SqlTag = function (
     const client = await pool.connect();
     try {
       const result = await client.queryObject(text, args);
-      // Convert BigInt → Number to prevent "Cannot mix BigInt and other types"
-      // deno-postgres returns BigInt for bigint columns; Supabase returns Number
+      // Normalize deno-postgres types to match Supabase client behavior:
+      // - BigInt → Number (prevents "Cannot mix BigInt and other types")
+      // - Date → ISO string (Supabase returns strings, deno-postgres returns Date objects)
       return (result.rows as SqlResult).map(row => {
         const converted: Record<string, unknown> = {};
         for (const [key, val] of Object.entries(row)) {
-          converted[key] = typeof val === 'bigint' ? Number(val) : val;
+          converted[key] = typeof val === 'bigint' ? Number(val)
+                         : val instanceof Date ? val.toISOString()
+                         : val;
         }
         return converted;
       });
