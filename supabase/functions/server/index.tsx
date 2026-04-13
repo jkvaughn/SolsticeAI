@@ -1848,6 +1848,122 @@ app.get("/make-server-49d15288/user/login-history", async (c) => {
   return c.json({ entries: rows });
 });
 
+// ═══════════════════════════════════════════════════════
+// Governance — Permissions, Change Requests, Config History
+// ═══════════════════════════════════════════════════════
+
+// GET /governance/permissions — list all config permissions
+app.get("/make-server-49d15288/governance/permissions", async (c) => {
+  const rows = await sql`SELECT * FROM config_permissions ORDER BY resource, action`;
+  return c.json({ permissions: rows });
+});
+
+// GET /governance/change-requests — list change requests (optional ?status= and ?bank_id=)
+app.get("/make-server-49d15288/governance/change-requests", async (c) => {
+  const status = c.req.query("status");
+  const bankId = c.req.query("bank_id");
+  let rows;
+  if (status && bankId) {
+    rows = await sql`SELECT * FROM config_change_requests WHERE status = ${status} AND bank_id = ${bankId}::uuid ORDER BY submitted_at DESC`;
+  } else if (status) {
+    rows = await sql`SELECT * FROM config_change_requests WHERE status = ${status} ORDER BY submitted_at DESC`;
+  } else if (bankId) {
+    rows = await sql`SELECT * FROM config_change_requests WHERE bank_id = ${bankId}::uuid ORDER BY submitted_at DESC LIMIT 100`;
+  } else {
+    rows = await sql`SELECT * FROM config_change_requests ORDER BY submitted_at DESC LIMIT 100`;
+  }
+  return c.json({ requests: rows });
+});
+
+// POST /governance/change-requests — submit a new change request
+app.post("/make-server-49d15288/governance/change-requests", async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+  const body = await c.req.json();
+  const { bank_id, resource, field_name, old_value, new_value, reason } = body;
+
+  if (!resource || !field_name || new_value === undefined) {
+    return c.json({ error: "Missing required fields: resource, field_name, new_value" }, 400);
+  }
+
+  const rows = await sql`
+    INSERT INTO config_change_requests (bank_id, resource, field_name, old_value, new_value, reason, submitted_by)
+    VALUES (${bank_id || null}, ${resource}, ${field_name}, ${old_value || null}, ${new_value}, ${reason || null}, ${email})
+    RETURNING *
+  `;
+
+  logAuditEvent(email, 'governance.change_request_submitted', 'config_change_requests', rows[0]?.id, { resource, field_name }, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
+  return c.json(rows[0]);
+});
+
+// POST /governance/change-requests/:id/review — approve or reject a pending request
+app.post("/make-server-49d15288/governance/change-requests/:id/review", async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const { action } = body; // 'approve' or 'reject'
+
+  if (action !== 'approve' && action !== 'reject') {
+    return c.json({ error: "action must be 'approve' or 'reject'" }, 400);
+  }
+
+  const newStatus = action === 'approve' ? 'approved' : 'rejected';
+  const rows = await sql`
+    UPDATE config_change_requests
+    SET status = ${newStatus}, reviewed_by = ${email}, reviewed_at = now()
+    WHERE id = ${id} AND status = 'pending'
+    RETURNING *
+  `;
+
+  if (rows.length === 0) return c.json({ error: "Request not found or already reviewed" }, 404);
+
+  logAuditEvent(email, `governance.change_request_${action}d`, 'config_change_requests', id, { action }, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
+  return c.json(rows[0]);
+});
+
+// POST /governance/change-requests/:id/apply — mark an approved request as applied
+app.post("/make-server-49d15288/governance/change-requests/:id/apply", async (c) => {
+  const denied = requireUser(c);
+  if (denied) return denied;
+  const email = getUserEmail(c)!;
+  const id = c.req.param("id");
+
+  const rows = await sql`
+    UPDATE config_change_requests
+    SET status = 'applied', applied_at = now()
+    WHERE id = ${id} AND status = 'approved'
+    RETURNING *
+  `;
+
+  if (rows.length === 0) return c.json({ error: "Request not found or not approved" }, 404);
+
+  // Record in config history
+  const req = rows[0];
+  await sql`
+    INSERT INTO agent_config_history (bank_id, field_name, old_value, new_value, changed_by, change_type, change_request_id)
+    VALUES (${req.bank_id}, ${req.field_name}, ${req.old_value}, ${req.new_value}, ${email}, 'workflow', ${id})
+  `;
+
+  logAuditEvent(email, 'governance.change_request_applied', 'config_change_requests', id, { field_name: req.field_name }, c.req.header("x-forwarded-for"), c.req.header("user-agent"));
+  return c.json(rows[0]);
+});
+
+// GET /governance/config-history — version history for agent config changes
+app.get("/make-server-49d15288/governance/config-history", async (c) => {
+  const bankId = c.req.query("bank_id");
+  const limit = Math.min(parseInt(c.req.query("limit") || "50"), 200);
+  let rows;
+  if (bankId) {
+    rows = await sql`SELECT * FROM agent_config_history WHERE bank_id = ${bankId}::uuid ORDER BY created_at DESC LIMIT ${limit}`;
+  } else {
+    rows = await sql`SELECT * FROM agent_config_history ORDER BY created_at DESC LIMIT ${limit}`;
+  }
+  return c.json({ history: rows });
+});
+
 // ============================================================
 // 1a. CHECK-SOL-BALANCE — Query Solana Devnet for wallet SOL balance
 // ============================================================

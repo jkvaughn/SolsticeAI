@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   Sliders, Save, RefreshCw,
   Check, AlertTriangle, Zap, Shield, BarChart3, Landmark, Globe,
-  FileText, Activity, Gauge, Eye, Timer
+  FileText, Activity, Gauge, Eye, Timer, GitBranch
 } from 'lucide-react';
 import { motion, AnimatePresence } from './motion-shim';
 import { PageShell } from './PageShell';
@@ -19,6 +19,9 @@ import type { ChangeDetail } from './aria/ConfigChangeToast';
 import { useAria } from '../contexts/AriaContext';
 import { useLayout } from '../contexts/LayoutContext';
 import { usePersona } from '../contexts/PersonaContext';
+import { ChangeRequestPanel } from './governance/ChangeRequestPanel';
+import { ConfigHistory } from './governance/ConfigHistory';
+import { PermissionsMatrix } from './governance/PermissionsMatrix';
 
 // ============================================================
 // SWR fetcher types
@@ -1369,7 +1372,40 @@ export function AgentConfig() {
             </WidgetShell>
             </motion.div>
 
+            {/* ═══════════════════════════════════════════════════
+                GOVERNANCE — Change Requests + Config History + Permissions
+                ═══════════════════════════════════════════════════ */}
+            <motion.div layout transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
+            <WidgetShell title="Governance" icon={GitBranch} dirty={false} collapsible defaultOpen={false}>
+              <div className="space-y-4">
+                {/* Change Requests */}
+                <div>
+                  <h4 className="text-[10px] uppercase tracking-wider text-coda-text-muted font-medium mb-2">
+                    Change Requests
+                  </h4>
+                  <ChangeRequestPanel bankId={isDefaultsTab ? null : selectedBankId} />
+                </div>
 
+                {/* Config History */}
+                {!isDefaultsTab && selectedBankId && (
+                  <div>
+                    <h4 className="text-[10px] uppercase tracking-wider text-coda-text-muted font-medium mb-2">
+                      Config History
+                    </h4>
+                    <ConfigHistory bankId={selectedBankId} />
+                  </div>
+                )}
+
+                {/* Permissions Matrix */}
+                <div>
+                  <h4 className="text-[10px] uppercase tracking-wider text-coda-text-muted font-medium mb-2">
+                    Permissions Matrix
+                  </h4>
+                  <PermissionsMatrix />
+                </div>
+              </div>
+            </WidgetShell>
+            </motion.div>
 
           </motion.div>
         )}
