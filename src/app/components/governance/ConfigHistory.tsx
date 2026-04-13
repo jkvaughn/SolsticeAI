@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, History, Cpu, GitBranch, User } from 'lucide-react';
-import { userCallServer } from '../../lib/userClient';
-import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../supabaseClient';
 
 // ============================================================
 // ConfigHistory — Version history timeline for agent config
@@ -51,26 +50,26 @@ function truncateEmail(email: string): string {
 }
 
 export function ConfigHistory({ bankId }: ConfigHistoryProps) {
-  const { user } = useAuth();
-  const email = user?.email ?? '';
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchHistory = useCallback(async () => {
-    if (!email) return;
     setLoading(true);
     try {
-      const query = bankId ? `?bank_id=${bankId}&limit=30` : '?limit=30';
-      const res = await userCallServer<{ history: HistoryEntry[] }>(
-        `/make-server-49d15288/governance/config-history${query}`, email
-      );
-      setHistory(res.history ?? []);
+      let q = supabase
+        .from('agent_config_history')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      if (bankId) q = q.eq('bank_id', bankId);
+      const { data } = await q;
+      setHistory(data ?? []);
     } catch (err) {
       console.error('[ConfigHistory] fetch error:', err);
     } finally {
       setLoading(false);
     }
-  }, [bankId, email]);
+  }, [bankId]);
 
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
 

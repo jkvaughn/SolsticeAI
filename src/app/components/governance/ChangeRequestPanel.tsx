@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, XCircle, Clock, ArrowRight, RefreshCw, Play } from 'lucide-react';
-import { userCallServer, userCallServerPost } from '../../lib/userClient';
+import { supabase, callServer } from '../../supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 
 // ============================================================
@@ -56,20 +56,21 @@ export function ChangeRequestPanel({ bankId }: ChangeRequestPanelProps) {
   const [actionInFlight, setActionInFlight] = useState<string | null>(null);
 
   const fetchRequests = useCallback(async () => {
-    if (!email) return;
     setLoading(true);
     try {
-      const query = bankId ? `?bank_id=${bankId}` : '';
-      const res = await userCallServer<{ requests: ChangeRequest[] }>(
-        `/make-server-49d15288/governance/change-requests${query}`, email
-      );
-      setRequests(res.requests ?? []);
+      let q = supabase
+        .from('config_change_requests')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+      if (bankId) q = q.eq('bank_id', bankId);
+      const { data } = await q;
+      setRequests(data ?? []);
     } catch (err) {
       console.error('[ChangeRequestPanel] fetch error:', err);
     } finally {
       setLoading(false);
     }
-  }, [bankId, email]);
+  }, [bankId]);
 
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
@@ -77,10 +78,11 @@ export function ChangeRequestPanel({ bankId }: ChangeRequestPanelProps) {
     if (!email) return;
     setActionInFlight(id);
     try {
-      await userCallServerPost(
-        `/make-server-49d15288/governance/change-requests/${id}/review`,
-        email,
-        { action }
+      await callServer(
+        `/governance/change-requests/${id}/review`,
+        { action },
+        1,
+        { headers: { 'X-User-Email': email } }
       );
       await fetchRequests();
     } catch (err) {
@@ -94,10 +96,11 @@ export function ChangeRequestPanel({ bankId }: ChangeRequestPanelProps) {
     if (!email) return;
     setActionInFlight(id);
     try {
-      await userCallServerPost(
-        `/make-server-49d15288/governance/change-requests/${id}/apply`,
-        email,
-        {}
+      await callServer(
+        `/governance/change-requests/${id}/apply`,
+        {},
+        1,
+        { headers: { 'X-User-Email': email } }
       );
       await fetchRequests();
     } catch (err) {

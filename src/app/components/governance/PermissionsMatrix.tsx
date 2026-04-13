@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, CheckCircle2, MinusCircle } from 'lucide-react';
-import { callServer } from '../../supabaseClient';
+import { supabase } from '../../supabaseClient';
 
 // ============================================================
 // PermissionsMatrix — Read-only role authority table
@@ -46,10 +46,11 @@ export function PermissionsMatrix() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await callServer<{ permissions: Permission[] }>(
-          '/make-server-49d15288/governance/permissions'
-        );
-        setPermissions(res.permissions ?? []);
+        const { data } = await supabase
+          .from('config_permissions')
+          .select('*')
+          .order('resource');
+        setPermissions(data ?? []);
       } catch (err) {
         console.error('[PermissionsMatrix] fetch error:', err);
       } finally {
