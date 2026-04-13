@@ -74,7 +74,7 @@ export async function fetchTransactions(params?: {
     if (params?.since) p.since = params.since;
     return serverGet('/transactions', p);
   }
-  let q = supabase.from('transactions').select('*').order('created_at', { ascending: false });
+  let q = supabase.from('transactions').select('*, sender_bank:banks!transactions_sender_bank_id_fkey(id, short_code, name), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, short_code, name)').order('created_at', { ascending: false });
   if (params?.bank_id) q = q.or(`sender_bank_id.eq.${params.bank_id},receiver_bank_id.eq.${params.bank_id}`);
   if (params?.status) q = q.eq('status', params.status);
   if (params?.limit) q = q.limit(params.limit);
@@ -86,7 +86,7 @@ export async function fetchTransactions(params?: {
 
 export async function fetchTransaction(id: string): Promise<any> {
   if (useServer) return serverGet(`/transactions/${id}`);
-  const { data, error } = await supabase.from('transactions').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('transactions').select('*, sender_bank:banks!transactions_sender_bank_id_fkey(id, short_code, name), receiver_bank:banks!transactions_receiver_bank_id_fkey(id, short_code, name)').eq('id', id).single();
   if (error) throw error;
   return data;
 }
