@@ -5,7 +5,7 @@ import {
   Send, Loader2, AlertCircle, Wallet,
   Copy, CheckCircle2,
 } from 'lucide-react';
-import { supabase, callServer, supabaseUrl, publicAnonKey } from '../supabaseClient';
+import { supabase, callServer, supabaseUrl, publicAnonKey, serverBaseUrl } from '../supabaseClient';
 import {
   fetchBankWithWallets, fetchAgentConversations,
   fetchAgentMessagesForBank, fetchPendingAgentMessages,
@@ -162,24 +162,21 @@ export function AgentTerminal() {
       const existing = pipelinesRef.current.get(transactionId);
       if (!existing || existing.isComplete) return;
 
-      const response = await fetch(
-        `${supabaseUrl}/rest/v1/transactions?id=eq.${transactionId}&select=*`,
-        {
-          headers: {
-            'apikey': publicAnonKey,
-            'Authorization': `Bearer ${publicAnonKey}`,
-            'Accept': 'application/json',
-          },
-        }
-      );
+      const txUrl = RUNTIME_IS_PRODUCTION
+        ? `${serverBaseUrl}/data/transactions/${transactionId}`
+        : `${supabaseUrl}/rest/v1/transactions?id=eq.${transactionId}&select=*`;
+      const txHeaders: Record<string, string> = RUNTIME_IS_PRODUCTION
+        ? { 'Accept': 'application/json' }
+        : { 'apikey': publicAnonKey, 'Authorization': `Bearer ${publicAnonKey}`, 'Accept': 'application/json' };
+      const response = await fetch(txUrl, { headers: txHeaders });
 
       if (!response.ok) {
         console.warn(`[refreshPipeline] HTTP ${response.status} for tx ${transactionId.slice(0, 8)}`);
         return;
       }
 
-      const rows = await response.json();
-      const tx = rows[0];
+      const json = await response.json();
+      const tx = RUNTIME_IS_PRODUCTION ? json : json[0];
       if (!tx) {
         console.warn(`[refreshPipeline] No transaction found for ${transactionId.slice(0, 8)}`);
         return;
