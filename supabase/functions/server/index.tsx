@@ -4,7 +4,8 @@ import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import sql from "./db.tsx";
 import { callGemini, callGeminiJSON } from "./gemini.tsx";
-import { handleProvingGround, setCadenzaDirectHandlers, setAgentDirectHandlers } from "./proving-ground.tsx";
+import { handleProvingGround, setCadenzaDirectHandlers, setAgentDirectHandlers, setVerifyDirectHandler } from "./proving-ground.tsx";
+import { MockVerifyProvider, type VerifyResult, type IVerifyProvider } from "./integrations/verify-provider.ts";
 import { handleAria } from "./aria.tsx";
 import { calculateAccruedYield, formatYieldUsd } from "./yield-engine.tsx";
 import { evaluateRules, type RuleContext } from "./risk-engine.ts";
@@ -2587,6 +2588,73 @@ app.post("/make-server-49d15288/compliance-check", async (c) => {
   } catch (err) {
     console.log(`[compliance-check] Error: ${(err as Error).message}`);
     return c.json({ error: `Compliance check error: ${(err as Error).message}` }, 500);
+  }
+});
+
+// ============================================================
+// 3c. Core verify logic (Task 158 — account verification step)
+// ============================================================
+async function coreVerify(transactionId: string, providerOverride?: string, mockOverrides?: Partial<VerifyResult>): Promise<VerifyResult> {
+  // Load transaction + banks
+  const [tx] = await sql`
+    SELECT t.*,
+      sb.id AS sb_id, sb.name AS sb_name, sb.short_code AS sb_code, sb.jurisdiction AS sb_jurisdiction, sb.status AS sb_status,
+      rb.id AS rb_id, rb.name AS rb_name, rb.short_code AS rb_code, rb.jurisdiction AS rb_jurisdiction, rb.status AS rb_status
+    FROM transactions t
+    JOIN banks sb ON sb.id = t.sender_bank_id
+    JOIN banks rb ON rb.id = t.receiver_bank_id
+    WHERE t.id = ${transactionId}
+  `;
+  if (!tx) throw new Error(`Transaction not found: ${transactionId}`);
+
+  const senderBank = { id: tx.sb_id, name: tx.sb_name, short_code: tx.sb_code, jurisdiction: tx.sb_jurisdiction, status: tx.sb_status };
+  const receiverBank = { id: tx.rb_id, name: tx.rb_name, short_code: tx.rb_code, jurisdiction: tx.rb_jurisdiction, status: tx.rb_status };
+
+  // Determine mode from bank_agent_config.integrations.verify.mode
+  let mode = 'sandbox';
+  try {
+    const [config] = await sql`SELECT * FROM bank_agent_config WHERE bank_id = ${tx.receiver_bank_id}`;
+    if (config?.integrations?.verify?.mode) {
+      mode = config.integrations.verify.mode;
+    }
+  } catch { /* no config — default sandbox */ }
+
+  // Override mode with explicit provider param
+  if (providerOverride === 'live') mode = 'live';
+
+  let provider: IVerifyProvider;
+  if (mode === 'live') {
+    // Placeholder for live provider — returns mock with provider='live_placeholder'
+    provider = new MockVerifyProvider({ provider: 'live_placeholder', ...mockOverrides });
+  } else {
+    provider = new MockVerifyProvider(mockOverrides || {});
+  }
+
+  console.log(`[verify] Running account verification for tx ${transactionId.slice(0, 8)} mode=${mode}`);
+  const result = await provider.verify(tx, senderBank, receiverBank);
+
+  // Store result on transaction
+  await sql`UPDATE transactions SET verify_result = ${JSON.stringify(result)} WHERE id = ${transactionId}`;
+
+  console.log(`[verify] Result: passed=${result.passed}, provider=${result.provider}, name_match=${result.name_match}`);
+  return result;
+}
+
+// 3c-route. VERIFY route (delegates to coreVerify)
+app.post("/make-server-49d15288/verify", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { transaction_id, provider, mock_overrides } = body;
+
+    if (!transaction_id) {
+      return c.json({ error: "Missing required field: transaction_id" }, 400);
+    }
+
+    const result = await coreVerify(transaction_id, provider, mock_overrides);
+    return c.json({ verify_result: result });
+  } catch (err) {
+    console.log(`[verify] Error: ${(err as Error).message}`);
+    return c.json({ error: `Verify error: ${(err as Error).message}` }, 500);
   }
 });
 
@@ -6834,6 +6902,9 @@ async function coreCadenzaUserReversal(lockupId: string, reason: string): Promis
 // ── Inject Cadenza handlers into Proving Ground (bypasses HTTP self-call 401) ──
 // Same pattern as A2A orchestration fix at line 2334.
 setCadenzaDirectHandlers(coreCadenzaScanLockup, coreCadenzaUserReversal);
+
+// ── Inject verify handler into Proving Ground (Task 158) ──
+setVerifyDirectHandler(coreVerify);
 
 // ── Inject agent handlers (Concord, Fermata, Maestro) into Proving Ground ──
 // Task 113: Same pattern — all PG scenarios now call core functions directly.

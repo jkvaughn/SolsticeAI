@@ -1197,6 +1197,47 @@ export function TransactionDetail() {
               </div>
             )}
 
+            {/* Account Verification (Task 158) */}
+            {(tx as any).verify_result && (() => {
+              const vr = (tx as any).verify_result;
+              const verifyChecks = [
+                { label: 'Account Open', passed: vr.account_open, detail: vr.account_open ? 'Active' : 'Closed' },
+                { label: 'Name Match', passed: vr.name_match !== 'no_match', detail: (vr.name_match || '\u2014').replace(/_/g, ' ') },
+                { label: 'Currency Eligible', passed: vr.currency_eligible, detail: vr.currency_eligible ? 'Eligible' : 'Not eligible' },
+                { label: 'Recent Activity', passed: vr.recent_activity, detail: vr.recent_activity ? 'Active' : 'Dormant' },
+              ];
+              return (
+                <div className="mt-4 pt-4 border-t border-black/[0.06] dark:border-white/[0.06]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <UserCheck className="w-4 h-4 text-coda-text-muted" />
+                    <span className="text-[12px] font-mono text-coda-text-muted uppercase tracking-wider">Account Verification</span>
+                    <span className={`ml-auto px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                      vr.passed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                    }`}>
+                      {vr.passed ? 'PASSED' : 'FAILED'}
+                    </span>
+                  </div>
+                  <div>
+                    {verifyChecks.map((vc: any, i: number) => (
+                      <div key={i} className={`flex items-center gap-3 py-2 ${i > 0 ? 'border-t border-black/[0.04] dark:border-white/[0.04]' : ''}`}>
+                        {vc.passed ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> : <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0" />}
+                        <span className="text-[12px] text-coda-text-secondary">{vc.label}</span>
+                        <span className="text-[11px] text-coda-text-muted ml-auto capitalize">{vc.detail}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.04]">
+                    <span className="text-[10px] text-coda-text-muted">Provider: {vr.provider}</span>
+                    {vr.verified_at && (
+                      <span className="text-[10px] text-coda-text-muted ml-auto font-mono tabular-nums">
+                        {new Date(vr.verified_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             {tx.memo && (
               <div className="mt-3 pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
                 <div className="text-[11px] text-coda-text-muted mb-1">Memo</div>

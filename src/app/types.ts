@@ -176,6 +176,16 @@ export interface Transaction {
   lockup_duration_minutes?: number;
   // Travel Rule (Task 127) — IVMS 101 payload for FinCEN compliance
   travel_rule_payload?: any;
+  // Verify step (Task 158) — account verification result
+  verify_result?: {
+    provider: string;
+    account_open: boolean;
+    name_match: 'exact' | 'partial' | 'no_match' | 'not_checked';
+    currency_eligible: boolean;
+    recent_activity: boolean;
+    passed: boolean;
+    verified_at: string;
+  } | null;
   created_at: string;
   updated_at?: string;
   sender_bank?: Bank;

@@ -2,6 +2,7 @@ import {
   CheckCircle2, Loader2, XCircle, Clock,
   Brain, Shield, Gauge, Link2, AlertTriangle,
   Landmark, Globe, Scale, Activity, ExternalLink,
+  UserCheck,
 } from 'lucide-react';
 import type { Transaction, AgentMessage } from '../../types';
 import { explorerUrl, TX_STATUS_CONFIG } from '../../types';
@@ -33,6 +34,7 @@ interface PipelineStage {
 const PIPELINE_STAGES: PipelineStage[] = [
   { key: 'dispatch', agent: 'Maestro', label: 'Dispatch', icon: Brain, msgTypes: ['payment_request'] },
   { key: 'compliance', agent: 'Concord', label: 'Compliance', icon: Shield, msgTypes: ['compliance_query', 'compliance_response'] },
+  { key: 'verify', agent: 'Verify', label: 'Account Verify', icon: UserCheck, msgTypes: [] },
   { key: 'risk', agent: 'Fermata', label: 'Risk Scoring', icon: Gauge, msgTypes: ['risk_alert'] },
   { key: 'settlement', agent: 'Canto', label: 'Settlement', icon: Link2, msgTypes: ['settlement_confirm'], actions: ['settlement_started'] },
 ];
@@ -122,6 +124,32 @@ function resolveStageVerdict(
         timestamp: latestMsg?.created_at || undefined,
         detail: 'Passed',
       };
+    }
+    return { status: 'pending' };
+  }
+
+  // Verify step (Task 158) — shown between Concord and Fermata if verify_result exists
+  if (stage.key === 'verify') {
+    const vr = (tx as any).verify_result;
+    if (vr) {
+      return {
+        status: vr.passed ? 'completed' : 'failed',
+        timestamp: vr.verified_at,
+        detail: vr.passed ? 'Verified' : 'Failed',
+        reasoning: vr.name_match === 'exact' ? 'Name match: exact'
+          : vr.name_match === 'partial' ? 'Name match: partial'
+          : !vr.account_open ? 'Account closed'
+          : !vr.recent_activity ? 'Dormant account'
+          : vr.provider === 'not_found' ? 'Not in network'
+          : `Provider: ${vr.provider}`,
+      };
+    }
+    // If no verify_result, show as completed-skipped when pipeline is past compliance
+    if (['risk_scored', 'executing', 'settled', 'locked', 'reversed'].includes(tx.status)) {
+      return { status: 'completed', detail: 'Skipped' };
+    }
+    if (tx.compliance_passed === true) {
+      return { status: 'pending', detail: 'Awaiting' };
     }
     return { status: 'pending' };
   }

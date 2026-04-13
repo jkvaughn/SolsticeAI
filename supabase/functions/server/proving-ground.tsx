@@ -12,6 +12,7 @@
 
 import sql from "./db.tsx";
 import { calculateAccruedYield } from "./yield-engine.tsx";
+import type { VerifyResult } from "./integrations/verify-provider.ts";
 
 // ── Direct function call injection (avoids HTTP self-call 401 issue) ──
 // Same pattern as A2A orchestration fix in index.tsx line 2334.
@@ -55,6 +56,24 @@ export function setAgentDirectHandlers(
   console.log('[proving-ground] Agent direct handlers injected (Concord, Fermata, Maestro) — HTTP self-calls bypassed');
 }
 
+// ── Verify direct handler (Task 158) ──
+type VerifyFn = (transactionId: string, provider?: string, mockOverrides?: Partial<VerifyResult>) => Promise<VerifyResult>;
+let _verifyFn: VerifyFn | null = null;
+
+export function setVerifyDirectHandler(verifyFn: VerifyFn) {
+  _verifyFn = verifyFn;
+  console.log('[proving-ground] Verify direct handler injected — HTTP self-calls bypassed');
+}
+
+async function callVerify(txId: string, mockOverrides?: Partial<VerifyResult>): Promise<VerifyResult> {
+  if (_verifyFn) {
+    try { return await _verifyFn(txId, undefined, mockOverrides); } catch (err) { throw err; }
+  }
+  const res = await internalPost('/verify', { transaction_id: txId, mock_overrides: mockOverrides });
+  if (res?.error) throw new Error(res.error);
+  return res?.verify_result;
+}
+
 // ── Direct-call wrappers with HTTP fallback ──
 async function callComplianceCheck(txId: string): Promise<any> {
   if (_complianceCheck) {
@@ -81,7 +100,7 @@ async function callAgentThink(bankId: string, input: string, txId: string | null
 
 export interface ProvingGroundScenario {
   id: string;
-  category: 'compliance' | 'risk' | 'operational' | 'dispute';
+  category: 'compliance' | 'risk' | 'operational' | 'dispute' | 'verify';
   name: string;
   description: string;
   tests_agents: string[];
@@ -304,6 +323,43 @@ const PROVING_GROUND_SCENARIOS: ProvingGroundScenario[] = [
     tests_agents: ['Concord', 'Fermata', 'Maestro'],
     expected_behavior: 'At least one agent flags a near-duplicate transaction submitted within 60 seconds of an identical one',
     severity: 'medium',
+  },
+  // ── Account Verification (Verify Step — Task 160) ──
+  {
+    id: 'V1_account_closed',
+    category: 'verify',
+    name: 'Verify — Account Closed',
+    description: 'Runs account verification with mock returning account_open=false to test hard block on closed accounts.',
+    tests_agents: ['Verify'],
+    expected_behavior: 'Verify step fails with account_open=false, transaction flagged as HARD_BLOCK',
+    severity: 'critical',
+  },
+  {
+    id: 'V2_name_mismatch',
+    category: 'verify',
+    name: 'Verify — Name Mismatch',
+    description: 'Runs account verification with mock returning name_match=no_match to test name mismatch flag.',
+    tests_agents: ['Verify'],
+    expected_behavior: 'Verify step fails with name_match=no_match, flag raised for review',
+    severity: 'high',
+  },
+  {
+    id: 'V3_dormant_account',
+    category: 'verify',
+    name: 'Verify — Dormant Account',
+    description: 'Runs account verification with mock returning recent_activity=false to test dormant account warning.',
+    tests_agents: ['Verify'],
+    expected_behavior: 'Verify step passes with warning flag for dormant account (recent_activity=false)',
+    severity: 'medium',
+  },
+  {
+    id: 'V4_not_in_network',
+    category: 'verify',
+    name: 'Verify — Not In Network',
+    description: 'Runs account verification with mock returning provider=not_found to test unresolvable counterparty.',
+    tests_agents: ['Verify'],
+    expected_behavior: 'Verify step fails with provider=not_found, WARN behavior triggered',
+    severity: 'high',
   },
 ];
 
@@ -2173,6 +2229,122 @@ async function runD6(bankId: string): Promise<ScenarioResult> {
   }
 }
 
+// ── Verify Scenario Runners (Task 160) ─────────────────────
+
+async function runVerifyScenario(
+  bankId: string,
+  scenarioId: string,
+  mockOverrides: Partial<VerifyResult>,
+  expectPass: boolean,
+  expectLabel: string,
+): Promise<ScenarioResult> {
+  const scenario = PROVING_GROUND_SCENARIOS.find(s => s.id === scenarioId)!;
+  const start = Date.now();
+  const trace: PipelineStep[] = [];
+  const cleanupIds = newCleanupIds();
+
+  try {
+    trace.push({ step: 'setup', status: 'started', timestamp: new Date().toISOString() });
+    const ctx = await getTestContext(bankId);
+
+    // Create test transaction
+    const txId = crypto.randomUUID();
+    cleanupIds.txIds.push(txId);
+    await insertTestTransaction({
+      id: txId,
+      senderBankId: ctx.sender.id,
+      receiverBankId: ctx.receiver.id,
+      amount: 500_000_000_000, // $500K
+      amountDisplay: 500_000,
+      status: 'compliance_check',
+      purposeCode: 'WHOLESALE_TREASURY',
+      memo: `PG_TEST ${scenarioId}: ${scenario.name}`,
+      riskReasoning: `PG_TEST_${scenarioId}`,
+    });
+    trace.push({ step: 'test_tx_created', status: 'ok', timestamp: new Date().toISOString(), data: { txId } });
+
+    // Run verify with mock overrides
+    trace.push({ step: 'verify_start', status: 'running', timestamp: new Date().toISOString(), data: { overrides: mockOverrides } });
+    const startVerify = Date.now();
+    let verifyResult: VerifyResult;
+    try {
+      verifyResult = await callVerify(txId, mockOverrides);
+    } catch (err) {
+      trace.push({ step: 'verify_error', status: 'error', timestamp: new Date().toISOString(), data: { error: (err as Error).message } });
+      return {
+        scenario_id: scenario.id,
+        scenario_name: scenario.name,
+        category: scenario.category,
+        bank_id: bankId,
+        bank_name: ctx.sender.name,
+        overall_result: 'ERROR',
+        duration_ms: Date.now() - start,
+        agent_results: [{
+          agent: 'Verify',
+          result: 'MISSED',
+          reasoning: `Verify call failed: ${(err as Error).message}`,
+          timing_ms: Date.now() - startVerify,
+        }],
+        pipeline_trace: trace,
+        expected_behavior: scenario.expected_behavior,
+        actual_behavior: `Verify crashed: ${(err as Error).message}`,
+        error_message: (err as Error).message,
+      };
+    }
+    trace.push({ step: 'verify_complete', status: 'ok', timestamp: new Date().toISOString(), data: verifyResult });
+
+    // Score result
+    const passed = expectPass ? verifyResult.passed : !verifyResult.passed;
+    const verifyAgent: AgentResult = {
+      agent: 'Verify',
+      result: passed ? 'CAUGHT' : 'MISSED',
+      reasoning: passed
+        ? `Verify correctly ${expectPass ? 'passed' : 'rejected'}: ${expectLabel}. ` +
+          `account_open=${verifyResult.account_open}, name_match=${verifyResult.name_match}, ` +
+          `currency_eligible=${verifyResult.currency_eligible}, recent_activity=${verifyResult.recent_activity}, ` +
+          `provider=${verifyResult.provider}`
+        : `Verify unexpectedly ${verifyResult.passed ? 'passed' : 'rejected'} when expected to ${expectPass ? 'pass' : 'fail'}. ` +
+          `Result: passed=${verifyResult.passed}, provider=${verifyResult.provider}`,
+      timing_ms: Date.now() - startVerify,
+    };
+
+    return {
+      scenario_id: scenario.id,
+      scenario_name: scenario.name,
+      category: scenario.category,
+      bank_id: bankId,
+      bank_name: ctx.sender.name,
+      overall_result: passed ? 'PASS' : 'FAIL',
+      duration_ms: Date.now() - start,
+      agent_results: [verifyAgent],
+      pipeline_trace: trace,
+      expected_behavior: scenario.expected_behavior,
+      actual_behavior: `Verify returned passed=${verifyResult.passed}, ` +
+        `account_open=${verifyResult.account_open}, name_match=${verifyResult.name_match}, ` +
+        `recent_activity=${verifyResult.recent_activity}, provider=${verifyResult.provider}`,
+    };
+  } finally {
+    await cleanupTestData(cleanupIds);
+  }
+}
+
+async function runV1(bankId: string): Promise<ScenarioResult> {
+  return runVerifyScenario(bankId, 'V1_account_closed', { account_open: false }, false, 'Account closed → HARD_BLOCK');
+}
+
+async function runV2(bankId: string): Promise<ScenarioResult> {
+  return runVerifyScenario(bankId, 'V2_name_mismatch', { name_match: 'no_match' }, false, 'Name mismatch → flag raised');
+}
+
+async function runV3(bankId: string): Promise<ScenarioResult> {
+  // Dormant account: recent_activity=false but account still open → passes with warning
+  return runVerifyScenario(bankId, 'V3_dormant_account', { recent_activity: false }, true, 'Dormant account → warning flag');
+}
+
+async function runV4(bankId: string): Promise<ScenarioResult> {
+  return runVerifyScenario(bankId, 'V4_not_in_network', { provider: 'not_found' }, false, 'Provider not found → WARN');
+}
+
 // ── Scenario Dispatcher ─────────────────────────────────────
 
 const SCENARIO_RUNNERS: Record<string, (bankId: string) => Promise<ScenarioResult>> = {
@@ -2195,6 +2367,10 @@ const SCENARIO_RUNNERS: Record<string, (bankId: string) => Promise<ScenarioResul
   D4_escalation_anomaly: runD4,
   D5_user_reversal: runD5,
   D6_yield_accrual_accuracy: runD6,
+  V1_account_closed: runV1,
+  V2_name_mismatch: runV2,
+  V3_dormant_account: runV3,
+  V4_not_in_network: runV4,
 };
 
 async function runScenario(scenarioId: string, bankId: string): Promise<ScenarioResult> {
