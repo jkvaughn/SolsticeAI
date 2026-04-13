@@ -1871,6 +1871,57 @@ The settlement flow race conditions were covered in Section 12.7. Additional con
 - `min_replicas = 1` minimum in production — no cold starts for a financial platform
 - Idempotency keys on all enqueued work so duplicate delivery doesn't cause duplicate settlements
 
+### 21.10 Database Transactions: None
+
+Every SQL statement in the codebase is a separate auto-committed transaction. The `sql` tagged template in `db.tsx` grabs a connection from the pool, runs one query, releases the connection. There is no concept of holding a connection across multiple queries and no `BEGIN`/`COMMIT`/`ROLLBACK` anywhere.
+
+**Impact on the settlement pipeline:**
+
+The PvP settlement path executes these as independent commits:
+1. `UPDATE transactions SET status = 'executing'`
+2. _(Solana call — 2-60 seconds)_
+3. `UPDATE wallets SET balance_tokens = ...` (sender)
+4. `UPDATE wallets SET balance_tokens = ...` (receiver)
+5. `UPDATE transactions SET status = 'settled', solana_tx_signature = ...`
+6. `INSERT INTO agent_messages ...`
+
+If the process dies between step 3 and step 4, sender balance is updated but receiver balance is not. Transaction is stuck at `executing`. Data is permanently inconsistent.
+
+**Operations that need transaction wrapping:**
+
+| Operation | Writes that must be atomic |
+|-----------|---------------------------|
+| Settlement complete (PvP) | wallets x2 + transaction status + agent_message |
+| Lockup initiate | lockup_tokens + transaction status + wallets + agent_message |
+| Lockup settle (hard finality) | lockup_tokens + transaction status + wallets + yield sweep |
+| Lockup reversal | lockup_tokens + transaction status + wallets |
+| Compliance pipeline | compliance_logs x5 + transaction status |
+| Bank setup | banks + wallets + bank_agent_config |
+
+**What the rebuild needs:**
+
+A `withTransaction` wrapper in the repository layer:
+
+```typescript
+await withTransaction(async (tx) => {
+  await transactionRepo.updateStatus(tx, id, 'settled', { signature });
+  await walletRepo.updateBalance(tx, senderId, senderBalance);
+  await walletRepo.updateBalance(tx, receiverId, receiverBalance);
+  await agentMessageRepo.create(tx, { ... });
+  // ALL commit or ALL roll back
+});
+```
+
+Repository functions accept an optional transaction client. Inside `withTransaction`, they share a connection and commit/rollback atomically. Outside, they use the pool normally (auto-commit for simple reads).
+
+**Nuance with blockchain operations:** Postgres transactions cannot wrap Solana calls. The pattern is:
+
+1. `BEGIN` → validate, lock rows (`SELECT FOR UPDATE`), write pre-state → `COMMIT`
+2. Execute Solana call (outside any DB transaction — irreversible)
+3. `BEGIN` → write results (balances, signatures, status) → `COMMIT`
+
+The DB writes before and after the chain call are each atomic. The chain call itself can't be rolled back — which is why idempotency keys and a recovery mechanism for "Solana succeeded but DB write failed" are also required (see Section 12.7).
+
 ---
 
 *This audit captures the state of the codebase as of commit `f83be40` on `main`.*
