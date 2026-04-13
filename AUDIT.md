@@ -1720,5 +1720,133 @@ The rebuild doesn't need to reverse-engineer the current system. This audit alre
 
 ---
 
+---
+
+## 21. Overlooked Areas
+
+### 21.1 RLS Policies: "Allow All for Demo"
+
+Supabase Row-Level Security is enabled on 9 tables in the Supabase migration, but every policy is:
+
+```sql
+CREATE POLICY "Allow all for demo" ON "public"."transactions" USING (true) WITH CHECK (true);
+```
+
+RLS is turned on but every policy says "allow everything." This is security theater — it gives the appearance of access control while providing none. Any Supabase client with the anon key has full read/write access to all rows in all tables.
+
+Tables with RLS enabled but "allow all" policies: `agent_conversations`, `agent_messages`, `bank_agent_config`, `banks`, `compliance_logs`, `kv_store_49d15288`, `risk_scores`, `transactions`, `wallets`.
+
+Tables with no RLS at all: `cadenza_flags`, `heartbeat_cycles`, `lockup_tokens`, `network_snapshots`, `network_wallets`, `simulated_watchlist`, `treasury_mandates`, and all user/enterprise tables.
+
+The Azure migration (`20260319`) strips RLS entirely — production Postgres has no row-level policies. This is actually correct since the backend connects with a single admin pool, but it means the database has zero access control at any layer.
+
+### 21.2 API Input Validation: Almost None
+
+The ~80 route handlers have minimal input validation. The pattern is:
+
+```typescript
+const { bank_id, input } = body;
+if (!bank_id || !input) return c.json({ error: "Missing required fields" }, 400);
+// ... immediately use bank_id in SQL query
+```
+
+**What's validated:** Presence of required fields (null/undefined checks). A few routes check string format (e.g., base58 for wallet addresses). The `user/profile-update` route validates role against an allowlist (but allows self-escalation to admin).
+
+**What's NOT validated:**
+- No type checking on any field (a number where a string is expected just passes through)
+- No length limits on string fields (memo, content, reasoning could be arbitrarily large)
+- No format validation on UUIDs (invalid UUID → Postgres error leaked to client)
+- No range validation on numeric fields (negative amounts, absurd lockup durations)
+- No Zod, no Joi, no JSON schema, no validation library of any kind
+- `JSON.parse()` on KV store values with no try/catch in many places (lines 440, 484, 499, 1101, etc.) — malformed KV data crashes the route
+
+The mandate validation at line 4587-4591 is one of the few places that clamps values, but it operates on AI-generated output, not user input.
+
+### 21.3 Rate Limiting: None on the API
+
+There is zero rate limiting on any endpoint. The only rate-limiting behavior is:
+- Gemini wrapper retries on 429 (Gemini's own rate limit)
+- `sleep()` delays between heartbeat cycle bank evaluations to avoid Gemini 429s
+- Frontend staging queue (350ms gap between requests to avoid Supabase 429s)
+
+**No rate limiting exists on the backend itself.** Any client can:
+- Call `/agent-think` thousands of times, burning Gemini API credits
+- Call `/agent-execute` repeatedly, attempting to settle the same transaction
+- Call `/data/*` endpoints at any rate, hammering the database
+- Call `/faucet` repeatedly, draining the faucet wallet
+
+For the rebuild: Hono has rate-limiting middleware (`hono/rate-limiter`) or use a dedicated package. Critical for Gemini-calling endpoints and settlement operations.
+
+### 21.4 Secrets in Git History
+
+The initial commit (`1c44265`) contains `utils/supabase/info.tsx` with:
+- Supabase project ID: `daekdqzghrjneftpvnfy`
+- Supabase anon key (full JWT): `eyJhbGciOiJI...`
+
+The commit message says "secrets removed" but the anon key is committed. Anon keys are semi-public by Supabase's design (they're meant for client-side use), but this one grants access to the Supabase database through the "Allow all for demo" RLS policies.
+
+No actual secrets (service role key, database password, Gemini API key, faucet keypair) were found in git history. Terraform state is stored in Azure Blob Storage (not committed). No `.tfstate` or `terraform.tfvars` files in the repo.
+
+### 21.5 Memory Leaks: Uncleared Timers in AgentTerminal
+
+`AgentTerminal.tsx` creates **cascading `setTimeout` chains** that are never cleaned up:
+
+```typescript
+// Lines 326-352 — triggered on every realtime message
+setTimeout(() => refreshPipelineFromDB(scTxId), 500);
+setTimeout(() => refreshPipelineFromDB(scTxId), 2000);
+setTimeout(() => {
+  // ...
+  setTimeout(() => refreshWalletDirect(), 1000);
+  setTimeout(() => refreshWalletDirect(), 3000);
+}, 5000);
+setTimeout(() => refreshPipelineFromDB(msg.transaction_id!), 500);
+setTimeout(() => refreshPipelineFromDB(msg.transaction_id!), 2000);
+setTimeout(() => refreshPipelineFromDB(msg.transaction_id!), 5000);
+setTimeout(() => refreshPipelineFromDB(msg.transaction_id!), 8000);
+setTimeout(() => refreshPipelineFromDB(msg.transaction_id!), 12000);
+```
+
+These fire on every realtime subscription message. If the user navigates away from the page before the timers complete, the callbacks still execute against a stale/unmounted component. The `setTimeout` IDs are never stored in refs and never cleared in cleanup functions.
+
+The realtime channel subscriptions themselves ARE properly cleaned up (`return () => { supabase.removeChannel(channel) }`), but the cascading timers are not.
+
+`useNetworkSimulation.ts` is cleaner — it properly cleans up channels, animation frames, and uses a `cancelled` flag for async operations.
+
+### 21.6 Accessibility: Minimal
+
+72 ARIA-related attributes found across 31 files — but almost entirely from the shadcn/ui primitives (which include `aria-*` and `role` attributes by default). The page-level components have almost zero accessibility work:
+
+- No skip-to-content link
+- No landmark regions on page components
+- No focus management on route changes
+- No announcements for async operations (settlement status changes, pipeline progress)
+- No keyboard navigation for custom interactive elements (pipeline visualizer, agent terminal chat)
+- Color contrast may be an issue with the dark theme and muted text colors (`text-coda-text-muted`)
+
+For a financial platform, WCAG compliance would be expected. The shadcn/ui primitives provide a solid base, but the page-level components built on top of them have no accessibility consideration.
+
+### 21.7 Bundle Size
+
+Not measured during this audit, but the dual UI framework issue (MUI + shadcn/Radix) means the production bundle includes:
+- `@mui/material` + `@emotion/react` + `@emotion/styled` (~300KB minified)
+- 20 `@radix-ui/*` packages (~150KB minified)
+- `mapbox-gl` (~500KB minified — loaded on NetworkCommand page)
+- `recharts` + `d3` subset (~200KB minified)
+- `motion` (Framer Motion) (~100KB minified)
+- `lottie-react` + animation data (variable)
+
+With only one route using `React.lazy()` (EscalationDashboard), most of this ships in the initial bundle. For the rebuild: route-based code splitting on every route is mandatory, and pick one UI framework.
+
+### 21.8 Concurrency Issues Beyond Settlement
+
+The settlement flow race conditions were covered in Section 12.7. Additional concurrency gaps:
+
+- **Bank config updates vs active settlements:** An Aria config change (risk weights, auto-accept ceiling) takes effect immediately. An in-flight transaction that already passed risk scoring with the old config will execute with stale risk parameters. No versioning or snapshotting of config at transaction creation time.
+- **Treasury cycle overlap:** If a heartbeat cycle takes longer than the interval, the next cycle can start before the previous one finishes. No mutex or cycle-in-progress guard exists.
+- **KV store race conditions:** The custodian/fees wallet data is stored in KV (`kv.get` → modify → `kv.set`). Two concurrent requests can read the same value, both modify it, and one overwrites the other. No atomic read-modify-write.
+
+---
+
 *This audit captures the state of the codebase as of commit `f83be40` on `main`.*
-*Completed 2026-04-11. Sections: structural analysis (1-11), settlement flow trace (12), auth security audit (13), database access patterns (14), updated triage (15), production database (16), error handling & observability (17), Deno forensics (18), repo structure (19), rebuild brief (20).*
+*Completed 2026-04-11/12. Sections: structural analysis (1-11), settlement flow trace (12), auth security audit (13), database access patterns (14), updated triage (15), production database (16), error handling & observability (17), Deno forensics (18), repo structure (19), rebuild brief (20), overlooked areas (21).*
